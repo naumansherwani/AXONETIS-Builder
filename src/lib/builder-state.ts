@@ -6,6 +6,10 @@
 import { createContext, useContext } from "react";
 import type { Branch, Environment, ProjectId } from "./projects";
 
+export type AgentState = "standby" | "jimmy" | "sherlock";
+
+
+
 export type BottomTabId =
   | "files"
   | "code"
