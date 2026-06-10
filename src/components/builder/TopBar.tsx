@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { ChevronDown, Command, LogOut, Rocket, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "@tanstack/react-router";
@@ -8,11 +9,25 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { supabase3, SUPABASE3_READY } from "@/integrations/supabase3/client";
+import KernelLogo from "./KernelLogo";
 
 export default function TopBar() {
   const navigate = useNavigate();
-  const { project, branch, environment, setProject, setBranch, setEnvironment, setPaletteOpen } = useBuilder();
+  const { project, branch, environment, agentState, setProject, setBranch, setEnvironment, setPaletteOpen, setAgentState } = useBuilder();
   const active = PROJECTS.find((p) => p.id === project)!;
+
+  // Founder demo: Alt+1 standby · Alt+2 Jimmy · Alt+3 Sherlock
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!e.altKey) return;
+      if (e.key === "1") setAgentState("standby");
+      if (e.key === "2") setAgentState("jimmy");
+      if (e.key === "3") setAgentState("sherlock");
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [setAgentState]);
+
 
   async function handleSignOut() {
     if (SUPABASE3_READY) await supabase3.auth.signOut();
