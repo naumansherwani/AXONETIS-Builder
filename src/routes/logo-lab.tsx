@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import type { AgentState } from "@/lib/builder-state";
-import AxenMark from "@/components/builder/logo-lab/AxenMark";
+import AxenMark from "@/components/builder/logo-lab/AxonMark";
 
 export const Route = createFileRoute("/logo-lab")({
   head: () => ({ meta: [{ title: "AXEN — Identity" }, { name: "robots", content: "noindex, nofollow" }] }),
