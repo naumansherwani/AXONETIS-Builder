@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BuilderCtx, type BottomTabId, type PreviewMode } from "@/lib/builder-state";
+import { BuilderCtx, type AgentState, type BottomTabId, type PreviewMode } from "@/lib/builder-state";
 import { DEFAULT_PROJECT, type Branch, type Environment, type ProjectId } from "@/lib/projects";
 import TopBar from "./TopBar";
 import LivePreview from "./LivePreview";
