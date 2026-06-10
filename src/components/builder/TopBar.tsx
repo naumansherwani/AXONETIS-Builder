@@ -44,11 +44,12 @@ export default function TopBar() {
       {/* LEFT: Logo (FAB) + selectors */}
       <div className="flex items-center gap-2">
         <div className="mr-2 flex items-center gap-2">
-          <div className="grid h-7 w-7 place-items-center rounded-md bg-gradient-to-br from-[#E50914] to-[#7a050b] shadow-[0_0_8px_rgba(229,9,20,0.25)]">
-            <span className="text-xs font-black text-white">F</span>
-          </div>
-          <span className="hidden text-sm font-semibold tracking-tight md:inline">Founder Builder</span>
+          <KernelLogo state={agentState} size={18} />
+          <span className="hidden text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground md:inline">
+            AI Autonomous Agent Builder
+          </span>
         </div>
+
 
         <Selector label={active.name} accent={active.accent}>
           {PROJECTS.map((p) => (
