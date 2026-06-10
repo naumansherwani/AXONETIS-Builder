@@ -9,12 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LogoLabRouteImport } from './routes/logo-lab'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
-import { Route as AuthenticatedLogoLabRouteImport } from './routes/_authenticated/logo-lab'
 
+const LogoLabRoute = LogoLabRouteImport.update({
+  id: '/logo-lab',
+  path: '/logo-lab',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -34,21 +39,16 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/callback',
   getParentRoute: () => AuthRoute,
 } as any)
-const AuthenticatedLogoLabRoute = AuthenticatedLogoLabRouteImport.update({
-  id: '/logo-lab',
-  path: '/logo-lab',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRouteWithChildren
-  '/logo-lab': typeof AuthenticatedLogoLabRoute
+  '/logo-lab': typeof LogoLabRoute
   '/auth/callback': typeof AuthCallbackRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRouteWithChildren
-  '/logo-lab': typeof AuthenticatedLogoLabRoute
+  '/logo-lab': typeof LogoLabRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/': typeof AuthenticatedIndexRoute
 }
@@ -56,7 +56,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
-  '/_authenticated/logo-lab': typeof AuthenticatedLogoLabRoute
+  '/logo-lab': typeof LogoLabRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
@@ -69,7 +69,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authenticated'
     | '/auth'
-    | '/_authenticated/logo-lab'
+    | '/logo-lab'
     | '/auth/callback'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
@@ -77,10 +77,18 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
+  LogoLabRoute: typeof LogoLabRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/logo-lab': {
+      id: '/logo-lab'
+      path: '/logo-lab'
+      fullPath: '/logo-lab'
+      preLoaderRoute: typeof LogoLabRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -109,23 +117,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/_authenticated/logo-lab': {
-      id: '/_authenticated/logo-lab'
-      path: '/logo-lab'
-      fullPath: '/logo-lab'
-      preLoaderRoute: typeof AuthenticatedLogoLabRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedLogoLabRoute: typeof AuthenticatedLogoLabRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedLogoLabRoute: AuthenticatedLogoLabRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 
@@ -145,6 +144,7 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
+  LogoLabRoute: LogoLabRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
