@@ -44,7 +44,7 @@ export default function TopBar() {
       {/* LEFT: Logo (FAB) + selectors */}
       <div className="flex items-center gap-2">
         <div className="ml-1 mr-2 flex items-center gap-3">
-          <AxenMark state={agentState} size={22} wordmark />
+          <AxenMark state={agentState} size={34} wordmark />
           <span className="hidden text-[9px] font-medium uppercase tracking-[0.35em] text-muted-foreground/80 lg:inline">
             Nervous system for autonomous agents
           </span>
