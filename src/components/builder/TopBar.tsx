@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { ChevronDown, Command, LogOut, Rocket, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "@tanstack/react-router";
@@ -8,11 +9,25 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { supabase3, SUPABASE3_READY } from "@/integrations/supabase3/client";
+import KernelLogo from "./KernelLogo";
 
 export default function TopBar() {
   const navigate = useNavigate();
-  const { project, branch, environment, setProject, setBranch, setEnvironment, setPaletteOpen } = useBuilder();
+  const { project, branch, environment, agentState, setProject, setBranch, setEnvironment, setPaletteOpen, setAgentState } = useBuilder();
   const active = PROJECTS.find((p) => p.id === project)!;
+
+  // Founder demo: Alt+1 standby · Alt+2 Jimmy · Alt+3 Sherlock
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!e.altKey) return;
+      if (e.key === "1") setAgentState("standby");
+      if (e.key === "2") setAgentState("jimmy");
+      if (e.key === "3") setAgentState("sherlock");
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [setAgentState]);
+
 
   async function handleSignOut() {
     if (SUPABASE3_READY) await supabase3.auth.signOut();
@@ -29,11 +44,12 @@ export default function TopBar() {
       {/* LEFT: Logo (FAB) + selectors */}
       <div className="flex items-center gap-2">
         <div className="mr-2 flex items-center gap-2">
-          <div className="grid h-7 w-7 place-items-center rounded-md bg-gradient-to-br from-[#E50914] to-[#7a050b] shadow-[0_0_8px_rgba(229,9,20,0.25)]">
-            <span className="text-xs font-black text-white">F</span>
-          </div>
-          <span className="hidden text-sm font-semibold tracking-tight md:inline">Founder Builder</span>
+          <KernelLogo state={agentState} size={18} />
+          <span className="hidden text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground md:inline">
+            AI Autonomous Agent Builder
+          </span>
         </div>
+
 
         <Selector label={active.name} accent={active.accent}>
           {PROJECTS.map((p) => (

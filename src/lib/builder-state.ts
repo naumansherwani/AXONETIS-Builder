@@ -6,6 +6,10 @@
 import { createContext, useContext } from "react";
 import type { Branch, Environment, ProjectId } from "./projects";
 
+export type AgentState = "standby" | "jimmy" | "sherlock";
+
+
+
 export type BottomTabId =
   | "files"
   | "code"
@@ -35,13 +39,16 @@ export interface BuilderState {
   bottomTab: BottomTabId | null;
   previewMode: PreviewMode;
   paletteOpen: boolean;
+  agentState: AgentState;
   setProject: (p: ProjectId) => void;
   setBranch: (b: Branch) => void;
   setEnvironment: (e: Environment) => void;
   setBottomTab: (t: BottomTabId | null) => void;
   setPreviewMode: (m: PreviewMode) => void;
   setPaletteOpen: (o: boolean) => void;
+  setAgentState: (s: AgentState) => void;
 }
+
 
 export const BuilderCtx = createContext<BuilderState | null>(null);
 

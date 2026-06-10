@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BuilderCtx, type BottomTabId, type PreviewMode } from "@/lib/builder-state";
+import { BuilderCtx, type AgentState, type BottomTabId, type PreviewMode } from "@/lib/builder-state";
 import { DEFAULT_PROJECT, type Branch, type Environment, type ProjectId } from "@/lib/projects";
 import TopBar from "./TopBar";
 import LivePreview from "./LivePreview";
@@ -15,6 +15,7 @@ export default function BuilderShell() {
   const [bottomTab, setBottomTab] = useState<BottomTabId | null>(null);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("single");
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [agentState, setAgentState] = useState<AgentState>("standby");
 
   // ⌘K / Ctrl+K opens command palette
   useEffect(() => {
@@ -30,11 +31,12 @@ export default function BuilderShell() {
 
   const value = useMemo(
     () => ({
-      project, branch, environment, bottomTab, previewMode, paletteOpen,
-      setProject, setBranch, setEnvironment, setBottomTab, setPreviewMode, setPaletteOpen,
+      project, branch, environment, bottomTab, previewMode, paletteOpen, agentState,
+      setProject, setBranch, setEnvironment, setBottomTab, setPreviewMode, setPaletteOpen, setAgentState,
     }),
-    [project, branch, environment, bottomTab, previewMode, paletteOpen],
+    [project, branch, environment, bottomTab, previewMode, paletteOpen, agentState],
   );
+
 
   return (
     <BuilderCtx.Provider value={value}>
