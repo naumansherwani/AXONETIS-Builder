@@ -52,8 +52,8 @@ function AuthPage() {
     <div className="relative min-h-screen w-full overflow-hidden bg-background text-foreground">
       {/* Ambient glow */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-40 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-[#E50914]/10 blur-[140px]" />
-        <div className="absolute bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-[#1a0933]/40 blur-[120px]" />
+        <div className="absolute -top-40 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-[#E50914]/[0.04] blur-[160px]" />
+        <div className="absolute bottom-0 right-0 h-[360px] w-[360px] rounded-full bg-[#1a0933]/25 blur-[140px]" />
       </div>
 
       <div className="relative flex min-h-screen items-center justify-center px-6">
