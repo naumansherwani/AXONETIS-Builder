@@ -1,5 +1,5 @@
 /**
- * AXEN — THE SIGNAL MARK  (Autonomous · eXecution · Orchestration · Network)
+ * AXONET — THE SIGNAL MARK  (Autonomous · eXecution · Orchestration · Network)
  * ────────────────────────────────────────────────────────────────
  * A hexagonal synapse: six dendrites fire inward to a glowing core.
  * Geometric, processor-like, unmistakably AI. Not a Meta loop, not a
@@ -29,7 +29,7 @@ const HEX_PATH =
 interface Props {
   state?: AgentState;
   size?: number;
-  /** Show "AXEN" wordmark to the right of the glyph */
+  /** Show "AXONET" wordmark to the right of the glyph */
   wordmark?: boolean;
   /** Force the wordmark color */
   textColor?: string;
@@ -148,13 +148,13 @@ export default function AxenMark({ state = "standby", size = 40, wordmark = fals
           className="font-semibold uppercase"
           style={{
             fontFamily: "'Geist Mono','JetBrains Mono',ui-monospace,monospace",
-            fontSize: size * 0.55,
-            letterSpacing: "0.32em",
+            fontSize: size * 0.48,
+            letterSpacing: "0.22em",
             color: textColor ?? "#f4f4f8",
             textShadow: active ? `0 0 ${size * 0.4}px ${c.glow}` : `0 0 ${size * 0.2}px ${c.glow}`,
           }}
         >
-          AXEN
+          AXONET
         </span>
       )}
     </div>
