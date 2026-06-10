@@ -5,7 +5,7 @@ import type { AgentState } from "@/lib/builder-state";
 import AxenMark from "@/components/builder/logo-lab/AxonMark";
 
 export const Route = createFileRoute("/logo-lab")({
-  head: () => ({ meta: [{ title: "AXEN — Identity" }, { name: "robots", content: "noindex, nofollow" }] }),
+  head: () => ({ meta: [{ title: "AXONET — Identity" }, { name: "robots", content: "noindex, nofollow" }] }),
   component: LogoLab,
 });
 
@@ -13,8 +13,8 @@ const STATES: AgentState[] = ["standby", "jimmy", "sherlock"];
 
 const TAGLINES = [
   { line: "The nervous system for autonomous agents.", note: "Founder-grade. Literal. Future-proof." },
-  { line: "Every signal becomes software.",            note: "Punchy. Pure AXEN DNA — input → fire → build." },
-  { line: "Where intelligence finds its body.",        note: "Poetic. Positions AXEN as the substrate, not a tool." },
+  { line: "Every signal becomes software.",            note: "Punchy. Pure AXONET DNA — input → fire → build." },
+  { line: "Where intelligence finds its body.",        note: "Poetic. Positions AXONET as the substrate, not a tool." },
   { line: "Think. Fire. Build.",                       note: "3-word manifesto. Tesla/Apple cadence. T-shirt ready." },
   { line: "The synapse of the autonomous age.",        note: "Mythic, civilizational. Pair with hero films." },
   { line: "Built by signals. Born autonomous.",        note: "Self-describing — explains the product in 4 words." },
@@ -81,7 +81,7 @@ function LogoLab() {
                 textShadow: "0 0 60px rgba(229,9,20,0.35), 0 0 120px rgba(168,85,247,0.2)",
               }}
             >
-              AXEN
+              AXONET
             </div>
             <div className="mt-4 text-[11px] uppercase tracking-[0.45em] text-muted-foreground">
               Autonomous · eXecution · Orchestration · Network
