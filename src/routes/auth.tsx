@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { Loader2, Mail } from "lucide-react";
 import { supabase3, SUPABASE3_READY } from "@/integrations/supabase3/client";
 import { Button } from "@/components/ui/button";
+import KernelLogo from "@/components/builder/KernelLogo";
+
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
