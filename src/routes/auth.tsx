@@ -65,17 +65,14 @@ function AuthPage() {
           transition={{ type: "spring", stiffness: 80, damping: 15 }}
           className="fb-glass fb-hairline w-full max-w-md rounded-2xl p-8 shadow-2xl"
         >
-          <div className="mb-8 flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-lg bg-gradient-to-br from-[#E50914] to-[#7a050b] shadow-[0_0_12px_rgba(229,9,20,0.3)]">
-              <span className="font-black text-white">F</span>
-            </div>
-            <div>
-              <div className="text-sm font-medium tracking-wider text-muted-foreground uppercase">
-                Founder
-              </div>
-              <div className="text-lg font-bold leading-tight">AI Builder™</div>
+          <div className="mb-8 flex flex-col gap-2">
+            <KernelLogo state="standby" size={22} />
+            <div className="mt-2 text-lg font-semibold leading-tight">AI Autonomous Agent Builder</div>
+            <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              Kernel · F-OS · Founder-only
             </div>
           </div>
+
 
           <h1 className="mb-2 text-2xl font-semibold tracking-tight">Sovereign access</h1>
           <p className="mb-8 text-sm text-muted-foreground">
