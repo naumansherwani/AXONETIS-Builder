@@ -29,7 +29,7 @@ export default function TopBar() {
       {/* LEFT: Logo (FAB) + selectors */}
       <div className="flex items-center gap-2">
         <div className="mr-2 flex items-center gap-2">
-          <div className="grid h-7 w-7 place-items-center rounded-md bg-[#E50914] shadow-[0_0_18px_rgba(229,9,20,0.45)]">
+          <div className="grid h-7 w-7 place-items-center rounded-md bg-gradient-to-br from-[#E50914] to-[#7a050b] shadow-[0_0_8px_rgba(229,9,20,0.25)]">
             <span className="text-xs font-black text-white">F</span>
           </div>
           <span className="hidden text-sm font-semibold tracking-tight md:inline">Founder Builder</span>
@@ -73,7 +73,7 @@ export default function TopBar() {
           <kbd className="ml-1 rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd>
         </button>
 
-        <Button size="sm" className="fb-pulse h-8 gap-1.5 bg-[#E50914] px-3 text-xs font-medium text-white hover:bg-[#E50914]/90">
+        <Button size="sm" className="fb-pulse h-8 gap-1.5 bg-gradient-to-r from-[#E50914] to-[#b3070f] px-3 text-xs font-medium text-white hover:from-[#E50914] hover:to-[#E50914]">
           <Rocket className="h-3.5 w-3.5" />
           Publish
         </Button>

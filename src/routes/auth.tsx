@@ -52,8 +52,8 @@ function AuthPage() {
     <div className="relative min-h-screen w-full overflow-hidden bg-background text-foreground">
       {/* Ambient glow */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-40 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-[#E50914]/10 blur-[140px]" />
-        <div className="absolute bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-[#1a0933]/40 blur-[120px]" />
+        <div className="absolute -top-40 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-[#E50914]/[0.04] blur-[160px]" />
+        <div className="absolute bottom-0 right-0 h-[360px] w-[360px] rounded-full bg-[#1a0933]/25 blur-[140px]" />
       </div>
 
       <div className="relative flex min-h-screen items-center justify-center px-6">
@@ -61,10 +61,10 @@ function AuthPage() {
           initial={{ opacity: 0, y: 12, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ type: "spring", stiffness: 80, damping: 15 }}
-          className="fb-glass w-full max-w-md rounded-2xl p-8 shadow-2xl"
+          className="fb-glass fb-hairline w-full max-w-md rounded-2xl p-8 shadow-2xl"
         >
           <div className="mb-8 flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-lg bg-[#E50914] shadow-[0_0_24px_rgba(229,9,20,0.5)]">
+            <div className="grid h-10 w-10 place-items-center rounded-lg bg-gradient-to-br from-[#E50914] to-[#7a050b] shadow-[0_0_12px_rgba(229,9,20,0.3)]">
               <span className="font-black text-white">F</span>
             </div>
             <div>
