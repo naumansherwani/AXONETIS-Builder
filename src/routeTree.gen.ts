@@ -13,7 +13,6 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
-import { Route as AuthenticatedLogoLabRouteImport } from './routes/_authenticated/logo-lab'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -34,21 +33,14 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/callback',
   getParentRoute: () => AuthRoute,
 } as any)
-const AuthenticatedLogoLabRoute = AuthenticatedLogoLabRouteImport.update({
-  id: '/logo-lab',
-  path: '/logo-lab',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRouteWithChildren
-  '/logo-lab': typeof AuthenticatedLogoLabRoute
   '/auth/callback': typeof AuthCallbackRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRouteWithChildren
-  '/logo-lab': typeof AuthenticatedLogoLabRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/': typeof AuthenticatedIndexRoute
 }
@@ -56,20 +48,18 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
-  '/_authenticated/logo-lab': typeof AuthenticatedLogoLabRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/logo-lab' | '/auth/callback'
+  fullPaths: '/' | '/auth' | '/auth/callback'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/logo-lab' | '/auth/callback' | '/'
+  to: '/auth' | '/auth/callback' | '/'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
-    | '/_authenticated/logo-lab'
     | '/auth/callback'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
@@ -109,23 +99,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/_authenticated/logo-lab': {
-      id: '/_authenticated/logo-lab'
-      path: '/logo-lab'
-      fullPath: '/logo-lab'
-      preLoaderRoute: typeof AuthenticatedLogoLabRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedLogoLabRoute: typeof AuthenticatedLogoLabRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedLogoLabRoute: AuthenticatedLogoLabRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 
@@ -149,3 +130,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
