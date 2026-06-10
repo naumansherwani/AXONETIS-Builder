@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import type { AgentState } from "@/lib/builder-state";
-import AxonMark from "@/components/builder/logo-lab/AxonMark";
+import AxenMark from "@/components/builder/logo-lab/AxonMark";
 
 export const Route = createFileRoute("/logo-lab")({
-  head: () => ({ meta: [{ title: "AXON — Identity" }, { name: "robots", content: "noindex, nofollow" }] }),
+  head: () => ({ meta: [{ title: "AXEN — Identity" }, { name: "robots", content: "noindex, nofollow" }] }),
   component: LogoLab,
 });
 
@@ -13,8 +13,8 @@ const STATES: AgentState[] = ["standby", "jimmy", "sherlock"];
 
 const TAGLINES = [
   { line: "The nervous system for autonomous agents.", note: "Founder-grade. Literal. Future-proof." },
-  { line: "Every signal becomes software.",            note: "Punchy. Pure AXON DNA — input → fire → build." },
-  { line: "Where intelligence finds its body.",        note: "Poetic. Positions AXON as the substrate, not a tool." },
+  { line: "Every signal becomes software.",            note: "Punchy. Pure AXEN DNA — input → fire → build." },
+  { line: "Where intelligence finds its body.",        note: "Poetic. Positions AXEN as the substrate, not a tool." },
   { line: "Think. Fire. Build.",                       note: "3-word manifesto. Tesla/Apple cadence. T-shirt ready." },
   { line: "The synapse of the autonomous age.",        note: "Mythic, civilizational. Pair with hero films." },
   { line: "Built by signals. Born autonomous.",        note: "Self-describing — explains the product in 4 words." },
@@ -71,7 +71,7 @@ function LogoLab() {
         {/* HERO — the mark, monumental */}
         <div className="mt-10 grid place-items-center rounded-3xl border border-white/[0.06] bg-white/[0.015] py-20 backdrop-blur-xl"
              style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.02) inset, 0 60px 160px -40px rgba(229,9,20,0.25)" }}>
-          <AxonMark state={state} size={220} />
+          <AxenMark state={state} size={220} />
           <div className="mt-10 text-center">
             <div
               className="text-[64px] font-semibold uppercase leading-none text-white"
@@ -81,7 +81,7 @@ function LogoLab() {
                 textShadow: "0 0 60px rgba(229,9,20,0.35), 0 0 120px rgba(168,85,247,0.2)",
               }}
             >
-              AXON
+              AXEN
             </div>
             <div className="mt-4 text-[11px] uppercase tracking-[0.45em] text-muted-foreground">
               Autonomous · eXecution · Orchestration · Network
@@ -121,7 +121,7 @@ function LogoLab() {
           {[16, 32, 64, 120].map((sz) => (
             <div key={sz} className="grid h-32 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.02]">
               <div className="flex flex-col items-center gap-2">
-                <AxonMark state={state} size={sz} />
+                <AxenMark state={state} size={sz} />
                 <span className="text-[9px] uppercase tracking-widest text-muted-foreground">{sz}px</span>
               </div>
             </div>
@@ -133,18 +133,18 @@ function LogoLab() {
         <div className="grid gap-3">
           {/* Top-bar */}
           <div className="flex h-12 items-center gap-3 rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 backdrop-blur-xl">
-            <AxonMark state={state} size={22} wordmark />
+            <AxenMark state={state} size={22} wordmark />
             <span className="ml-auto text-[10px] uppercase tracking-widest text-muted-foreground">
               builder · main · Sandbox
             </span>
           </div>
           {/* Boot splash */}
           <div className="grid h-44 place-items-center rounded-lg border border-white/[0.08] bg-black/40">
-            <AxonMark state={state} size={56} wordmark />
+            <AxenMark state={state} size={56} wordmark />
           </div>
           {/* Centered card */}
           <div className="grid h-28 place-items-center rounded-lg border border-white/[0.08] bg-white/[0.02]">
-            <AxonMark state={state} size={32} wordmark />
+            <AxenMark state={state} size={32} wordmark />
           </div>
         </div>
 
