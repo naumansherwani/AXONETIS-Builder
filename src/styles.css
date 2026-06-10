@@ -133,12 +133,30 @@
   }
 }
 
-/* Red glow pulse for critical actions */
+/* Subtle red breathing — restrained, futureX */
 @keyframes founder-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 oklch(0.58 0.24 25 / 0.5); }
-  50%      { box-shadow: 0 0 24px 4px oklch(0.58 0.24 25 / 0.35); }
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.58 0.24 25 / 0.18); }
+  50%      { box-shadow: 0 0 10px 1px oklch(0.58 0.24 25 / 0.18); }
 }
-.fb-pulse { animation: founder-pulse 2.4s ease-in-out infinite; }
+.fb-pulse { animation: founder-pulse 3.6s ease-in-out infinite; }
+
+/* Hairline gradient sweep for premium surfaces */
+.fb-hairline {
+  position: relative;
+}
+.fb-hairline::after {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg,
+    oklch(1 0 0 / 0.08) 0%,
+    oklch(1 0 0 / 0) 40%,
+    oklch(0.58 0.24 25 / 0.12) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  pointer-events: none;
+}
 
 /* Status dot blink */
 @keyframes founder-blink {
