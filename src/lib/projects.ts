@@ -32,7 +32,7 @@ export const PROJECTS: ProjectDef[] = [
     id: "founderbuilder",
     name: "AXONETIS AI Builder™",
     shortName: "AXONETIS",
-    previewUrl: "https://axonetis.hostflowai.net",
+    previewUrl: "https://aiaxonetis.hostflowai.net",
     accent: "#1a0933",
   },
 ];
