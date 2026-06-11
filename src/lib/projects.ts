@@ -30,9 +30,9 @@ export const PROJECTS: ProjectDef[] = [
   },
   {
     id: "founderbuilder",
-    name: "AXONET AI Builder™",
-    shortName: "AXONET",
-    previewUrl: "https://aiaxonet.hostflowai.net",
+    name: "AXONETIS AI Builder™",
+    shortName: "AXONETIS",
+    previewUrl: "https://axonetis.hostflowai.net",
     accent: "#1a0933",
   },
 ];

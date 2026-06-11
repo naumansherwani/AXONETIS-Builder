@@ -154,7 +154,7 @@ export default function AxenMark({ state = "standby", size = 40, wordmark = fals
             textShadow: active ? `0 0 ${size * 0.4}px ${c.glow}` : `0 0 ${size * 0.2}px ${c.glow}`,
           }}
         >
-          AXONET
+          AXONETIS
         </span>
       )}
     </div>
