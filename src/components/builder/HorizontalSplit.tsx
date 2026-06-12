@@ -73,10 +73,11 @@ export default function HorizontalSplit({
           document.body.style.cursor = "col-resize";
           document.body.style.userSelect = "none";
         }}
-        className="group relative z-20 w-[7px] shrink-0 cursor-col-resize bg-black/20"
+        className="group relative z-30 w-[10px] shrink-0 cursor-col-resize bg-black/40 hover:bg-[#E50914]/25 transition-colors"
       >
-        <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-white/[0.09] transition-colors group-hover:bg-[#E50914]/70" />
-        <div className="pointer-events-none absolute left-1/2 top-1/2 h-12 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.10] transition-colors group-hover:bg-[#E50914]/80 group-hover:shadow-[0_0_18px_rgba(229,9,20,0.65)]" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-px bg-white/[0.12]" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-px bg-white/[0.12]" />
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-16 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/30 shadow-[0_0_12px_rgba(229,9,20,0.5)] transition-all group-hover:bg-[#E50914] group-hover:shadow-[0_0_22px_rgba(229,9,20,0.95)]" />
       </div>
       <div className="min-h-0 min-w-0 flex-1 overflow-hidden">{right}</div>
     </div>
