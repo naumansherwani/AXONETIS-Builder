@@ -5,6 +5,7 @@
  */
 import { createContext, useContext } from "react";
 import type { Branch, Environment, ProjectId } from "./projects";
+import type { BridgeStatus, PreviewBridgeEvent } from "./preview-bridge";
 
 export type AgentState = "standby" | "jimmy" | "sherlock";
 
@@ -40,6 +41,8 @@ export interface BuilderState {
   previewMode: PreviewMode;
   paletteOpen: boolean;
   agentState: AgentState;
+  bridgeStatus: BridgeStatus;
+  lastBridgeEvent: PreviewBridgeEvent | null;
   setProject: (p: ProjectId) => void;
   setBranch: (b: Branch) => void;
   setEnvironment: (e: Environment) => void;
@@ -47,6 +50,8 @@ export interface BuilderState {
   setPreviewMode: (m: PreviewMode) => void;
   setPaletteOpen: (o: boolean) => void;
   setAgentState: (s: AgentState) => void;
+  setBridgeStatus: (s: BridgeStatus) => void;
+  setLastBridgeEvent: (e: PreviewBridgeEvent | null) => void;
 }
 
 
