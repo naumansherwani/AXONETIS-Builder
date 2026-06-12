@@ -87,8 +87,8 @@ export default function TopBar() {
           </div>
           {/* Row 2: subtitle under AXONETIS */}
           <span
-            className="mt-2 whitespace-nowrap font-medium uppercase text-[#CBD5E1]"
-            style={{ fontSize: 12, letterSpacing: "0.28em" }}
+            className="mt-1.5 whitespace-nowrap font-medium uppercase text-[#CBD5E1]"
+            style={{ fontSize: 8, letterSpacing: "0.14em" }}
           >
             Advance AI OS Builder
           </span>
