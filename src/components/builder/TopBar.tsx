@@ -11,12 +11,15 @@ import {
 import { supabase3, SUPABASE3_READY } from "@/integrations/supabase3/client";
 import AxenMark from "./logo-lab/AxonMark";
 
+/**
+ * FOUNDER OS TOP BAR — cinematic command bar.
+ * Spec: header ≥88px · logo 72px · wordmark 2.5x · brand area ~25% width.
+ */
 export default function TopBar() {
   const navigate = useNavigate();
   const { project, branch, environment, agentState, setProject, setBranch, setEnvironment, setPaletteOpen, setAgentState } = useBuilder();
   const active = PROJECTS.find((p) => p.id === project)!;
 
-  // Founder demo: Alt+1 standby · Alt+2 Jimmy · Alt+3 Sherlock
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!e.altKey) return;
@@ -28,7 +31,6 @@ export default function TopBar() {
     return () => window.removeEventListener("keydown", onKey);
   }, [setAgentState]);
 
-
   async function handleSignOut() {
     if (SUPABASE3_READY) await supabase3.auth.signOut();
     navigate({ to: "/auth", replace: true });
@@ -36,21 +38,41 @@ export default function TopBar() {
 
   return (
     <motion.header
-      initial={{ y: -8, opacity: 0 }}
+      initial={{ y: -10, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 80, damping: 15 }}
-      className="flex h-12 shrink-0 items-center justify-between border-b border-white/[0.06] bg-background/80 px-3 backdrop-blur-xl"
+      className="relative flex h-[92px] shrink-0 items-center justify-between gap-6 border-b border-white/[0.06] bg-gradient-to-b from-[#07070c] to-[#040406] px-6 backdrop-blur-xl"
     >
-      {/* LEFT: Logo (FAB) + selectors */}
-      <div className="flex items-center gap-2">
-        <div className="ml-1 mr-2 flex items-center gap-3">
-          <AxenMark state={agentState} size={34} wordmark />
-          <span className="hidden text-[9px] font-medium uppercase tracking-[0.35em] text-muted-foreground/80 lg:inline">
-            Nervous system for autonomous agents
+      {/* Cinematic top hairline glow */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#E50914]/60 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+      {/* LEFT — BRAND (≈25% width) */}
+      <div className="flex min-w-0 shrink-0 basis-[26%] items-center gap-5">
+        <AxenMark state={agentState} size={72} />
+        <div className="flex min-w-0 flex-col leading-none">
+          <span
+            className="truncate font-semibold uppercase text-white"
+            style={{
+              fontFamily: "'Geist Mono','JetBrains Mono',ui-monospace,monospace",
+              fontSize: 30,
+              letterSpacing: "0.22em",
+              textShadow: "0 0 28px rgba(229,9,20,0.35), 0 0 60px rgba(168,85,247,0.18)",
+            }}
+          >
+            AXONETIS
+          </span>
+          <span className="mt-2 truncate text-[10px] font-medium uppercase tracking-[0.42em] text-muted-foreground/80">
+            Founder OS · Autonomous Agent Command Center
+          </span>
+          <span className="mt-1.5 font-mono text-[10px] text-muted-foreground/50">
+            aiaxonetis.hostflowai.net
           </span>
         </div>
+      </div>
 
-
+      {/* CENTER — context selectors */}
+      <div className="flex flex-1 items-center justify-center gap-2">
         <Selector label={active.name} accent={active.accent}>
           {PROJECTS.map((p) => (
             <DropdownMenuItem key={p.id} onClick={() => setProject(p.id as ProjectId)} className="gap-2">
@@ -68,7 +90,7 @@ export default function TopBar() {
           ))}
         </Selector>
 
-        <Selector label={environment} pill={envPill(environment)}>
+        <Selector label={environment} pill={envDot(environment)}>
           {ENVIRONMENTS.map((e) => (
             <DropdownMenuItem key={e} onClick={() => setEnvironment(e as Environment)} className="gap-2">
               <span className={`inline-block h-2 w-2 rounded-full ${envDot(e)}`} />
@@ -78,26 +100,29 @@ export default function TopBar() {
         </Selector>
       </div>
 
-      {/* RIGHT: ⌘K, Publish, User */}
-      <div className="flex items-center gap-2">
+      {/* RIGHT — Quick actions / Publish / User */}
+      <div className="flex shrink-0 items-center gap-2.5">
         <button
           onClick={() => setPaletteOpen(true)}
-          className="hidden h-8 items-center gap-2 rounded-md border border-white/[0.08] bg-white/[0.02] px-2.5 text-xs text-muted-foreground transition-colors hover:border-white/[0.16] hover:text-foreground md:flex"
+          className="hidden h-10 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 text-xs text-muted-foreground transition-colors hover:border-white/[0.18] hover:bg-white/[0.04] hover:text-foreground md:flex"
         >
           <Command className="h-3.5 w-3.5" />
           <span>Quick actions</span>
           <kbd className="ml-1 rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd>
         </button>
 
-        <Button size="sm" className="fb-pulse h-8 gap-1.5 bg-gradient-to-r from-[#E50914] to-[#b3070f] px-3 text-xs font-medium text-white hover:from-[#E50914] hover:to-[#E50914]">
+        <Button
+          size="sm"
+          className="fb-pulse h-10 gap-2 rounded-lg bg-gradient-to-r from-[#E50914] via-[#cc0812] to-[#7c0610] px-5 text-[13px] font-semibold uppercase tracking-wider text-white shadow-[0_8px_30px_-8px_rgba(229,9,20,0.55)] hover:from-[#ff1521] hover:to-[#E50914]"
+        >
           <Rocket className="h-3.5 w-3.5" />
           Publish
         </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="grid h-8 w-8 place-items-center rounded-md border border-white/[0.08] bg-white/[0.02] transition-colors hover:bg-white/[0.05]">
-              <User className="h-3.5 w-3.5" />
+            <button className="grid h-10 w-10 place-items-center rounded-lg border border-white/[0.08] bg-white/[0.02] transition-colors hover:bg-white/[0.05]">
+              <User className="h-4 w-4" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
@@ -117,21 +142,18 @@ function Selector({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex h-8 items-center gap-1.5 rounded-md border border-white/[0.08] bg-white/[0.02] px-2.5 text-xs transition-colors hover:border-white/[0.16] hover:bg-white/[0.05]">
-          {accent && <span className="inline-block h-2 w-2 rounded-full" style={{ background: accent }} />}
+        <button className="flex h-10 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] px-3.5 text-[13px] transition-colors hover:border-white/[0.18] hover:bg-white/[0.05]">
+          {accent && <span className="inline-block h-2 w-2 rounded-full" style={{ background: accent, boxShadow: `0 0 8px ${accent}` }} />}
           {pill && <span className={`inline-block h-2 w-2 rounded-full ${pill}`} />}
           <span className={mono ? "font-mono" : "font-medium"}>{label}</span>
-          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-[180px]">{children}</DropdownMenuContent>
+      <DropdownMenuContent align="start" className="min-w-[200px]">{children}</DropdownMenuContent>
     </DropdownMenu>
   );
 }
 
-function envPill(env: Environment) {
-  return env === "Production" ? "bg-red-500" : env === "Staging" ? "bg-amber-400" : "bg-emerald-400";
-}
 function envDot(env: string) {
   return env === "Production" ? "bg-red-500" : env === "Staging" ? "bg-amber-400" : "bg-emerald-400";
 }
