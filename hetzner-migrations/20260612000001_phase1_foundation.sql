@@ -59,8 +59,9 @@ $$;
 
 grant execute on function public.has_role(uuid, public.app_role) to authenticated, service_role;
 
--- Founder auto-admin trigger (email match)
--- ⚠️ FOUNDER: replace the email below with your real auth email before running.
+-- Founder auto-admin trigger — supports MULTIPLE locked founder emails.
+-- Add/remove emails in the array below; trigger will auto-grant admin+founder
+-- roles whenever any of these emails sign up.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -68,9 +69,12 @@ security definer
 set search_path = public
 as $$
 declare
-  founder_email constant text := 'founder@hostflowai.net'; -- TODO: set real email
+  founder_emails constant text[] := array[
+    'naumansherwani@hostflowai.net',
+    'naumankhansherwani@gmail.com'
+  ];
 begin
-  if new.email = founder_email then
+  if new.email = any(founder_emails) then
     insert into public.user_roles (user_id, role) values (new.id, 'admin')
     on conflict do nothing;
     insert into public.user_roles (user_id, role) values (new.id, 'founder')
@@ -84,6 +88,22 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- Backfill: any already-existing auth user whose email matches the founder
+-- list gets admin+founder roles immediately (covers users created BEFORE
+-- this trigger existed, e.g. naumansherwani@hostflowai.net + naumankhansherwani@gmail.com).
+insert into public.user_roles (user_id, role)
+select u.id, 'admin'::public.app_role
+from auth.users u
+where u.email in ('naumansherwani@hostflowai.net','naumankhansherwani@gmail.com')
+on conflict do nothing;
+
+insert into public.user_roles (user_id, role)
+select u.id, 'founder'::public.app_role
+from auth.users u
+where u.email in ('naumansherwani@hostflowai.net','naumankhansherwani@gmail.com')
+on conflict do nothing;
+
 
 -- ============================================================================
 -- 2. PROJECTS
@@ -284,6 +304,89 @@ values
 on conflict (model_key) do nothing;
 
 -- ============================================================================
+-- 8b. AI_AGENT_IDENTITIES — Jimmy / Sherlock / 8 Advisors / Autonomous RapidPay
+-- Each identity has a default model + fallback chain, referencing ai_model_registry.
+-- ============================================================================
+create table if not exists public.ai_agent_identities (
+  id                    uuid primary key default gen_random_uuid(),
+  identity_key          text not null unique,
+  display_name          text not null,
+  role                  text not null,          -- jimmy | sherlock | advisor | rapidpay
+  industry              text,                   -- advisors only
+  default_model_key     text not null references public.ai_model_registry(model_key),
+  failover_model_keys   text[] not null default '{}',
+  system_prompt         text,
+  capabilities          jsonb not null default '[]'::jsonb,
+  is_active             boolean not null default true,
+  priority              integer not null default 100,
+  created_at            timestamptz not null default now(),
+  updated_at            timestamptz not null default now()
+);
+create index if not exists idx_ai_agent_identities_role on public.ai_agent_identities(role);
+
+grant select on public.ai_agent_identities to authenticated;
+grant all    on public.ai_agent_identities to service_role;
+alter table public.ai_agent_identities enable row level security;
+create policy "ai_agent_identities: read auth" on public.ai_agent_identities
+  for select to authenticated using (true);
+create policy "ai_agent_identities: admin write" on public.ai_agent_identities
+  for all to authenticated
+  using (public.has_role(auth.uid(), 'admin'))
+  with check (public.has_role(auth.uid(), 'admin'));
+
+-- updated_at trigger for ai_agent_identities is created in the trigger section at the bottom.
+
+
+insert into public.ai_agent_identities
+  (identity_key, display_name, role, industry, default_model_key, failover_model_keys, capabilities, priority)
+values
+  -- Core builder agents
+  ('jimmy',                 'Jimmy — Builder Lead',          'jimmy',    null,
+     'openrouter/hermes-405b',
+     array['openrouter/qwen3-coder-480b','groq/gpt-oss-120b'],
+     '["code-gen","planning","tools","multi-file-edit"]'::jsonb, 10),
+
+  ('sherlock',              'Sherlock — Auto-Fix & Reasoning','sherlock', null,
+     'openrouter/deepseek-r1',
+     array['groq/llama-3.3-70b','openrouter/llama-3.3-70b'],
+     '["reasoning","auto-fix","error-diagnosis","max-3-loops"]'::jsonb, 10),
+
+  -- 8 Industry Advisors (HostFlow industries)
+  ('advisor_hospitality',   'Advisor — Hospitality',         'advisor',  'hospitality',
+     'openrouter/llama-3.3-70b', array['groq/llama-3.3-70b'],
+     '["domain-knowledge","recommendations"]'::jsonb, 50),
+  ('advisor_restaurants',   'Advisor — Restaurants',         'advisor',  'restaurants',
+     'openrouter/llama-3.3-70b', array['groq/llama-3.3-70b'],
+     '["domain-knowledge","recommendations"]'::jsonb, 50),
+  ('advisor_retail',        'Advisor — Retail',              'advisor',  'retail',
+     'openrouter/llama-3.3-70b', array['groq/llama-3.3-70b'],
+     '["domain-knowledge","recommendations"]'::jsonb, 50),
+  ('advisor_healthcare',    'Advisor — Healthcare',          'advisor',  'healthcare',
+     'openrouter/llama-3.3-70b', array['groq/llama-3.3-70b'],
+     '["domain-knowledge","recommendations"]'::jsonb, 50),
+  ('advisor_realestate',    'Advisor — Real Estate',         'advisor',  'realestate',
+     'openrouter/llama-3.3-70b', array['groq/llama-3.3-70b'],
+     '["domain-knowledge","recommendations"]'::jsonb, 50),
+  ('advisor_education',     'Advisor — Education',           'advisor',  'education',
+     'openrouter/llama-3.3-70b', array['groq/llama-3.3-70b'],
+     '["domain-knowledge","recommendations"]'::jsonb, 50),
+  ('advisor_automotive',    'Advisor — Automotive',          'advisor',  'automotive',
+     'openrouter/llama-3.3-70b', array['groq/llama-3.3-70b'],
+     '["domain-knowledge","recommendations"]'::jsonb, 50),
+  ('advisor_professional',  'Advisor — Professional Services','advisor', 'professional',
+     'openrouter/llama-3.3-70b', array['groq/llama-3.3-70b'],
+     '["domain-knowledge","recommendations"]'::jsonb, 50),
+
+  -- Autonomous Rapid Pay
+  ('rapidpay_autonomous',   'Autonomous RapidPay',           'rapidpay', null,
+     'openrouter/qwen3-coder-480b',
+     array['openrouter/hermes-405b','groq/gpt-oss-120b'],
+     '["payments","ledger","autonomous-ops","state-sync"]'::jsonb, 10)
+on conflict (identity_key) do nothing;
+
+
+
+-- ============================================================================
 -- 9. MIRROR_SYNC_LOG
 -- ============================================================================
 create table if not exists public.mirror_sync_log (
@@ -460,13 +563,15 @@ create or replace function public.touch_updated_at()
 returns trigger language plpgsql as $$
 begin new.updated_at = now(); return new; end $$;
 
-drop trigger if exists trg_projects_touch          on public.projects;
-drop trigger if exists trg_project_files_touch     on public.project_files;
-drop trigger if exists trg_ai_model_registry_touch on public.ai_model_registry;
+drop trigger if exists trg_projects_touch              on public.projects;
+drop trigger if exists trg_project_files_touch         on public.project_files;
+drop trigger if exists trg_ai_model_registry_touch     on public.ai_model_registry;
+drop trigger if exists trg_ai_agent_identities_touch   on public.ai_agent_identities;
 
-create trigger trg_projects_touch          before update on public.projects          for each row execute function public.touch_updated_at();
-create trigger trg_project_files_touch     before update on public.project_files     for each row execute function public.touch_updated_at();
-create trigger trg_ai_model_registry_touch before update on public.ai_model_registry for each row execute function public.touch_updated_at();
+create trigger trg_projects_touch              before update on public.projects              for each row execute function public.touch_updated_at();
+create trigger trg_project_files_touch         before update on public.project_files         for each row execute function public.touch_updated_at();
+create trigger trg_ai_model_registry_touch     before update on public.ai_model_registry     for each row execute function public.touch_updated_at();
+create trigger trg_ai_agent_identities_touch   before update on public.ai_agent_identities   for each row execute function public.touch_updated_at();
 
 -- ============================================================================
 -- END Phase 1
