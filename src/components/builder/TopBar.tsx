@@ -41,7 +41,7 @@ export default function TopBar() {
       initial={{ y: -10, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 80, damping: 15 }}
-      className="relative flex h-[98px] shrink-0 items-center justify-between gap-6 border-b bg-[#0F172A]/85 px-8 backdrop-blur-2xl"
+      className="relative flex h-[80px] shrink-0 items-center justify-between gap-6 border-b bg-[#0F172A]/85 px-8 backdrop-blur-2xl"
       style={{ borderBottomColor: "rgba(255,255,255,0.08)" }}
     >
       {/* Cinematic top hairline glow */}
@@ -49,33 +49,25 @@ export default function TopBar() {
       <div className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.02] via-transparent to-black/30" />
 
-      {/* LEFT — BRAND (~40% width) */}
-      <div className="relative flex min-w-0 shrink-0 items-center gap-4" style={{ flexBasis: "40%" }}>
-        <AxenMark state={agentState} size={50} />
-        <div className="flex min-w-0 flex-col justify-center leading-none">
-          <div className="flex items-baseline gap-3 min-w-0">
-            <span
-              className="shrink-0 font-bold uppercase text-[#F8FAFC]"
-              style={{
-                fontFamily: "'Geist Mono','JetBrains Mono',ui-monospace,monospace",
-                fontSize: 28,
-                letterSpacing: "0.16em",
-                lineHeight: 1,
-                textShadow: "0 0 24px rgba(229,9,20,0.32), 0 0 60px rgba(168,85,247,0.16)",
-              }}
-            >
-              AXONETIS
-            </span>
-            <span
-              className="truncate font-medium uppercase text-[#94A3B8]"
-              style={{ fontSize: 10.5, letterSpacing: "0.26em" }}
-            >
-              Nervous System For Autonomous Agent
-            </span>
-          </div>
+      {/* LEFT — BRAND (max 320px) */}
+      <div className="relative flex shrink-0 items-center gap-3.5" style={{ maxWidth: 320 }}>
+        <AxenMark state={agentState} size={48} />
+        <div className="flex flex-col justify-center leading-none">
           <span
-            className="mt-2 truncate font-medium uppercase text-[#CBD5E1]"
-            style={{ fontSize: 11, letterSpacing: "0.34em" }}
+            className="whitespace-nowrap font-bold uppercase text-[#F8FAFC]"
+            style={{
+              fontFamily: "'Geist Mono','JetBrains Mono',ui-monospace,monospace",
+              fontSize: 28,
+              letterSpacing: "0.16em",
+              lineHeight: 1,
+              textShadow: "0 0 24px rgba(229,9,20,0.32), 0 0 60px rgba(168,85,247,0.16)",
+            }}
+          >
+            AXONETIS
+          </span>
+          <span
+            className="mt-2 whitespace-nowrap font-medium uppercase text-[#CBD5E1]"
+            style={{ fontSize: 12, letterSpacing: "0.28em" }}
           >
             Advance AI OS Builder
           </span>
