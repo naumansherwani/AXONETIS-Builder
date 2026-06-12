@@ -69,10 +69,11 @@ export default function TopBar() {
               className="font-bold uppercase text-[#F8FAFC]"
               style={{
                 fontFamily: "'Geist Mono','JetBrains Mono',ui-monospace,monospace",
-                fontSize: 25,
-                letterSpacing: "0.14em",
+                fontSize: 20,
+                letterSpacing: "0.18em",
                 lineHeight: 1,
-                textShadow: "0 0 24px rgba(229,9,20,0.32), 0 0 60px rgba(168,85,247,0.16)",
+                textShadow:
+                  "0 0 8px rgba(229,9,20,0.55), 0 0 28px rgba(229,9,20,0.35), 0 0 56px rgba(168,85,247,0.22), 0 0 90px rgba(229,9,20,0.12)",
               }}
             >
               AXONETIS
