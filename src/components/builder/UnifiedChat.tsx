@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Octagon, Rocket, Send, Sparkles, X } from "lucide-react";
+import { Check, Octagon, Radio, Rocket, Send, X } from "lucide-react";
+import { useBuilder } from "@/lib/builder-state";
+import { sendBuilderCommand } from "@/lib/hostflow-api";
 
 type Agent = "founder" | "jimmy" | "sherlock";
 interface Msg { id: string; agent: Agent; text: string; thinking?: boolean }
@@ -18,6 +20,7 @@ const AGENT_META: Record<Agent, { name: string; subtitle: string; rail: string; 
 };
 
 export default function UnifiedChat() {
+  const { project, branch, environment, bridgeStatus, lastBridgeEvent } = useBuilder();
   const [messages] = useState<Msg[]>(SEED);
   const [draft, setDraft] = useState("");
 
@@ -28,7 +31,7 @@ export default function UnifiedChat() {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#E50914]/40 to-transparent" />
         <div className="flex items-center gap-5">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-3.5 w-3.5 text-[#ff6b73]" />
+            <Radio className="h-3.5 w-3.5 text-[#ff6b73]" />
             <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-foreground/80">
               Unified Build Chat
             </span>
@@ -59,7 +62,13 @@ export default function UnifiedChat() {
       {/* COMPOSER */}
       <div className="shrink-0 border-t border-white/[0.06] bg-background/40 p-4 backdrop-blur-xl">
         <form
-          onSubmit={(e) => { e.preventDefault(); setDraft(""); }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            const prompt = draft.trim();
+            if (!prompt) return;
+            void sendBuilderCommand({ projectId: project, branch, environment, prompt }).catch(() => undefined);
+            setDraft("");
+          }}
           className="fb-glass flex items-end gap-2.5 rounded-2xl p-2.5 shadow-[0_8px_40px_-12px_rgba(229,9,20,0.25)]"
         >
           <textarea
@@ -83,7 +92,7 @@ export default function UnifiedChat() {
           </button>
         </form>
         <div className="mt-2 flex items-center justify-between px-1 text-[10px] uppercase tracking-widest text-muted-foreground/60">
-          <span>Phase 1 · visual only. Agents wire in Phase 2.</span>
+          <span>Phase 3 · bridge {bridgeStatus}{lastBridgeEvent ? ` · ${lastBridgeEvent.summary}` : ""}</span>
           <span className="font-mono">⌘ ↵ to send</span>
         </div>
       </div>

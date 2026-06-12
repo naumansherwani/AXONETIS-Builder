@@ -133,6 +133,42 @@
   }
 }
 
+/* GitHub-safe cinematic shell glow: plain CSS, visible in dev + pulled builds. */
+.fb-cinematic-shell {
+  isolation: isolate;
+  background:
+    radial-gradient(80% 64% at 18% -8%, rgba(229, 9, 20, 0.34) 0%, rgba(229, 9, 20, 0.11) 38%, transparent 68%),
+    radial-gradient(70% 60% at 82% -6%, rgba(124, 58, 237, 0.28) 0%, rgba(26, 9, 51, 0.22) 44%, transparent 72%),
+    radial-gradient(90% 55% at 50% 112%, rgba(229, 9, 20, 0.18) 0%, transparent 72%),
+    #040406;
+}
+
+.fb-cinematic-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  background:
+    radial-gradient(46% 38% at 24% 8%, rgba(229, 9, 20, 0.22), transparent 70%),
+    radial-gradient(42% 42% at 78% 12%, rgba(124, 58, 237, 0.16), transparent 72%);
+  mix-blend-mode: screen;
+  opacity: 0.42;
+}
+
+.fb-cinematic-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 21;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.28) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.28) 1px, transparent 1px);
+  background-size: 44px 44px;
+  opacity: 0.035;
+}
+
 /* Subtle red breathing — restrained, futureX */
 @keyframes founder-pulse {
   0%, 100% { box-shadow: 0 0 0 0 oklch(0.58 0.24 25 / 0.18); }

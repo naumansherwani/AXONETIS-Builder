@@ -9,14 +9,14 @@ import CommandPalette from "./CommandPalette";
 import SideRail from "./SideRail";
 import SidePanelDrawer from "./SidePanelDrawer";
 import { LEFT_RAIL_ITEMS, RIGHT_RAIL_ITEMS } from "./rail-items";
-import VerticalSplit from "./VerticalSplit";
+import HorizontalSplit from "./HorizontalSplit";
+import type { BridgeStatus, PreviewBridgeEvent } from "@/lib/preview-bridge";
 
 /**
  * FOUNDER OS SHELL
  * ┌──────────────────── TopBar (92px, cinematic) ────────────────────┐
- * │ LeftRail │ [Drawer] │ Live Preview              │ [Drawer] │ Right│
- * │  (64)    │  (320)?  │ ─────────────────────────│  (320)?  │ Rail │
- * │          │          │ Unified Build Chat        │          │ (64) │
+ * │ LeftRail │ [Drawer] │ Unified Chat │ Live Preview│ [Drawer] │Right│
+ * │  (64)    │  (340)?  │    ~40%      │    ~60%     │  (340)?  │Rail │
  * └──────────────────── StatusBar (24) ─────────────────────────────┘
  */
 export default function BuilderShell() {
@@ -27,6 +27,8 @@ export default function BuilderShell() {
   const [previewMode, setPreviewMode] = useState<PreviewMode>("single");
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [agentState, setAgentState] = useState<AgentState>("standby");
+  const [bridgeStatus, setBridgeStatus] = useState<BridgeStatus>("standby");
+  const [lastBridgeEvent, setLastBridgeEvent] = useState<PreviewBridgeEvent | null>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -41,15 +43,16 @@ export default function BuilderShell() {
 
   const value = useMemo(
     () => ({
-      project, branch, environment, bottomTab, previewMode, paletteOpen, agentState,
+      project, branch, environment, bottomTab, previewMode, paletteOpen, agentState, bridgeStatus, lastBridgeEvent,
       setProject, setBranch, setEnvironment, setBottomTab, setPreviewMode, setPaletteOpen, setAgentState,
+      setBridgeStatus, setLastBridgeEvent,
     }),
-    [project, branch, environment, bottomTab, previewMode, paletteOpen, agentState],
+    [project, branch, environment, bottomTab, previewMode, paletteOpen, agentState, bridgeStatus, lastBridgeEvent],
   );
 
   return (
     <BuilderCtx.Provider value={value}>
-      <div className="relative flex h-screen w-full flex-col overflow-hidden bg-[#040406] text-foreground">
+      <div className="fb-cinematic-shell relative flex h-screen w-full flex-col overflow-hidden text-foreground">
         {/* Ambient cinematic glow — drives the "3D" depth across the whole shell */}
         <div
           aria-hidden
@@ -80,10 +83,10 @@ export default function BuilderShell() {
             <SidePanelDrawer side="left" />
 
             <main className="flex min-w-0 flex-1 flex-col">
-              <VerticalSplit
-                top={<LivePreview />}
-                bottom={<UnifiedChat />}
-                initial={0.6}
+              <HorizontalSplit
+                left={<UnifiedChat />}
+                right={<LivePreview />}
+                initial={0.4}
               />
             </main>
 

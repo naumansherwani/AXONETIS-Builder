@@ -32,6 +32,7 @@ export default function ProjectsPanel() {
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[13px] font-semibold text-foreground/95">{p.name}</div>
                 <div className="truncate font-mono text-[10px] text-muted-foreground/70">{p.previewUrl}</div>
+                <div className="mt-0.5 text-[9px] uppercase tracking-widest text-muted-foreground/45">iframe sandbox target</div>
               </div>
               {active && <Check className="h-4 w-4 text-[#ff7480]" />}
             </button>

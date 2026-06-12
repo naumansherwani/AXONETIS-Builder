@@ -3,6 +3,7 @@
  * Phase 3 wires to live SSE/Realtime from Hetzner bridge.
  */
 import { useEffect, useState } from "react";
+import { useBuilder } from "@/lib/builder-state";
 
 type Level = "info" | "warn" | "error" | "ok";
 interface Log { id: number; t: string; level: Level; src: string; msg: string }
@@ -23,6 +24,7 @@ const COLOR: Record<Level, string> = {
 };
 
 export default function LogsPanel() {
+  const { lastBridgeEvent } = useBuilder();
   const [logs, setLogs] = useState<Log[]>(SEED);
 
   useEffect(() => {
@@ -40,6 +42,16 @@ export default function LogsPanel() {
     }, 4000);
     return () => clearInterval(i);
   }, []);
+
+  useEffect(() => {
+    if (!lastBridgeEvent) return;
+    const d = new Date(lastBridgeEvent.receivedAt);
+    const t = `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`;
+    setLogs((prev) => [
+      ...prev.slice(-80),
+      { id: lastBridgeEvent.receivedAt, t, level: lastBridgeEvent.level, src: "preview", msg: lastBridgeEvent.summary },
+    ]);
+  }, [lastBridgeEvent]);
 
   return (
     <div className="rounded-lg border border-white/[0.06] bg-black/40 p-2">

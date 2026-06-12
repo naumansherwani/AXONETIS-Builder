@@ -16,6 +16,7 @@ import ProjectsPanel from "./panels/ProjectsPanel";
 import CodePanel from "./panels/CodePanel";
 import VersionsPanel from "./panels/VersionsPanel";
 import AnalyticsPanel from "./panels/AnalyticsPanel";
+import RuntimePanel from "./panels/RuntimePanel";
 import GenericPanel from "./panels/GenericPanel";
 
 export default function SidePanelDrawer({ side }: { side: "left" | "right" }) {
@@ -77,6 +78,7 @@ function renderPanel(
     case "code":      return <CodePanel />;
     case "versions":  return <VersionsPanel />;
     case "analytics": return <AnalyticsPanel />;
+    case "runtime":   return <RuntimePanel />;
     default:
       return <GenericPanel icon={Icon as any} title={label} hint={hint} />;
   }

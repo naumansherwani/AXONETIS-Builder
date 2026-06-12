@@ -3,7 +3,7 @@ import { PROJECTS } from "@/lib/projects";
 import { SUPABASE3_READY } from "@/integrations/supabase3/client";
 
 export default function StatusBar() {
-  const { project, branch, environment } = useBuilder();
+  const { project, branch, environment, bridgeStatus } = useBuilder();
   const active = PROJECTS.find((p) => p.id === project)!;
 
   return (
@@ -18,7 +18,12 @@ export default function StatusBar() {
           pulse={!SUPABASE3_READY}
         />
         <StatusItem label="Build" value="Idle" tone="gray" />
-        <StatusItem label="Bridge" value="Standby" tone="gray" />
+        <StatusItem
+          label="Bridge"
+          value={bridgeStatus}
+          tone={bridgeStatus === "connected" ? "emerald" : bridgeStatus === "no-signal" ? "amber" : "gray"}
+          pulse={bridgeStatus === "handshaking"}
+        />
       </div>
 
       {/* RIGHT: cost meter + context */}
