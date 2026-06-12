@@ -334,12 +334,8 @@ create policy "ai_agent_identities: admin write" on public.ai_agent_identities
   using (public.has_role(auth.uid(), 'admin'))
   with check (public.has_role(auth.uid(), 'admin'));
 
-drop trigger if exists trg_ai_agent_identities_touch on public.ai_agent_identities;
-create trigger trg_ai_agent_identities_touch
-  before update on public.ai_agent_identities
-  for each row execute function public.touch_updated_at();
--- ⚠️ touch_updated_at() is defined at the bottom of this migration; CREATE TRIGGER
--- here is fine because the function is created in the same transaction before COMMIT.
+-- updated_at trigger for ai_agent_identities is created in the trigger section at the bottom.
+
 
 insert into public.ai_agent_identities
   (identity_key, display_name, role, industry, default_model_key, failover_model_keys, capabilities, priority)
