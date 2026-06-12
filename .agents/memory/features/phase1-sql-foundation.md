@@ -1,12 +1,23 @@
 ---
 name: Phase 1 SQL Foundation
-description: Hetzner Supabase 3 ke liye Phase 1 migration — 8 core + 7 hybrid mirror tables + roles + 6 seeded models. File `hetzner-migrations/20260612000001_phase1_foundation.sql`.
+description: Hetzner Supabase 3 ke liye Phase 1 migration — 8 core + 7 hybrid mirror tables + roles + 6 seeded models + 11 agent identities. Founder emails locked.
 type: feature
 ---
 
 # Phase 1 SQL — Supabase 3 Foundation (LOCKED)
 
-**File:** `hetzner-migrations/20260612000001_phase1_foundation.sql`
+**Files:**
+- `hetzner-migrations/20260612000001_phase1_foundation.sql` ✅ run Jun 12 2026
+- `hetzner-migrations/20260612000002_add_builder_admin_email.sql` — adds `hostflowaibuilder@gmail.com` as 3rd founder/admin
+
+**Founder/admin emails (LOCKED, all 3):**
+1. naumansherwani@hostflowai.net
+2. naumankhansherwani@gmail.com
+3. hostflowaibuilder@gmail.com
+
+**Repos LOCKED:**
+- `naumansherwani/founder-ai-builder` → AXONETIS (Lovable, frontend + hetzner-migrations/)
+- `naumansherwani/hostflowai-server` → bridge + 3-Supabase server (founder manual, NEVER touch)
 **Run manually on Hetzner** (NOT via Lovable Cloud migration tool — different instance).
 
 ## What it creates
