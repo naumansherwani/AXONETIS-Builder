@@ -563,13 +563,15 @@ create or replace function public.touch_updated_at()
 returns trigger language plpgsql as $$
 begin new.updated_at = now(); return new; end $$;
 
-drop trigger if exists trg_projects_touch          on public.projects;
-drop trigger if exists trg_project_files_touch     on public.project_files;
-drop trigger if exists trg_ai_model_registry_touch on public.ai_model_registry;
+drop trigger if exists trg_projects_touch              on public.projects;
+drop trigger if exists trg_project_files_touch         on public.project_files;
+drop trigger if exists trg_ai_model_registry_touch     on public.ai_model_registry;
+drop trigger if exists trg_ai_agent_identities_touch   on public.ai_agent_identities;
 
-create trigger trg_projects_touch          before update on public.projects          for each row execute function public.touch_updated_at();
-create trigger trg_project_files_touch     before update on public.project_files     for each row execute function public.touch_updated_at();
-create trigger trg_ai_model_registry_touch before update on public.ai_model_registry for each row execute function public.touch_updated_at();
+create trigger trg_projects_touch              before update on public.projects              for each row execute function public.touch_updated_at();
+create trigger trg_project_files_touch         before update on public.project_files         for each row execute function public.touch_updated_at();
+create trigger trg_ai_model_registry_touch     before update on public.ai_model_registry     for each row execute function public.touch_updated_at();
+create trigger trg_ai_agent_identities_touch   before update on public.ai_agent_identities   for each row execute function public.touch_updated_at();
 
 -- ============================================================================
 -- END Phase 1
