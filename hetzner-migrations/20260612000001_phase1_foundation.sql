@@ -59,8 +59,9 @@ $$;
 
 grant execute on function public.has_role(uuid, public.app_role) to authenticated, service_role;
 
--- Founder auto-admin trigger (email match)
--- ⚠️ FOUNDER: replace the email below with your real auth email before running.
+-- Founder auto-admin trigger — supports MULTIPLE locked founder emails.
+-- Add/remove emails in the array below; trigger will auto-grant admin+founder
+-- roles whenever any of these emails sign up.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -68,9 +69,12 @@ security definer
 set search_path = public
 as $$
 declare
-  founder_email constant text := 'founder@hostflowai.net'; -- TODO: set real email
+  founder_emails constant text[] := array[
+    'naumansherwani@hostflowai.net',
+    'naumankhansherwani@gmail.com'
+  ];
 begin
-  if new.email = founder_email then
+  if new.email = any(founder_emails) then
     insert into public.user_roles (user_id, role) values (new.id, 'admin')
     on conflict do nothing;
     insert into public.user_roles (user_id, role) values (new.id, 'founder')
@@ -84,6 +88,22 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- Backfill: any already-existing auth user whose email matches the founder
+-- list gets admin+founder roles immediately (covers users created BEFORE
+-- this trigger existed, e.g. naumansherwani@hostflowai.net + naumankhansherwani@gmail.com).
+insert into public.user_roles (user_id, role)
+select u.id, 'admin'::public.app_role
+from auth.users u
+where u.email in ('naumansherwani@hostflowai.net','naumankhansherwani@gmail.com')
+on conflict do nothing;
+
+insert into public.user_roles (user_id, role)
+select u.id, 'founder'::public.app_role
+from auth.users u
+where u.email in ('naumansherwani@hostflowai.net','naumankhansherwani@gmail.com')
+on conflict do nothing;
+
 
 -- ============================================================================
 -- 2. PROJECTS
