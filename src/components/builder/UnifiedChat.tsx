@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Octagon, Radio, Rocket, Send, X } from "lucide-react";
 import { useBuilder } from "@/lib/builder-state";
+import { sendBuilderCommand } from "@/lib/hostflow-api";
 
 type Agent = "founder" | "jimmy" | "sherlock";
 interface Msg { id: string; agent: Agent; text: string; thinking?: boolean }
@@ -19,7 +20,7 @@ const AGENT_META: Record<Agent, { name: string; subtitle: string; rail: string; 
 };
 
 export default function UnifiedChat() {
-  const { bridgeStatus, lastBridgeEvent } = useBuilder();
+  const { project, branch, environment, bridgeStatus, lastBridgeEvent } = useBuilder();
   const [messages] = useState<Msg[]>(SEED);
   const [draft, setDraft] = useState("");
 
@@ -61,7 +62,13 @@ export default function UnifiedChat() {
       {/* COMPOSER */}
       <div className="shrink-0 border-t border-white/[0.06] bg-background/40 p-4 backdrop-blur-xl">
         <form
-          onSubmit={(e) => { e.preventDefault(); setDraft(""); }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            const prompt = draft.trim();
+            if (!prompt) return;
+            void sendBuilderCommand({ projectId: project, branch, environment, prompt }).catch(() => undefined);
+            setDraft("");
+          }}
           className="fb-glass flex items-end gap-2.5 rounded-2xl p-2.5 shadow-[0_8px_40px_-12px_rgba(229,9,20,0.25)]"
         >
           <textarea
