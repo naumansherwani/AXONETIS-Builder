@@ -41,32 +41,35 @@ export default function TopBar() {
       initial={{ y: -10, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 80, damping: 15 }}
-      className="relative flex h-[82px] shrink-0 items-center justify-between gap-6 border-b border-white/[0.06] bg-gradient-to-b from-[#07070c] to-[#040406] px-6 backdrop-blur-xl"
+      className="relative flex h-[98px] shrink-0 items-center justify-between gap-6 border-b bg-[#0F172A]/85 px-8 backdrop-blur-2xl"
+      style={{ borderBottomColor: "rgba(255,255,255,0.08)" }}
     >
       {/* Cinematic top hairline glow */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#E50914]/60 to-transparent" />
       <div className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.02] via-transparent to-black/30" />
 
-      {/* LEFT — BRAND */}
-      <div className="flex min-w-0 shrink-0 items-center gap-4">
-        <AxenMark state={agentState} size={62} />
-        <div className="flex min-w-0 flex-col leading-none">
+      {/* LEFT — BRAND (~28% width) */}
+      <div className="relative flex min-w-0 shrink-0 items-center gap-5" style={{ flexBasis: "28%" }}>
+        <AxenMark state={agentState} size={50} />
+        <div className="flex min-w-0 flex-col justify-center leading-none">
           <span
-            className="truncate font-semibold uppercase text-white"
+            className="truncate font-bold uppercase text-[#F8FAFC]"
             style={{
               fontFamily: "'Geist Mono','JetBrains Mono',ui-monospace,monospace",
-              fontSize: 24,
-              letterSpacing: "0.22em",
-              textShadow: "0 0 22px rgba(229,9,20,0.35), 0 0 50px rgba(168,85,247,0.18)",
+              fontSize: 42,
+              letterSpacing: "0.18em",
+              lineHeight: 1,
+              textShadow: "0 0 24px rgba(229,9,20,0.32), 0 0 60px rgba(168,85,247,0.16)",
             }}
           >
             AXONETIS
           </span>
-          <span className="mt-1.5 truncate text-[10px] font-medium uppercase tracking-[0.38em] text-muted-foreground/80">
+          <span
+            className="mt-2.5 truncate font-medium uppercase text-[#CBD5E1]"
+            style={{ fontSize: 14, letterSpacing: "0.34em" }}
+          >
             Advance AI OS Builder
-          </span>
-          <span className="mt-1 font-mono text-[9px] text-muted-foreground/50">
-            aiaxonetis.hostflowai.net
           </span>
         </div>
       </div>
