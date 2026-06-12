@@ -17,9 +17,9 @@ export default function HorizontalSplit({
   left,
   right,
   initial = 0.4,
-  storageKey = "axonetis.workspace.split.v1",
-  minLeftPct = 30,
-  minRightPct = 40,
+  storageKey = "axonetis.workspace.split.v2",
+  minLeftPct = 25,
+  minRightPct = 30,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef(false);
