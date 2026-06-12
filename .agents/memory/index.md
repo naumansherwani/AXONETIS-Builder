@@ -10,6 +10,7 @@ MASTER blueprint LOCKED (see mem://features/builder-master-blueprint-LOCKED) —
 NO DUPLICATE rule LOCKED: ek hi component/table/route/file — kabhi duplicate nahi banana. Pehle search karo, agar exists to extend karo. Building world's most advanced AI builder — zero duplication, zero throwaway code, har line production-grade.
 
 ## Memories
+- [Server Foundation READY](mem://features/server-foundation-ready) — Jun 2026: Hetzner `hostflow-server` repo has bridge layer (orchestrator/registry/realtime/checksum/mirror), AI gateway (OpenRouter+Groq), Jimmy/Sherlock/Advisors/RapidPay, supabase1/2/3 clients. Lovable MUST NOT duplicate any of this. Next: Phase 1 SQL.
 - [Builder MASTER Blueprint LOCKED](mem://features/builder-master-blueprint-LOCKED) — Full pixel-exact UI, postMessage bridge contract, Publish flow, Sherlock auto-fix loop, 8 Supabase 3 tables, killer features that beat Lovable/Bolt 100x. ZERO DEVIATION.
 - [Bridge + AI Gateway LOCKED](mem://features/bridge-and-ai-gateway-locked) — Full architecture: Hetzner bridge (Realtime + 5min checksum), 7 mirror_ tables, ai_model_registry, 3-layer context, failover chain, division of labor (founder=server, Lovable=Builder frontend)
 - [Builder FINAL Blueprint](mem://features/builder-final-blueprint) — 8 phases locked, Deep Obsidian design (#040406 + #E50914/#1a0933 glow, glass bg-white/[0.02], spring 80/15), full model map incl. Intelligence Layer (Stress/Revenue/Explainability/Founder Sandbox) + Global Router Llama 3.3 70B
