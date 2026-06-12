@@ -77,9 +77,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Founder AI Builder™" },
+      { title: "AI AXONETIS" },
       { name: "description", content: "Sovereign AI development workspace — founder-only." },
       { name: "robots", content: "noindex, nofollow" },
+      { property: "og:title", content: "AI AXONETIS" },
+      { name: "twitter:title", content: "AI AXONETIS" },
+      { property: "og:description", content: "Sovereign AI development workspace — founder-only." },
+      { name: "twitter:description", content: "Sovereign AI development workspace — founder-only." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fda73c5d-d987-41c2-859a-0887c423d40a/id-preview-0569fef0--23c2a607-a4fb-42b9-883d-0e635914ff35.lovable.app-1781247397835.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fda73c5d-d987-41c2-859a-0887c423d40a/id-preview-0569fef0--23c2a607-a4fb-42b9-883d-0e635914ff35.lovable.app-1781247397835.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:type", content: "website" },
     ],
     links: [
       {
