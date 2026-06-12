@@ -44,13 +44,23 @@ export default function TopBar() {
       className="relative flex h-[80px] shrink-0 items-center justify-between gap-6 border-b bg-[#0F172A]/85 px-8 backdrop-blur-2xl"
       style={{ borderBottomColor: "rgba(255,255,255,0.08)" }}
     >
-      {/* Cinematic top hairline glow */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#E50914]/60 to-transparent" />
+      {/* Cinematic top hairline glow — strong */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#E50914] to-transparent opacity-90" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-transparent via-[#E50914]/40 to-transparent blur-sm" />
+      <div className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
       <div className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.02] via-transparent to-black/30" />
 
-      {/* LEFT — BRAND */}
+      {/* LEFT — BRAND with cinematic halo */}
       <div className="relative flex shrink-0 items-center gap-3.5">
+        <div
+          className="pointer-events-none absolute -inset-x-6 -inset-y-3 -z-10 rounded-3xl opacity-90"
+          style={{
+            background:
+              "radial-gradient(60% 80% at 18% 50%, rgba(229,9,20,0.28) 0%, rgba(168,85,247,0.12) 45%, transparent 75%)",
+            filter: "blur(14px)",
+          }}
+        />
         <AxenMark state={agentState} size={48} />
         <div className="flex flex-col justify-center leading-none">
           {/* Row 1: AXONETIS + tagline inline */}
