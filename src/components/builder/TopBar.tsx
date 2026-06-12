@@ -41,32 +41,29 @@ export default function TopBar() {
       initial={{ y: -10, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 80, damping: 15 }}
-      className="relative flex h-[92px] shrink-0 items-center justify-between gap-6 border-b border-white/[0.06] bg-gradient-to-b from-[#07070c] to-[#040406] px-6 backdrop-blur-xl"
+      className="relative flex h-[56px] shrink-0 items-center justify-between gap-4 border-b border-white/[0.06] bg-gradient-to-b from-[#07070c] to-[#040406] px-4 backdrop-blur-xl"
     >
       {/* Cinematic top hairline glow */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#E50914]/60 to-transparent" />
       <div className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
-      {/* LEFT — BRAND (≈25% width) */}
-      <div className="flex min-w-0 shrink-0 basis-[26%] items-center gap-5">
-        <AxenMark state={agentState} size={72} />
+      {/* LEFT — BRAND (compact) */}
+      <div className="flex min-w-0 shrink-0 items-center gap-2.5">
+        <AxenMark state={agentState} size={28} />
         <div className="flex min-w-0 flex-col leading-none">
           <span
             className="truncate font-semibold uppercase text-white"
             style={{
               fontFamily: "'Geist Mono','JetBrains Mono',ui-monospace,monospace",
-              fontSize: 30,
-              letterSpacing: "0.22em",
-              textShadow: "0 0 28px rgba(229,9,20,0.35), 0 0 60px rgba(168,85,247,0.18)",
+              fontSize: 13,
+              letterSpacing: "0.2em",
+              textShadow: "0 0 12px rgba(229,9,20,0.35)",
             }}
           >
             AXONETIS
           </span>
-          <span className="mt-2 truncate text-[10px] font-medium uppercase tracking-[0.42em] text-muted-foreground/80">
-            Founder OS · Autonomous Agent Command Center
-          </span>
-          <span className="mt-1.5 font-mono text-[10px] text-muted-foreground/50">
-            aiaxonetis.hostflowai.net
+          <span className="mt-0.5 truncate text-[8px] font-medium uppercase tracking-[0.28em] text-muted-foreground/70">
+            Founder OS
           </span>
         </div>
       </div>
