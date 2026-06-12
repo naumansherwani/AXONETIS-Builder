@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { motion } from "framer-motion";
 import { Monitor, RefreshCw, Smartphone, Tablet, Columns3 } from "lucide-react";
 import { useBuilder } from "@/lib/builder-state";
@@ -14,11 +14,18 @@ export default function LivePreview() {
   const [device, setDevice] = useState<Device>("desktop");
   const [reloadKey, setReloadKey] = useState(0);
   const frameRef = useRef<HTMLIFrameElement | null>(null);
+  const bridgeStatusRef = useRef(bridgeStatus);
+
+  useEffect(() => {
+    bridgeStatusRef.current = bridgeStatus;
+  }, [bridgeStatus]);
 
   useEffect(() => {
     setBridgeStatus("handshaking");
     setLastBridgeEvent(null);
-    const timeout = window.setTimeout(() => setBridgeStatus((status) => (status === "connected" ? status : "no-signal")), 2600);
+    const timeout = window.setTimeout(() => {
+      if (bridgeStatusRef.current !== "connected") setBridgeStatus("no-signal");
+    }, 2600);
     return () => window.clearTimeout(timeout);
   }, [project, reloadKey, setBridgeStatus, setLastBridgeEvent]);
 
@@ -122,7 +129,7 @@ function SingleFrame({
   device,
   reloadKey,
   onLoad,
-}: { refEl: React.RefObject<HTMLIFrameElement | null>; url: string; device: Device; reloadKey: number; onLoad: () => void }) {
+}: { refEl: RefObject<HTMLIFrameElement | null>; url: string; device: Device; reloadKey: number; onLoad: () => void }) {
   const width = DEVICE_WIDTH[device];
   return (
     <motion.div
