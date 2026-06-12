@@ -49,25 +49,33 @@ export default function TopBar() {
       <div className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.02] via-transparent to-black/30" />
 
-      {/* LEFT — BRAND (~28% width) */}
-      <div className="relative flex min-w-0 shrink-0 items-center gap-5" style={{ flexBasis: "28%" }}>
+      {/* LEFT — BRAND (~40% width) */}
+      <div className="relative flex min-w-0 shrink-0 items-center gap-4" style={{ flexBasis: "40%" }}>
         <AxenMark state={agentState} size={50} />
         <div className="flex min-w-0 flex-col justify-center leading-none">
+          <div className="flex items-baseline gap-3 min-w-0">
+            <span
+              className="shrink-0 font-bold uppercase text-[#F8FAFC]"
+              style={{
+                fontFamily: "'Geist Mono','JetBrains Mono',ui-monospace,monospace",
+                fontSize: 28,
+                letterSpacing: "0.16em",
+                lineHeight: 1,
+                textShadow: "0 0 24px rgba(229,9,20,0.32), 0 0 60px rgba(168,85,247,0.16)",
+              }}
+            >
+              AXONETIS
+            </span>
+            <span
+              className="truncate font-medium uppercase text-[#94A3B8]"
+              style={{ fontSize: 10.5, letterSpacing: "0.26em" }}
+            >
+              Nervous System For Autonomous Agent
+            </span>
+          </div>
           <span
-            className="truncate font-bold uppercase text-[#F8FAFC]"
-            style={{
-              fontFamily: "'Geist Mono','JetBrains Mono',ui-monospace,monospace",
-              fontSize: 42,
-              letterSpacing: "0.18em",
-              lineHeight: 1,
-              textShadow: "0 0 24px rgba(229,9,20,0.32), 0 0 60px rgba(168,85,247,0.16)",
-            }}
-          >
-            AXONETIS
-          </span>
-          <span
-            className="mt-2.5 truncate font-medium uppercase text-[#CBD5E1]"
-            style={{ fontSize: 14, letterSpacing: "0.34em" }}
+            className="mt-2 truncate font-medium uppercase text-[#CBD5E1]"
+            style={{ fontSize: 11, letterSpacing: "0.34em" }}
           >
             Advance AI OS Builder
           </span>
