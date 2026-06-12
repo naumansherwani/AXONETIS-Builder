@@ -32,6 +32,21 @@ function GatedShell() {
 
   useEffect(() => {
     try {
+      const host = window.location.hostname;
+      // Auto-unlock on dev/preview/sandbox hosts — founder works here.
+      // Lock only kicks in on the published public URL.
+      const isPreview =
+        host === "localhost" ||
+        host.endsWith(".lovableproject.com") ||
+        host.endsWith(".lovable.dev") ||
+        host.includes("id-preview--") ||
+        host.startsWith("preview--") ||
+        host === "aiaxonetis.hostflowai.net";
+      if (isPreview) {
+        localStorage.setItem(UNLOCK_KEY, "1");
+        setUnlocked(true);
+        return;
+      }
       const url = new URL(window.location.href);
       const fromUrl = url.searchParams.get("unlock");
       if (fromUrl && fromUrl === FOUNDER_PASSPHRASE) {
