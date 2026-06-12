@@ -49,22 +49,32 @@ export default function TopBar() {
       <div className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.02] via-transparent to-black/30" />
 
-      {/* LEFT — BRAND (max 320px) */}
-      <div className="relative flex shrink-0 items-center gap-3.5" style={{ maxWidth: 320 }}>
+      {/* LEFT — BRAND */}
+      <div className="relative flex shrink-0 items-center gap-3.5">
         <AxenMark state={agentState} size={48} />
         <div className="flex flex-col justify-center leading-none">
-          <span
-            className="whitespace-nowrap font-bold uppercase text-[#F8FAFC]"
-            style={{
-              fontFamily: "'Geist Mono','JetBrains Mono',ui-monospace,monospace",
-              fontSize: 28,
-              letterSpacing: "0.16em",
-              lineHeight: 1,
-              textShadow: "0 0 24px rgba(229,9,20,0.32), 0 0 60px rgba(168,85,247,0.16)",
-            }}
-          >
-            AXONETIS
-          </span>
+          {/* Row 1: AXONETIS + tagline inline */}
+          <div className="flex items-baseline gap-3 whitespace-nowrap">
+            <span
+              className="font-bold uppercase text-[#F8FAFC]"
+              style={{
+                fontFamily: "'Geist Mono','JetBrains Mono',ui-monospace,monospace",
+                fontSize: 25,
+                letterSpacing: "0.14em",
+                lineHeight: 1,
+                textShadow: "0 0 24px rgba(229,9,20,0.32), 0 0 60px rgba(168,85,247,0.16)",
+              }}
+            >
+              AXONETIS
+            </span>
+            <span
+              className="font-medium uppercase text-[#94A3B8]"
+              style={{ fontSize: 11, letterSpacing: "0.24em", lineHeight: 1 }}
+            >
+              Nervous System For Autonomous Agents
+            </span>
+          </div>
+          {/* Row 2: subtitle under AXONETIS */}
           <span
             className="mt-2 whitespace-nowrap font-medium uppercase text-[#CBD5E1]"
             style={{ fontSize: 12, letterSpacing: "0.28em" }}
