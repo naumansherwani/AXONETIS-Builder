@@ -304,6 +304,93 @@ values
 on conflict (model_key) do nothing;
 
 -- ============================================================================
+-- 8b. AI_AGENT_IDENTITIES — Jimmy / Sherlock / 8 Advisors / Autonomous RapidPay
+-- Each identity has a default model + fallback chain, referencing ai_model_registry.
+-- ============================================================================
+create table if not exists public.ai_agent_identities (
+  id                    uuid primary key default gen_random_uuid(),
+  identity_key          text not null unique,
+  display_name          text not null,
+  role                  text not null,          -- jimmy | sherlock | advisor | rapidpay
+  industry              text,                   -- advisors only
+  default_model_key     text not null references public.ai_model_registry(model_key),
+  failover_model_keys   text[] not null default '{}',
+  system_prompt         text,
+  capabilities          jsonb not null default '[]'::jsonb,
+  is_active             boolean not null default true,
+  priority              integer not null default 100,
+  created_at            timestamptz not null default now(),
+  updated_at            timestamptz not null default now()
+);
+create index if not exists idx_ai_agent_identities_role on public.ai_agent_identities(role);
+
+grant select on public.ai_agent_identities to authenticated;
+grant all    on public.ai_agent_identities to service_role;
+alter table public.ai_agent_identities enable row level security;
+create policy "ai_agent_identities: read auth" on public.ai_agent_identities
+  for select to authenticated using (true);
+create policy "ai_agent_identities: admin write" on public.ai_agent_identities
+  for all to authenticated
+  using (public.has_role(auth.uid(), 'admin'))
+  with check (public.has_role(auth.uid(), 'admin'));
+
+drop trigger if exists trg_ai_agent_identities_touch on public.ai_agent_identities;
+create trigger trg_ai_agent_identities_touch
+  before update on public.ai_agent_identities
+  for each row execute function public.touch_updated_at();
+-- ⚠️ touch_updated_at() is defined at the bottom of this migration; CREATE TRIGGER
+-- here is fine because the function is created in the same transaction before COMMIT.
+
+insert into public.ai_agent_identities
+  (identity_key, display_name, role, industry, default_model_key, failover_model_keys, capabilities, priority)
+values
+  -- Core builder agents
+  ('jimmy',                 'Jimmy — Builder Lead',          'jimmy',    null,
+     'openrouter/hermes-405b',
+     array['openrouter/qwen3-coder-480b','groq/gpt-oss-120b'],
+     '["code-gen","planning","tools","multi-file-edit"]'::jsonb, 10),
+
+  ('sherlock',              'Sherlock — Auto-Fix & Reasoning','sherlock', null,
+     'openrouter/deepseek-r1',
+     array['groq/llama-3.3-70b','openrouter/llama-3.3-70b'],
+     '["reasoning","auto-fix","error-diagnosis","max-3-loops"]'::jsonb, 10),
+
+  -- 8 Industry Advisors (HostFlow industries)
+  ('advisor_hospitality',   'Advisor — Hospitality',         'advisor',  'hospitality',
+     'openrouter/llama-3.3-70b', array['groq/llama-3.3-70b'],
+     '["domain-knowledge","recommendations"]'::jsonb, 50),
+  ('advisor_restaurants',   'Advisor — Restaurants',         'advisor',  'restaurants',
+     'openrouter/llama-3.3-70b', array['groq/llama-3.3-70b'],
+     '["domain-knowledge","recommendations"]'::jsonb, 50),
+  ('advisor_retail',        'Advisor — Retail',              'advisor',  'retail',
+     'openrouter/llama-3.3-70b', array['groq/llama-3.3-70b'],
+     '["domain-knowledge","recommendations"]'::jsonb, 50),
+  ('advisor_healthcare',    'Advisor — Healthcare',          'advisor',  'healthcare',
+     'openrouter/llama-3.3-70b', array['groq/llama-3.3-70b'],
+     '["domain-knowledge","recommendations"]'::jsonb, 50),
+  ('advisor_realestate',    'Advisor — Real Estate',         'advisor',  'realestate',
+     'openrouter/llama-3.3-70b', array['groq/llama-3.3-70b'],
+     '["domain-knowledge","recommendations"]'::jsonb, 50),
+  ('advisor_education',     'Advisor — Education',           'advisor',  'education',
+     'openrouter/llama-3.3-70b', array['groq/llama-3.3-70b'],
+     '["domain-knowledge","recommendations"]'::jsonb, 50),
+  ('advisor_automotive',    'Advisor — Automotive',          'advisor',  'automotive',
+     'openrouter/llama-3.3-70b', array['groq/llama-3.3-70b'],
+     '["domain-knowledge","recommendations"]'::jsonb, 50),
+  ('advisor_professional',  'Advisor — Professional Services','advisor', 'professional',
+     'openrouter/llama-3.3-70b', array['groq/llama-3.3-70b'],
+     '["domain-knowledge","recommendations"]'::jsonb, 50),
+
+  -- Autonomous Rapid Pay
+  ('rapidpay_autonomous',   'Autonomous RapidPay',           'rapidpay', null,
+     'openrouter/qwen3-coder-480b',
+     array['openrouter/hermes-405b','groq/gpt-oss-120b'],
+     '["payments","ledger","autonomous-ops","state-sync"]'::jsonb, 10)
+on conflict (identity_key) do nothing;
+
+
+
+-- ============================================================================
 -- 9. MIRROR_SYNC_LOG
 -- ============================================================================
 create table if not exists public.mirror_sync_log (
