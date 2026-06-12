@@ -9,6 +9,7 @@ import CommandPalette from "./CommandPalette";
 import SideRail from "./SideRail";
 import SidePanelDrawer from "./SidePanelDrawer";
 import { LEFT_RAIL_ITEMS, RIGHT_RAIL_ITEMS } from "./rail-items";
+import VerticalSplit from "./VerticalSplit";
 
 /**
  * FOUNDER OS SHELL
@@ -48,28 +49,51 @@ export default function BuilderShell() {
 
   return (
     <BuilderCtx.Provider value={value}>
-      <div className="flex h-screen w-full flex-col overflow-hidden bg-[#040406] text-foreground">
-        <TopBar />
+      <div className="relative flex h-screen w-full flex-col overflow-hidden bg-[#040406] text-foreground">
+        {/* Ambient cinematic glow — drives the "3D" depth across the whole shell */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-0"
+          style={{
+            background:
+              "radial-gradient(60% 50% at 18% 0%, rgba(229,9,20,0.18) 0%, transparent 60%)," +
+              "radial-gradient(50% 45% at 82% 0%, rgba(168,85,247,0.14) 0%, transparent 65%)," +
+              "radial-gradient(70% 40% at 50% 100%, rgba(229,9,20,0.10) 0%, transparent 70%)",
+          }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-0 opacity-[0.04] mix-blend-overlay"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, rgba(255,255,255,0.6) 1px, transparent 1px)," +
+              "linear-gradient(to bottom, rgba(255,255,255,0.6) 1px, transparent 1px)",
+            backgroundSize: "44px 44px",
+          }}
+        />
 
-        <div className="flex min-h-0 flex-1">
-          <SideRail side="left" items={LEFT_RAIL_ITEMS} label="Navigate" />
-          <SidePanelDrawer side="left" />
+        <div className="relative z-10 flex h-full flex-col">
+          <TopBar />
 
-          <main className="flex min-w-0 flex-1 flex-col">
-            <div className="min-h-0 flex-[1.55] border-b border-white/[0.06]">
-              <LivePreview />
-            </div>
-            <div className="min-h-0 flex-1">
-              <UnifiedChat />
-            </div>
-          </main>
+          <div className="flex min-h-0 flex-1">
+            <SideRail side="left" items={LEFT_RAIL_ITEMS} label="Navigate" />
+            <SidePanelDrawer side="left" />
 
-          <SidePanelDrawer side="right" />
-          <SideRail side="right" items={RIGHT_RAIL_ITEMS} label="Workspace" />
+            <main className="flex min-w-0 flex-1 flex-col">
+              <VerticalSplit
+                top={<LivePreview />}
+                bottom={<UnifiedChat />}
+                initial={0.6}
+              />
+            </main>
+
+            <SidePanelDrawer side="right" />
+            <SideRail side="right" items={RIGHT_RAIL_ITEMS} label="Workspace" />
+          </div>
+
+          <StatusBar />
+          <CommandPalette />
         </div>
-
-        <StatusBar />
-        <CommandPalette />
       </div>
     </BuilderCtx.Provider>
   );
