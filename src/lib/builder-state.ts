@@ -20,6 +20,7 @@ export type BottomTabId =
   | "git"
   | "github"
   | "logs"
+  | "activity"
   | "deploy"
   | "analytics"
   | "documents"
