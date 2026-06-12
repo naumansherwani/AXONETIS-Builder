@@ -10,7 +10,7 @@ import { Dot, PanelSection, Row } from "./PanelChrome";
 export default function RuntimePanel() {
   const { project, bridgeStatus, lastBridgeEvent } = useBuilder();
   const active = PROJECTS.find((p) => p.id === project)!;
-  const dot = bridgeStatus === "connected" ? "emerald" : bridgeStatus === "no-signal" ? "amber" : "gray";
+  const dot: "emerald" | "amber" | "gray" = bridgeStatus === "connected" ? "emerald" : bridgeStatus === "no-signal" ? "amber" : "gray";
 
   return (
     <>
