@@ -15,6 +15,7 @@ MODEL ASSIGNMENT FOUNDER LOCK: Source of truth at mem://features/model-assignmen
 FOUNDER COPY-PASTE ONLY LOCK: Lovable = frontend + backend author. Founder sirf copy-paste karta hai (server ya Supabase SQL). Har backend deliverable = ek scoped copy-paste block + shout "⚠️ YEH HOSTFLOW-SERVER (BRIDGE)" ya "⚠️ YEH SUPABASE 3 SQL". See mem://features/founder-copy-paste-only-LOCKED.
 
 ## Memories
+- [Hetzner PM2 Online LOCKED](mem://features/hetzner-pm2-online-LOCKED) — Jun 13 2026 proof: 6 processes online (axonetis-builder, hostflow-server bridge, hostflowai-brain, aanris-runtime, runtime-schema-sync, schema-evolution). agentsRouter wired. Bridge REAL.
 - [Founder Copy-Paste Only LOCKED](mem://features/founder-copy-paste-only-LOCKED) — Lovable owns frontend AND backend code. Founder sirf paste karta hai. Har backend block scoped + ek paste + shout repo tag.
 - [HostFlow-Server File Tree LOCKED](mem://features/hostflow-server-file-tree-LOCKED) — Locked Hetzner bridge repo inventory (Jun 13 2026). MUST shout "YEH HOSTFLOW-SERVER" or "YEH AXONETIS BUILDER" before any server/bridge/agent reply.
 - [Server Endpoint Copy-Paste Workflow LOCKED](mem://features/server-endpoint-copy-paste-workflow-LOCKED) — For backend endpoint wiring, give exact TypeScript route code + request/response contract for founder to copy into hostflowai-server manually.
