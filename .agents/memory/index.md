@@ -7,6 +7,7 @@ Backend endpoint workflow LOCKED: for hostflowai-server, write exact copy-paste 
 NO Docker / NO containers. Architecture: iframe + postMessage bridge + Supabase project_files (truth) + Realtime HMR reload. Same trick as Lovable.
 3 products: HostFlow AI™, Rapid Pay™, AXONETIS AI Builder™. 3 separate Supabase instances.
 Repos LOCKED: founder-ai-builder (Lovable, frontend only) + hostflowai-server (founder manual, Hetzner). Workflow: Lovable builds ONE phase → founder says ruko → git pull → review → "agla phase" → next. NEVER touch hostflowai-server repo. NEVER run SQL until founder confirms server ready.
+BACKEND FAILURE LOCK: hostflow-server has NO `src/clients/supabase3`; snippets must use inline Supabase 3 client or confirmed `integrations/supabase3/client.ts`. SQL must be re-runnable: drop policy if exists before create.
 MASTER blueprint LOCKED — **FINAL Founder Lock Version** (see mem://features/axonetis-master-blueprint-FINAL-LOCKED). Supersedes all prior builder blueprints. 9 phases. Phase 1 SQL ✅ DONE & verified Jun 12 2026 on Hetzner Supabase 3 (11 ai_agent_identities, user_roles seeded, 8 core + 7 mirror tables live). NEXT = Phase 2 (Founder Workspace) when founder says "agla phase".
 NO DUPLICATE rule LOCKED: ek hi component/table/route/file — kabhi duplicate nahi banana. Pehle search karo, agar exists to extend karo. Building world's most advanced AI builder — zero duplication, zero throwaway code, har line production-grade.
 FOUNDER OS VISUAL GRADE LOCKED: header ≥88px, logo ≥72px, wordmark 2.5x, IDE layout (Left nav · Center preview+chat · Right Files/DB/Agents/Logs/Deploy), cinematic dark-glass command-center. Ordinary preview shell = project fail. See mem://features/founder-os-visual-grade-LOCKED.
@@ -16,6 +17,7 @@ FOUNDER COPY-PASTE ONLY LOCK: Lovable = frontend + backend author. Founder sirf 
 
 ## Memories
 - [Hetzner PM2 Online LOCKED](mem://features/hetzner-pm2-online-LOCKED) — Jun 13 2026 proof: 6 processes online (axonetis-builder, hostflow-server bridge, hostflowai-brain, aanris-runtime, runtime-schema-sync, schema-evolution). agentsRouter wired. Bridge REAL.
+- [Backend Snippet Imports + Idempotent SQL LOCKED](mem://features/backend-snippet-idempotency-and-imports-LOCKED) — Failure lesson: never import missing `src/clients/supabase3`; use inline client/confirmed path only. SQL policies must drop-if-exists before create.
 - [Founder Copy-Paste Only LOCKED](mem://features/founder-copy-paste-only-LOCKED) — Lovable owns frontend AND backend code. Founder sirf paste karta hai. Har backend block scoped + ek paste + shout repo tag.
 - [HostFlow-Server File Tree LOCKED](mem://features/hostflow-server-file-tree-LOCKED) — Locked Hetzner bridge repo inventory (Jun 13 2026). MUST shout "YEH HOSTFLOW-SERVER" or "YEH AXONETIS BUILDER" before any server/bridge/agent reply.
 - [Server Endpoint Copy-Paste Workflow LOCKED](mem://features/server-endpoint-copy-paste-workflow-LOCKED) — For backend endpoint wiring, give exact TypeScript route code + request/response contract for founder to copy into hostflowai-server manually.
