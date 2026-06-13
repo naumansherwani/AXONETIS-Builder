@@ -11,6 +11,7 @@ import SidePanelDrawer from "./SidePanelDrawer";
 import { LEFT_RAIL_ITEMS, RIGHT_RAIL_ITEMS } from "./rail-items";
 import HorizontalSplit from "./HorizontalSplit";
 import type { BridgeStatus, PreviewBridgeEvent } from "@/lib/preview-bridge";
+import type { PreviewEnv, PreviewFileChange } from "@/lib/preview-engine";
 
 /**
  * FOUNDER OS SHELL
@@ -29,6 +30,8 @@ export default function BuilderShell() {
   const [agentState, setAgentState] = useState<AgentState>("standby");
   const [bridgeStatus, setBridgeStatus] = useState<BridgeStatus>("standby");
   const [lastBridgeEvent, setLastBridgeEvent] = useState<PreviewBridgeEvent | null>(null);
+  const [previewEnv, setPreviewEnv] = useState<PreviewEnv>("sandbox");
+  const [lastPreviewChange, setLastPreviewChange] = useState<PreviewFileChange | null>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -44,10 +47,11 @@ export default function BuilderShell() {
   const value = useMemo(
     () => ({
       project, branch, environment, bottomTab, previewMode, paletteOpen, agentState, bridgeStatus, lastBridgeEvent,
+      previewEnv, lastPreviewChange,
       setProject, setBranch, setEnvironment, setBottomTab, setPreviewMode, setPaletteOpen, setAgentState,
-      setBridgeStatus, setLastBridgeEvent,
+      setBridgeStatus, setLastBridgeEvent, setPreviewEnv, setLastPreviewChange,
     }),
-    [project, branch, environment, bottomTab, previewMode, paletteOpen, agentState, bridgeStatus, lastBridgeEvent],
+    [project, branch, environment, bottomTab, previewMode, paletteOpen, agentState, bridgeStatus, lastBridgeEvent, previewEnv, lastPreviewChange],
   );
 
   return (
