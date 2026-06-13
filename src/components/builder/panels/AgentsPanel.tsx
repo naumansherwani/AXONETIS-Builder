@@ -4,7 +4,7 @@
  */
 import { useEffect, useState } from "react";
 import { PanelSection, Row, Dot } from "./PanelChrome";
-import { listAgents, type AgentInfo, type RapidPayAgentInfo } from "@/lib/hostflow-api";
+import { listAgents, listRapidPayAgents, type AgentInfo, type RapidPayAgentInfo } from "@/lib/hostflow-api";
 
 interface Agent {
   slug: string;
@@ -72,8 +72,20 @@ function mapAgent(a: AgentInfo): Agent {
   };
 }
 
+function mapRapidPayAgent(a: RapidPayAgentInfo): RapidPayAgent {
+  return {
+    slug: a.slug,
+    name: a.name,
+    role: a.role,
+    model: a.routing_config.primary.models.join(" · "),
+    layer: a.security_guardian ? "security" : a.layer,
+    securityGuardian: a.security_guardian,
+  };
+}
+
 export default function AgentsPanel() {
   const [agents, setAgents] = useState<Agent[]>(SEED);
+  const [rapidPayAgents, setRapidPayAgents] = useState<RapidPayAgent[]>(RAPID_PAY_SEED);
   const [source, setSource] = useState<"seed" | "live">("seed");
 
   useEffect(() => {
@@ -81,12 +93,16 @@ export default function AgentsPanel() {
     listAgents()
       .then((rows) => { if (alive && rows?.length) { setAgents(rows.map(mapAgent)); setSource("live"); } })
       .catch(() => { /* keep seed */ });
+    listRapidPayAgents()
+      .then((rows) => { if (alive && rows?.length) setRapidPayAgents(rows.map(mapRapidPayAgent)); })
+      .catch(() => { /* Rapid Pay lives in Supabase 2 later; keep locked seed contract */ });
     return () => { alive = false; };
   }, []);
 
   const supreme  = agents.filter((a) => a.kind === "supreme");
   const advisors = agents.filter((a) => a.kind === "advisor");
   const router   = agents.find((a) => a.kind === "router");
+  const rapidSecurity = rapidPayAgents.filter((a) => a.securityGuardian);
 
   return (
     <div>
@@ -112,6 +128,31 @@ export default function AgentsPanel() {
           <Row left={<><Dot tone="sky" /><span>{router.name}</span></>} right={router.model} />
         </PanelSection>
       )}
+
+      <PanelSection title="Phase 3 Endpoint Contract" action={<span className="text-[10px] text-muted-foreground/60">10</span>}>
+        <div className="grid gap-1 font-mono text-[9px] text-muted-foreground/80">
+          {["GET /api/agents", "POST /api/agents/:slug/chat", "POST /api/agents/sherlock/scan", "GET /api/agents/threads", "GET /api/agents/threads/:id/messages", "GET /api/agents/:slug/memory", "POST /api/agents/:slug/memory", "GET /api/agents/activity", "GET /api/agents/activity/stream", "POST /api/agents/router/route"].map((endpoint) => (
+            <div key={endpoint} className="truncate rounded bg-white/[0.02] px-2 py-1">{endpoint}</div>
+          ))}
+        </div>
+      </PanelSection>
+
+      <PanelSection title="Rapid Pay · Supabase 2 Future" action={<span className="text-[10px] text-muted-foreground/60">16 + 3 security</span>}>
+        <div className="mb-2 rounded-md border border-amber-400/15 bg-amber-400/[0.03] px-2 py-1.5 text-[10px] leading-relaxed text-muted-foreground/85">
+          routing_config → OpenRouter → Groq → Ollama. Rapid Pay is not inserted into Supabase 3.
+        </div>
+        <div className="flex flex-col gap-0.5">
+          {rapidPayAgents.map((a) => <RapidPayRow key={a.slug} agent={a} />)}
+        </div>
+      </PanelSection>
+
+      <PanelSection title="Security Guardians" action={<span className="text-[10px] text-muted-foreground/60">{rapidSecurity.length}</span>}>
+        <div className="flex flex-col gap-0.5">
+          {rapidSecurity.map((a) => (
+            <Row key={a.slug} left={<><Dot tone="red" /><span>{a.name}</span></>} right={a.model} />
+          ))}
+        </div>
+      </PanelSection>
     </div>
   );
 }
