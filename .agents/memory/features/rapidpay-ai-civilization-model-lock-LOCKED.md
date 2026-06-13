@@ -1,10 +1,10 @@
 ---
-name: Rapid Pay AI Civilization — Model Assignment Founder Lock (v2)
-description: LOCKED model→agent map for Rapid Pay (Supabase 2, future). 19 agents total = 16 core + 3 reserved. Sherlock is SHARED (Builder-owned identity, used here only in 3-guardian security swarm). Source of truth = agent_registry.routing_config — NO hardcoded TS routing.
+name: Rapid Pay AI Civilization — Model Assignment Founder Lock (v3)
+description: LOCKED model→agent map for Rapid Pay (Supabase 2, future). 19 operational workloads = 16 core + 3 Supabase-2 security guardians, NOT reserved. Source of truth = agent_registry.routing_config — NO hardcoded TS routing.
 type: constraint
 ---
 
-# RAPID PAY AI CIVILIZATION — FOUNDER LOCK v2 (Supabase 2, FUTURE)
+# RAPID PAY AI CIVILIZATION — FOUNDER LOCK v3 (Supabase 2, FUTURE)
 
 > Scope: Rapid Pay agents only. Builder agents (Jimmy/Sherlock/8 Advisors/Router) live in `model-assignment-source-of-truth-LOCKED.md`. Do NOT duplicate.
 > Implementation target: **Supabase 2**, AFTER AXONETIS Builder (Supabase 3) is finished.
@@ -12,7 +12,7 @@ type: constraint
 
 ---
 
-## Agent Count (LOCKED) — 19 total
+## Agent Count (LOCKED) — 19 total workloads
 
 ```
 Supreme Layer ............. 2  (Jimmy, Sherlock*)
@@ -21,7 +21,7 @@ Intelligence Layer ........ 4
 Global Routing Layer ...... 1
                           ----
 Core total ............... 16
-+ Reserved (future) ....... 3   (Compliance / KYC-AML / Dispute)
++ Supabase-2 security .... 3   (24/7 hacker-defense guardians; NOT reserved)
                           ----
 Grand total .............. 19
 ```
@@ -79,9 +79,9 @@ Grand total .............. 19
 
 ---
 
-## 5. Security Guardians (3) — 24/7 hacker-defense swarm inside Supabase 2
+## 5. Supabase-2 Security Guardians (3) — 24/7 hacker-defense swarm
 
-These three operate as the always-on security swarm. They are NOT extra agents — they are existing identities tagged for security duty:
+These three are **NOT reserved** and **NOT future placeholders**. They are Supabase-2 security workloads for Rapid Pay. Do not put Rapid Pay security agents into Supabase 3.
 
 1. **AI Sherlock** (shared, Builder-owned) — lead investigator → DeepSeek R1 + Hermes 405B + GPT-OSS 120B
 2. **AI Fraud Radar** (Treasury) — real-time fraud blocker → Llama 3.3 70B → escalate DeepSeek R1
@@ -89,19 +89,7 @@ These three operate as the always-on security swarm. They are NOT extra agents �
 
 ---
 
-## 6. Reserved Slots (3) — future Rapid Pay specialists
-
-| Slot | Default Primary | Escalation | Likely Purpose |
-|---|---|---|---|
-| Reserved-1 | Llama 3.3 70B Instruct | DeepSeek R1 | Compliance |
-| Reserved-2 | Llama 3.3 70B Instruct | DeepSeek R1 | KYC / AML |
-| Reserved-3 | Llama 3.3 70B Instruct | DeepSeek R1 | Dispute / Reconciliation |
-
-Founder names them when ready. Do NOT create another file — extend this one.
-
----
-
-## 7. Provider Hierarchy (ALL Rapid Pay agents — LOCKED)
+## 6. Provider Hierarchy (ALL Rapid Pay agents — LOCKED)
 
 ```
 Primary    → OpenRouter
@@ -111,7 +99,7 @@ Last Resort→ Local Ollama (qwen3:8b for Supreme, qwen3:4b for Treasury/Intelli
 
 ---
 
-## 8. Backend Rules (DO NOT DEVIATE)
+## 7. Backend Rules (DO NOT DEVIATE)
 
 1. **NO hardcoded agent model routing in TypeScript.** No `switch/case` in `router.service.ts`. Anything that hardcodes models is wrong and must be deleted.
 2. **Source of truth = `agent_registry.routing_config`** (Supabase 3 for Builder, Supabase 2 for Rapid Pay). Always read at runtime.
@@ -129,7 +117,7 @@ Last Resort→ Local Ollama (qwen3:8b for Supreme, qwen3:4b for Treasury/Intelli
 
 ---
 
-## 9. Endpoint Contracts
+## 8. Endpoint Contracts
 
 ### Builder (Phase 3, Supabase 3) — must implement exactly:
 - `GET  /api/agents`
@@ -143,7 +131,7 @@ Last Resort→ Local Ollama (qwen3:8b for Supreme, qwen3:4b for Treasury/Intelli
 - `GET  /api/agents/activity/stream` (SSE)
 - `POST /api/agents/router/route`
 
-### Rapid Pay (Supabase 2, future — reserve namespace now):
+### Rapid Pay (Supabase 2, future — expose frontend endpoint contract now):
 - `GET  /api/rapidpay/agents`
 - `POST /api/rapidpay/agents/:slug/chat`
 - `POST /api/rapidpay/agents/fraud-radar/scan`
@@ -163,8 +151,8 @@ Same routing_config → OpenRouter → Groq → Ollama chain.
 
 ---
 
-## 10. Enforcement
+## 9. Enforcement
 - This file + `model-assignment-source-of-truth-LOCKED.md` together = full model lock. Any conflict elsewhere → these two files win.
 - NO DUPLICATE: do not create another Rapid Pay model file. Extend this one.
-- Total agent count is **19** (16 core + 3 reserved). Do not invent more.
-- LOCKED Jun 13 2026 (v2 — Sherlock clarified as shared, count corrected from 22 → 19).
+- Total workload count is **19** (16 core + 3 Supabase-2 security guardians). They are **NOT reserved**. Do not invent more.
+- LOCKED Jun 13 2026 (v3 — reserved slots removed; 3 are Supabase-2 security guardians).
