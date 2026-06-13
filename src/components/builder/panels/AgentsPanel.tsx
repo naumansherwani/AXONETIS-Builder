@@ -4,7 +4,7 @@
  */
 import { useEffect, useState } from "react";
 import { PanelSection, Row, Dot } from "./PanelChrome";
-import { listAgents, type AgentInfo } from "@/lib/hostflow-api";
+import { listAgents, type AgentInfo, type RapidPayAgentInfo } from "@/lib/hostflow-api";
 
 interface Agent {
   slug: string;
@@ -15,22 +15,61 @@ interface Agent {
   status: "online" | "thinking" | "idle" | "offline" | "error";
 }
 
+interface RapidPayAgent {
+  slug: string;
+  name: string;
+  role: string;
+  model: string;
+  layer: RapidPayAgentInfo["layer"];
+  securityGuardian?: boolean;
+}
+
 const SEED: Agent[] = [
-  { slug: "jimmy",    name: "Jimmy",    role: "Build · Design · Architect", model: "Hermes 405B + Qwen3 480B", kind: "supreme",  status: "idle" },
-  { slug: "sherlock", name: "Sherlock", role: "Review · Debug · RCA",       model: "DeepSeek R1 + GPT-OSS 120B", kind: "supreme",  status: "idle" },
-  { slug: "aria",  name: "Aria",  role: "Beauty · Salon",      model: "GPT-OSS 120B", kind: "advisor", status: "idle" },
-  { slug: "orion", name: "Orion", role: "Restaurant · Food",   model: "GPT-OSS 120B", kind: "advisor", status: "idle" },
-  { slug: "rex",   name: "Rex",   role: "Auto · Mechanics",    model: "GPT-OSS 120B", kind: "advisor", status: "idle" },
-  { slug: "lyra",  name: "Lyra",  role: "Healthcare · Clinic", model: "GPT-OSS 120B", kind: "advisor", status: "idle" },
-  { slug: "sage",  name: "Sage",  role: "Legal · Advisory",    model: "GPT-OSS 120B", kind: "advisor", status: "idle" },
-  { slug: "atlas", name: "Atlas", role: "Logistics · Fleet",   model: "GPT-OSS 120B", kind: "advisor", status: "idle" },
-  { slug: "vega",  name: "Vega",  role: "Real Estate",         model: "GPT-OSS 120B", kind: "advisor", status: "idle" },
-  { slug: "kai",   name: "Kai",   role: "Retail · E-commerce", model: "GPT-OSS 120B", kind: "advisor", status: "idle" },
-  { slug: "router", name: "Router", role: "Global Routing", model: "Llama 3.3 70B", kind: "router", status: "idle" },
+  { slug: "jimmy",    name: "Jimmy",    role: "Build · Design · Architect", model: "OpenRouter: Hermes 405B · Qwen3 Coder 480B · Qwen3 Next 80B → Groq → Ollama qwen3:8b", kind: "supreme",  status: "idle" },
+  { slug: "sherlock", name: "Sherlock", role: "Review · Debug · RCA",       model: "OpenRouter: DeepSeek R1 · Hermes 405B · GPT-OSS 120B → Groq → Ollama qwen3:8b", kind: "supreme",  status: "idle" },
+  { slug: "aria",  name: "Aria",  role: "Beauty · Salon",      model: "OpenRouter: GPT-OSS 120B · Llama 3.3 70B → Groq → Ollama qwen3:4b", kind: "advisor", status: "idle" },
+  { slug: "orion", name: "Orion", role: "Restaurant · Food",   model: "OpenRouter: GPT-OSS 120B · Llama 3.3 70B → Groq → Ollama qwen3:4b", kind: "advisor", status: "idle" },
+  { slug: "rex",   name: "Rex",   role: "Auto · Mechanics",    model: "OpenRouter: GPT-OSS 120B · Llama 3.3 70B → Groq → Ollama qwen3:4b", kind: "advisor", status: "idle" },
+  { slug: "lyra",  name: "Lyra",  role: "Healthcare · Clinic", model: "OpenRouter: GPT-OSS 120B · Llama 3.3 70B → Groq → Ollama qwen3:4b", kind: "advisor", status: "idle" },
+  { slug: "sage",  name: "Sage",  role: "Legal · Advisory",    model: "OpenRouter: GPT-OSS 120B · Llama 3.3 70B → Groq → Ollama qwen3:4b", kind: "advisor", status: "idle" },
+  { slug: "atlas", name: "Atlas", role: "Logistics · Fleet",   model: "OpenRouter: GPT-OSS 120B · Llama 3.3 70B → Groq → Ollama qwen3:4b", kind: "advisor", status: "idle" },
+  { slug: "vega",  name: "Vega",  role: "Real Estate",         model: "OpenRouter: GPT-OSS 120B · Llama 3.3 70B → Groq → Ollama qwen3:4b", kind: "advisor", status: "idle" },
+  { slug: "kai",   name: "Kai",   role: "Retail · E-commerce", model: "OpenRouter: GPT-OSS 120B · Llama 3.3 70B → Groq → Ollama qwen3:4b", kind: "advisor", status: "idle" },
+  { slug: "router", name: "Router", role: "Global Routing", model: "OpenRouter: Llama 3.3 70B → Groq", kind: "router", status: "idle" },
+];
+
+const RAPID_PAY_SEED: RapidPayAgent[] = [
+  { slug: "jimmy", name: "AI Jimmy", role: "CEO Autopilot", model: "Hermes 405B · Qwen3 Coder 480B · Qwen3 Next 80B", layer: "supreme" },
+  { slug: "sherlock", name: "AI Sherlock", role: "Shared security investigation", model: "DeepSeek R1 · Hermes 405B · GPT-OSS 120B", layer: "security", securityGuardian: true },
+  { slug: "ledger-fox", name: "AI Ledger Fox", role: "Ledger intelligence · transaction analysis", model: "GPT-OSS 120B", layer: "treasury" },
+  { slug: "recovery-phantom", name: "Recovery Phantom", role: "Payment recovery · retry intelligence", model: "Llama 3.3 70B", layer: "treasury" },
+  { slug: "treasury-sentinel", name: "AI Treasury Sentinel", role: "Treasury monitoring · risk detection", model: "Llama 3.3 70B → DeepSeek R1", layer: "security", securityGuardian: true },
+  { slug: "corridor-brain", name: "AI Corridor Brain", role: "Cross-border routing", model: "Llama 3.3 70B", layer: "treasury" },
+  { slug: "treasury-navigator", name: "AI Treasury Navigator", role: "Treasury decisions · fund routing", model: "Llama 3.3 70B", layer: "treasury" },
+  { slug: "runtime-echo", name: "AI Runtime Echo", role: "Runtime monitoring · event analysis", model: "Llama 3.3 70B", layer: "treasury" },
+  { slug: "replay-keeper", name: "AI Replay Keeper", role: "Audit replay · reconstruction", model: "Llama 3.3 70B", layer: "treasury" },
+  { slug: "settlement-hawk", name: "AI Settlement Hawk", role: "Settlement intelligence", model: "Llama 3.3 70B", layer: "treasury" },
+  { slug: "fraud-radar", name: "AI Fraud Radar", role: "Fraud detection · risk escalation", model: "Llama 3.3 70B → DeepSeek R1", layer: "security", securityGuardian: true },
+  { slug: "treasury-stress-intelligence", name: "AI Treasury Stress Intelligence", role: "Stress tests · scenarios", model: "Hermes 405B", layer: "intelligence" },
+  { slug: "revenue-brain", name: "AI Revenue Brain", role: "Revenue optimization", model: "GPT-OSS 120B", layer: "intelligence" },
+  { slug: "explainability-civilization", name: "AI Explainability Civilization", role: "Decision explanations · audits", model: "GPT-OSS 120B", layer: "intelligence" },
+  { slug: "founder-sandbox-civilization", name: "AI Founder Sandbox Civilization", role: "Simulation · strategy testing", model: "Hermes 405B", layer: "intelligence" },
+  { slug: "global-router", name: "AI Global Router", role: "Agent · tool · route classification", model: "Llama 3.3 70B", layer: "router" },
 ];
 
 function mapAgent(a: AgentInfo): Agent {
-  return { slug: a.slug, name: a.name, role: a.role, model: a.model_primary, kind: a.kind, status: a.status };
+  const configModels = a.routing_config?.primary.models.join(" · ");
+  const fallback = [a.routing_config?.secondary?.provider, a.routing_config?.last_resort?.models.join(" · ")]
+    .filter(Boolean)
+    .join(" → ");
+  return {
+    slug: a.slug,
+    name: a.name,
+    role: a.role,
+    model: configModels ? `OpenRouter: ${configModels}${fallback ? ` → ${fallback}` : ""}` : a.model_primary,
+    kind: a.kind,
+    status: a.status,
+  };
 }
 
 export default function AgentsPanel() {
