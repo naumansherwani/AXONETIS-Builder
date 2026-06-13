@@ -44,6 +44,12 @@ type: constraint
 - **Rapid Pay Civilization is NOT part of Supabase 3 implementation.**
 - AI Autonomous Rapid Pay agents → implemented later in **Supabase 2**, after AXONETIS Builder project is finished.
 
+## Phase 3 Backend Contract (LOCKED)
+- **Source of truth:** `agent_registry.routing_config` in Supabase 3. Never bypass it with hardcoded TypeScript routing.
+- **Routing order:** read `routing_config` → OpenRouter primary → Groq speed fallback → Ollama last resort → insert `agent_threads` + `agent_thread_messages` + `agent_activity` → return reply.
+- **Required endpoints:** `GET /api/agents`, `POST /api/agents/:slug/chat`, `POST /api/agents/sherlock/scan`, `GET /api/agents/threads`, `GET /api/agents/threads/:id/messages`, `GET /api/agents/:slug/memory`, `POST /api/agents/:slug/memory`, `GET /api/agents/activity`, `GET /api/agents/activity/stream`, `POST /api/agents/router/route`.
+- If server `router.service.ts` has switch/case model assignment, it is wrong; replace with runtime read from `agent_registry.routing_config`.
+
 ## Enforcement
 - Any future agent_registry seed / server gateway routing / failover chain MUST match this file 1:1.
 - If a spec elsewhere conflicts with this file, **this file wins**.
