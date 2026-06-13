@@ -6,6 +6,7 @@
 import { createContext, useContext } from "react";
 import type { Branch, Environment, ProjectId } from "./projects";
 import type { BridgeStatus, PreviewBridgeEvent } from "./preview-bridge";
+import type { PreviewEnv, PreviewFileChange } from "./preview-engine";
 
 export type AgentState = "standby" | "jimmy" | "sherlock";
 
@@ -45,6 +46,10 @@ export interface BuilderState {
   agentState: AgentState;
   bridgeStatus: BridgeStatus;
   lastBridgeEvent: PreviewBridgeEvent | null;
+  previewEnv: PreviewEnv;
+  lastPreviewChange: PreviewFileChange | null;
+  setPreviewEnv: (e: PreviewEnv) => void;
+  setLastPreviewChange: (c: PreviewFileChange | null) => void;
   setProject: (p: ProjectId) => void;
   setBranch: (b: Branch) => void;
   setEnvironment: (e: Environment) => void;

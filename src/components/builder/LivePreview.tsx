@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { motion } from "framer-motion";
-import { Monitor, RefreshCw, Smartphone, Tablet, Columns3 } from "lucide-react";
+import { Monitor, RefreshCw, Smartphone, Tablet, Columns3, FlaskConical, Rocket } from "lucide-react";
 import { useBuilder } from "@/lib/builder-state";
 import { PROJECTS } from "@/lib/projects";
 import { createBridgeHandshake, getProjectOrigin, normalizePreviewBridgeEvent } from "@/lib/preview-bridge";
+import { subscribePreviewChanges } from "@/lib/preview-engine";
 
 type Device = "mobile" | "tablet" | "desktop";
 const DEVICE_WIDTH: Record<Device, number> = { mobile: 375, tablet: 768, desktop: 1440 };
 
 export default function LivePreview() {
-  const { project, previewMode, setPreviewMode, bridgeStatus, setBridgeStatus, setLastBridgeEvent } = useBuilder();
+  const { project, previewMode, setPreviewMode, bridgeStatus, setBridgeStatus, setLastBridgeEvent, previewEnv, setPreviewEnv, setLastPreviewChange } = useBuilder();
   const active = PROJECTS.find((p) => p.id === project)!;
   const [device, setDevice] = useState<Device>("desktop");
   const [reloadKey, setReloadKey] = useState(0);
@@ -40,6 +41,16 @@ export default function LivePreview() {
     return () => window.removeEventListener("message", onMessage);
   }, [setBridgeStatus, setLastBridgeEvent]);
 
+  // Phase 5: Realtime HMR — sandbox file changes auto-reload the iframe.
+  useEffect(() => {
+    if (previewEnv !== "sandbox") return;
+    const unsubscribe = subscribePreviewChanges(project, "sandbox", (change) => {
+      setLastPreviewChange(change);
+      setReloadKey((k) => k + 1);
+    });
+    return unsubscribe;
+  }, [project, previewEnv, setLastPreviewChange]);
+
   const sendHandshake = () => {
     frameRef.current?.contentWindow?.postMessage(createBridgeHandshake(project), getProjectOrigin(project));
   };
@@ -51,6 +62,26 @@ export default function LivePreview() {
         <div className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-emerald-400 fb-blink" />
           <span className="font-mono text-[11px] text-muted-foreground">{active.previewUrl}</span>
+          <div className="ml-2 flex rounded-md border border-white/[0.08] bg-white/[0.02] p-0.5">
+            <button
+              onClick={() => setPreviewEnv("sandbox")}
+              className={`flex h-6 items-center gap-1 rounded px-2 text-[10px] font-medium uppercase tracking-widest transition-colors ${
+                previewEnv === "sandbox" ? "bg-amber-400/15 text-amber-300" : "text-muted-foreground hover:text-foreground"
+              }`}
+              title="Sandbox — AI changes land here first"
+            >
+              <FlaskConical className="h-3 w-3" /> Sandbox
+            </button>
+            <button
+              onClick={() => setPreviewEnv("production")}
+              className={`flex h-6 items-center gap-1 rounded px-2 text-[10px] font-medium uppercase tracking-widest transition-colors ${
+                previewEnv === "production" ? "bg-emerald-400/15 text-emerald-300" : "text-muted-foreground hover:text-foreground"
+              }`}
+              title="Production — read-only preview of live site"
+            >
+              <Rocket className="h-3 w-3" /> Prod
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-1">
