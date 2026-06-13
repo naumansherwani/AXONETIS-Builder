@@ -232,6 +232,108 @@ export function routeTask(body: { projectId: ProjectId; task: string; context?: 
 }
 
 // ────────────────────────────────────────────────────────────────────
+// Phase 4 — Dual-Brain Workflow (Jimmy plan → code → Sherlock verify)
+// Implemented on hostflowai-server: src/routes/dual-brain.routes.ts
+// ────────────────────────────────────────────────────────────────────
+
+export type DualBrainStage =
+  | "queued"
+  | "jimmy_planning"
+  | "jimmy_coding"
+  | "sherlock_reviewing"
+  | "awaiting_approval"
+  | "approved"
+  | "rejected"
+  | "applied"
+  | "failed";
+
+export type DualBrainVerdict = "approve" | "reject" | "needs_changes";
+
+export interface DualBrainStep {
+  id: string;
+  run_id: string;
+  actor: "jimmy" | "sherlock";
+  phase: "plan" | "code" | "review" | "verdict" | "fix" | "apply";
+  title: string;
+  body: string;
+  model: string | null;
+  tokens_in: number;
+  tokens_out: number;
+  duration_ms: number | null;
+  created_at: string;
+}
+
+export interface DualBrainRun {
+  id: string;
+  project_id: ProjectId;
+  prompt: string;
+  stage: DualBrainStage;
+  plan_summary: string | null;
+  code_diff: string | null;
+  sherlock_verdict: DualBrainVerdict | null;
+  sherlock_notes: string | null;
+  iteration: number;
+  max_iterations: number;
+  total_cost_usd: number;
+  started_at: string;
+  finished_at: string | null;
+}
+
+export interface DispatchDualBrainBody {
+  projectId: ProjectId;
+  prompt: string;
+  threadId?: string;
+  maxIterations?: number;
+}
+
+export function dispatchDualBrain(body: DispatchDualBrainBody) {
+  return callHostFlowServer<{ runId: string; status: "queued" }>("/api/dual-brain/dispatch", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function getDualBrainRun(runId: string) {
+  return callHostFlowServer<{ run: DualBrainRun; steps: DualBrainStep[] }>(
+    `/api/dual-brain/runs/${runId}`,
+  );
+}
+
+export function listDualBrainRuns(params: { projectId?: ProjectId; limit?: number } = {}) {
+  const q = new URLSearchParams();
+  if (params.projectId) q.set("projectId", params.projectId);
+  if (params.limit) q.set("limit", String(params.limit));
+  const qs = q.toString();
+  return callHostFlowServer<DualBrainRun[]>(`/api/dual-brain/runs${qs ? `?${qs}` : ""}`);
+}
+
+export function decideDualBrainRun(runId: string, decision: "approve" | "reject", note?: string) {
+  return callHostFlowServer<{ runId: string; stage: DualBrainStage }>(
+    `/api/dual-brain/runs/${runId}/${decision}`,
+    { method: "POST", body: JSON.stringify({ note }) },
+  );
+}
+
+/** Subscribe to a dual-brain run via SSE. Returns close function. */
+export function subscribeDualBrainRun(
+  runId: string,
+  onEvent: (evt: { type: "step" | "stage" | "done"; step?: DualBrainStep; run?: DualBrainRun }) => void,
+  onError?: (e: Event) => void,
+): () => void {
+  if (!HOSTFLOW_API_BASE) {
+    console.warn("[hostflow-api] dual-brain SSE skipped — VITE_HOSTFLOW_SERVER_URL missing");
+    return () => {};
+  }
+  const url = `${HOSTFLOW_API_BASE.replace(/\/$/, "")}/api/dual-brain/runs/${runId}/stream`;
+  const es = new EventSource(url, { withCredentials: true });
+  es.onmessage = (ev) => {
+    try { onEvent(JSON.parse(ev.data)); } catch { /* ignore */ }
+  };
+  if (onError) es.onerror = onError;
+  return () => es.close();
+}
+
+// ────────────────────────────────────────────────────────────────────
 // Rapid Pay — Supabase 2 future endpoints (frontend contract only)
 // ────────────────────────────────────────────────────────────────────
 
