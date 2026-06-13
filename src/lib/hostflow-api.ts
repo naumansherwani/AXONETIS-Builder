@@ -48,6 +48,20 @@ export type AgentSlug =
   | "aria" | "orion" | "rex" | "lyra" | "sage" | "atlas" | "vega" | "kai"
   | "router";
 
+export type RapidPayAgentSlug =
+  | "jimmy" | "sherlock"
+  | "ledger-fox" | "recovery-phantom" | "treasury-sentinel" | "corridor-brain"
+  | "treasury-navigator" | "runtime-echo" | "replay-keeper" | "settlement-hawk" | "fraud-radar"
+  | "treasury-stress-intelligence" | "revenue-brain" | "explainability-civilization"
+  | "founder-sandbox-civilization" | "global-router";
+
+export interface AgentRoutingConfig {
+  primary: { provider: "openrouter"; models: string[] };
+  secondary?: { provider: "groq"; mode: "speed_acceleration"; models?: string[] };
+  last_resort?: { provider: "ollama"; models: string[] };
+  memory_target_messages?: number;
+}
+
 export interface AgentInfo {
   slug: AgentSlug;
   name: string;
@@ -55,6 +69,17 @@ export interface AgentInfo {
   kind: "supreme" | "advisor" | "rapidpay" | "router";
   model_primary: string;
   model_fallback: string[];
+  routing_config?: AgentRoutingConfig;
+  status: "online" | "thinking" | "idle" | "offline" | "error";
+}
+
+export interface RapidPayAgentInfo {
+  slug: RapidPayAgentSlug;
+  name: string;
+  role: string;
+  layer: "supreme" | "treasury" | "intelligence" | "router" | "security";
+  routing_config: AgentRoutingConfig;
+  security_guardian?: boolean;
   status: "online" | "thinking" | "idle" | "offline" | "error";
 }
 
@@ -204,4 +229,94 @@ export function routeTask(body: { projectId: ProjectId; task: string; context?: 
     "/api/agents/router/route",
     { method: "POST", body: JSON.stringify(body) },
   );
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Rapid Pay — Supabase 2 future endpoints (frontend contract only)
+// ────────────────────────────────────────────────────────────────────
+
+export const listRapidPayAgents = () => callHostFlowServer<RapidPayAgentInfo[]>("/api/rapidpay/agents");
+
+export function chatWithRapidPayAgent(slug: RapidPayAgentSlug, body: AgentChatRequest) {
+  return callHostFlowServer<AgentChatResponse>(`/api/rapidpay/agents/${slug}/chat`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function runRapidPayFraudScan(projectId: ProjectId, target?: string) {
+  return callHostFlowServer<{ scanId: string; status: string }>("/api/rapidpay/agents/fraud-radar/scan", {
+    method: "POST",
+    body: JSON.stringify({ projectId, target }),
+  });
+}
+
+export function runRapidPayTreasurySentinelScan(projectId: ProjectId, target?: string) {
+  return callHostFlowServer<{ scanId: string; status: string }>("/api/rapidpay/agents/treasury-sentinel/scan", {
+    method: "POST",
+    body: JSON.stringify({ projectId, target }),
+  });
+}
+
+export function runRapidPaySherlockSecurityScan(projectId: ProjectId, target?: string) {
+  return callHostFlowServer<{ scanId: string; status: string }>("/api/rapidpay/security/sherlock/scan", {
+    method: "POST",
+    body: JSON.stringify({ projectId, target }),
+  });
+}
+
+export function listRapidPayThreads(params: { projectId?: ProjectId; agentSlug?: RapidPayAgentSlug } = {}) {
+  const q = new URLSearchParams();
+  if (params.projectId) q.set("projectId", params.projectId);
+  if (params.agentSlug) q.set("agentSlug", params.agentSlug);
+  const qs = q.toString();
+  return callHostFlowServer<AgentThread[]>(`/api/rapidpay/agents/threads${qs ? `?${qs}` : ""}`);
+}
+
+export function getRapidPayThreadMessages(threadId: string) {
+  return callHostFlowServer<AgentMessage[]>(`/api/rapidpay/agents/threads/${threadId}/messages`);
+}
+
+export function getRapidPayAgentMemory(slug: RapidPayAgentSlug, params: { scope?: string; limit?: number } = {}) {
+  const q = new URLSearchParams();
+  if (params.scope) q.set("scope", params.scope);
+  if (params.limit) q.set("limit", String(params.limit));
+  const qs = q.toString();
+  return callHostFlowServer<AgentMemoryRow[]>(`/api/rapidpay/agents/${slug}/memory${qs ? `?${qs}` : ""}`);
+}
+
+export function writeRapidPayAgentMemory(slug: RapidPayAgentSlug, body: {
+  scope: "episodic" | "semantic" | "procedural" | "fact";
+  content: string;
+  key?: string;
+  importance?: number;
+  projectId?: ProjectId;
+}) {
+  return callHostFlowServer<{ id: string }>(`/api/rapidpay/agents/${slug}/memory`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function listRapidPayActivity(params: { projectId?: ProjectId; agentSlug?: RapidPayAgentSlug; limit?: number } = {}) {
+  const q = new URLSearchParams();
+  if (params.projectId) q.set("projectId", params.projectId);
+  if (params.agentSlug) q.set("agentSlug", params.agentSlug);
+  if (params.limit) q.set("limit", String(params.limit));
+  const qs = q.toString();
+  return callHostFlowServer<AgentActivity[]>(`/api/rapidpay/agents/activity${qs ? `?${qs}` : ""}`);
+}
+
+export function routeRapidPayTask(body: { projectId: ProjectId; task: string; context?: Record<string, unknown> }) {
+  return callHostFlowServer<{ agent: RapidPayAgentSlug; reason: string; estimatedCost: number }>(
+    "/api/rapidpay/agents/router/route",
+    { method: "POST", body: JSON.stringify(body) },
+  );
+}
+
+export function dispatchRapidPaySwarm(body: { projectId: ProjectId; task: string; agents?: RapidPayAgentSlug[]; context?: Record<string, unknown> }) {
+  return callHostFlowServer<{ runId: string; status: string }>("/api/rapidpay/swarm/dispatch", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
