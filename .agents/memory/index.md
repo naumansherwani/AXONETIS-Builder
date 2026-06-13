@@ -14,6 +14,7 @@ MODEL ASSIGNMENT FOUNDER LOCK: Source of truth at mem://features/model-assignmen
 
 ## Memories
 - [Model Assignment Source of Truth LOCKED](mem://features/model-assignment-source-of-truth-LOCKED) — Founder Lock: exact OpenRouter/Groq/Ollama model map for Jimmy, Sherlock, 8 Advisors, Router + memory caps. DO NOT invent.
+- [Rapid Pay AI Civilization Model Lock LOCKED](mem://features/rapidpay-ai-civilization-model-lock-LOCKED) — Founder Lock: Rapid Pay 22-agent map (Supreme/Treasury 9/Intelligence 4/Router/3 security guardians + 6 reserved). routing_config in Supabase 2 = source of truth, NO hardcoded TS routing. Rapid Pay endpoint namespace reserved (/api/rapidpay/*) for future.
 - [Founder OS Visual Grade LOCKED](mem://features/founder-os-visual-grade-LOCKED) — Mandatory cinematic Founder-OS UI baseline. Visual refinement only, never architecture.
 - [Phase 3 Final Layout + Frontend Bridge LOCKED](mem://features/phase3-final-layout-and-frontend-bridge-LOCKED) — Final Lovable-style split layout + iframe domain switcher + postMessage bridge UI; frontend-only HostFlow API calls; no duplicate backend/bridge/Jimmy logic.
 - [Phase 3.9 Real Builder Parity LOCKED](mem://features/phase3.9-real-builder-parity-LOCKED) — Full Lovable-parity blueprint: real composer (Send/Stop/Mic/Attach), Publish modal, Domains, Cloud panel, Versions, Monaco+Visual Edit, postMessage contract, 9 new tables, full Hetzner endpoint map, 9 sub-phases 3.9.1→3.9.9. ZERO dummy.
