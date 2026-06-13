@@ -179,3 +179,24 @@ function AgentRow({ agent, large }: { agent: Agent; large?: boolean }) {
     </div>
   );
 }
+
+function RapidPayRow({ agent }: { agent: RapidPayAgent }) {
+  const tone =
+    agent.securityGuardian ? "red" :
+    agent.layer === "supreme" ? "amber" :
+    agent.layer === "intelligence" ? "violet" :
+    agent.layer === "router" ? "sky" : "emerald";
+  return (
+    <div className="rounded-md px-2 py-1.5 transition-colors hover:bg-white/[0.03]">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <Dot tone={tone as "red" | "amber" | "emerald" | "violet" | "sky"} />
+          <span className="truncate text-[11px] font-semibold text-foreground/90">{agent.name}</span>
+        </div>
+        <span className="shrink-0 text-[9px] uppercase tracking-wider text-muted-foreground/60">{agent.layer}</span>
+      </div>
+      <div className="mt-0.5 truncate pl-3.5 text-[10px] text-muted-foreground/75">{agent.role}</div>
+      <div className="mt-0.5 truncate pl-3.5 font-mono text-[9px] text-muted-foreground/60">{agent.model}</div>
+    </div>
+  );
+}
