@@ -30,7 +30,8 @@ export type BottomTabId =
   | "memory"
   | "blueprints"
   | "knowledge"
-  | "projects";
+  | "projects"
+  | "dualbrain";
 
 export type PreviewMode = "single" | "triptych";
 

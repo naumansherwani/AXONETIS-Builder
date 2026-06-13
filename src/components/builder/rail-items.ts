@@ -5,7 +5,7 @@
 import {
   Activity, BookOpen, Boxes, Brain, Code2, Database, FileCode2, FileText, Files,
   Folder, GitBranch, Github, History, Layers, LineChart, Rocket, ScrollText,
-  Terminal, Users,
+  ShieldCheck, Terminal, Users,
 } from "lucide-react";
 import type { BottomTabId } from "@/lib/builder-state";
 import type { RailItem } from "./SideRail";
@@ -31,6 +31,7 @@ export const RIGHT_RAIL_ITEMS: RailItem[] = [
   { id: "files",      label: "Files",      icon: Files,      hint: "Project file tree." },
   { id: "database",   label: "Database",   icon: Database,   hint: "Tables, RLS, live query runner." },
   { id: "agents",     label: "Agents",     icon: Users,      hint: "Jimmy, Sherlock, 8 advisors — live status." },
+  { id: "dualbrain",  label: "Dual-Brain", icon: ShieldCheck,hint: "Jimmy plan → code → Sherlock verify → founder approve." },
   { id: "activity",   label: "Activity",   icon: Activity,   hint: "Live agent activity feed (SSE)." },
   { id: "logs",       label: "Logs",       icon: ScrollText, hint: "Streaming build + runtime logs." },
   { id: "deploy",     label: "Deploy",     icon: Rocket,     hint: "Sandbox → Staging → Production pipeline." },
