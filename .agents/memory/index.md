@@ -3,6 +3,7 @@
 ## Core
 Project: Self-hosted AI agent builder — **AXONETIS AI Builder™** (formerly AXONET; renamed Jun 2026 because Axonet/Axxonet/Axionet/Axonis all taken). Coined name, 8 letters, acronym: Autonomous · Xclusive · Orchestration · Network · Enterprise · Technology · Intelligent · Sovereign. Hosted at axonetis.hostflowai.net — hidden/founder-only. Edits founder's existing sites (HostFlow AI, Rapid Pay). Backend: self-hosted Supabase on Hetzner. Never mention Supabase — founder uses own instance. APIs via OpenRouter + Groq.
 Founder: Muhammad Nauman Sherwani. Roman Urdu/Hindi — reply same style, keep short.
+Backend endpoint workflow LOCKED: for hostflowai-server, write exact copy-paste TypeScript endpoint code for founder to run manually. No vague contracts only.
 NO Docker / NO containers. Architecture: iframe + postMessage bridge + Supabase project_files (truth) + Realtime HMR reload. Same trick as Lovable.
 3 products: HostFlow AI™, Rapid Pay™, AXONETIS AI Builder™. 3 separate Supabase instances.
 Repos LOCKED: founder-ai-builder (Lovable, frontend only) + hostflowai-server (founder manual, Hetzner). Workflow: Lovable builds ONE phase → founder says ruko → git pull → review → "agla phase" → next. NEVER touch hostflowai-server repo. NEVER run SQL until founder confirms server ready.
@@ -13,6 +14,7 @@ PHASE 3 FINAL LOCK: Lovable-style split Builder — left chat ~40%, right iframe
 MODEL ASSIGNMENT FOUNDER LOCK: Source of truth at mem://features/model-assignment-source-of-truth-LOCKED. DO NOT invent mappings. Jimmy=Hermes405B+Qwen3Coder480B+Qwen3Next80B (OR)→Groq→Ollama qwen3:8b. Sherlock=DeepSeekR1+Hermes405B+GPT-OSS120B→Groq→Ollama qwen3:8b. 8 Advisors=GPT-OSS120B+Llama3.3-70B→Groq→Ollama qwen3:4b. Router=Llama3.3-70B (OR). Memory: Jimmy 3M, Sherlock 1M, each Advisor 100k. Rapid Pay civilization NOT in Supabase 3 — later in Supabase 2.
 
 ## Memories
+- [Server Endpoint Copy-Paste Workflow LOCKED](mem://features/server-endpoint-copy-paste-workflow-LOCKED) — For backend endpoint wiring, give exact TypeScript route code + request/response contract for founder to copy into hostflowai-server manually.
 - [Model Assignment Source of Truth LOCKED](mem://features/model-assignment-source-of-truth-LOCKED) — Founder Lock: exact OpenRouter/Groq/Ollama model map for Jimmy, Sherlock, 8 Advisors, Router + memory caps. DO NOT invent.
 - [Rapid Pay AI Civilization Model Lock LOCKED](mem://features/rapidpay-ai-civilization-model-lock-LOCKED) — Founder Lock v3: Rapid Pay 19 workloads = 16 core + 3 Supabase-2 security guardians (NOT reserved). routing_config in Supabase 2 = source of truth, NO hardcoded TS routing. Rapid Pay endpoint namespace reserved (/api/rapidpay/*) for future.
 - [Founder OS Visual Grade LOCKED](mem://features/founder-os-visual-grade-LOCKED) — Mandatory cinematic Founder-OS UI baseline. Visual refinement only, never architecture.
