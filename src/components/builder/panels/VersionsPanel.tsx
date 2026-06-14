@@ -1,40 +1,159 @@
 /**
- * Versions panel — time-travel: snapshots, diff history, rollback (Phase 6 wires real data).
+ * Versions panel — Phase 6 wired.
+ * Sources: snapshots (file_versions) + deployments + rollback_history.
+ * Falls back to seed data when bridge / supabase3 not configured.
  */
+import { useEffect, useState } from "react";
 import { PanelSection, Row } from "./PanelChrome";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Rocket } from "lucide-react";
+import { useBuilder } from "@/lib/builder-state";
+import {
+  fetchDeployments, fetchRollbackHistory, fetchSnapshots, rollback,
+  type Deployment, type RollbackEntry, type Snapshot,
+} from "@/lib/versions-api";
 
-const SNAPSHOTS = [
-  { id: "v17", label: "phase 1 sql verified", t: "2h ago", current: true },
-  { id: "v16", label: "founder lock gate + glow", t: "9h ago" },
-  { id: "v15", label: "topbar cinematic redesign", t: "11h ago" },
-  { id: "v14", label: "axonetis rename", t: "1d ago" },
-  { id: "v13", label: "initial shell scaffold", t: "1d ago" },
+const SEED_SNAP: Snapshot[] = [
+  { id: "v17", path: "db/migrations/2026_06_14_phase6_versions.sql", change: "create", author: "jimmy",    message: "phase 6 sql",        created_at: new Date(Date.now() - 2 * 3600_000).toISOString(),  env: "sandbox", branch: "main" },
+  { id: "v16", path: "src/components/builder/UnifiedChat.tsx",       change: "update", author: "jimmy",    message: "virtual scroll",     created_at: new Date(Date.now() - 9 * 3600_000).toISOString(),  env: "sandbox", branch: "main" },
+  { id: "v15", path: "src/components/builder/TopBar.tsx",            change: "update", author: "sherlock", message: "cinematic redesign", created_at: new Date(Date.now() - 11 * 3600_000).toISOString(), env: "sandbox", branch: "main" },
 ];
 
+const SEED_DEPS: Deployment[] = [
+  { id: "d3", project_id: "founderbuilder", label: "phase 6 lock",       summary: "+3 files",  status: "live",        files_changed: 3, started_at: new Date(Date.now() - 1800_000).toISOString(),    finished_at: new Date().toISOString(),                     current: true,  target_env: "production" },
+  { id: "d2", project_id: "founderbuilder", label: "phase 5 preview",    summary: "+12 files", status: "rolled_back", files_changed: 12, started_at: new Date(Date.now() - 86400_000).toISOString(),  finished_at: new Date(Date.now() - 86000_000).toISOString(), current: false, target_env: "production" },
+  { id: "d1", project_id: "founderbuilder", label: "phase 4 dual-brain", summary: "+8 files",  status: "live",        files_changed: 8, started_at: new Date(Date.now() - 2 * 86400_000).toISOString(), finished_at: new Date(Date.now() - 2 * 86000_000).toISOString(), current: false, target_env: "production" },
+];
+
+const rel = (iso: string) => {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60_000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+};
+
 export default function VersionsPanel() {
+  const { project } = useBuilder();
+  const [snaps, setSnaps] = useState<Snapshot[]>(SEED_SNAP);
+  const [deps, setDeps] = useState<Deployment[]>(SEED_DEPS);
+  const [history, setHistory] = useState<RollbackEntry[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const refresh = async () => {
+    const [s, d, h] = await Promise.all([
+      fetchSnapshots(project, 50),
+      fetchDeployments(project),
+      fetchRollbackHistory(project),
+    ]);
+    if (s.length) setSnaps(s);
+    if (d.length) setDeps(d);
+    if (h.length) setHistory(h);
+  };
+
+  useEffect(() => { void refresh(); }, [project]);
+
+  const onRollback = async (scope: "file" | "deployment", id: string) => {
+    setBusy(id);
+    await rollback({ projectId: project, scope, targetId: id, triggeredBy: "founder" });
+    await refresh();
+    setBusy(null);
+  };
+
   return (
-    <PanelSection title="Time Travel">
-      <div className="flex flex-col gap-1">
-        {SNAPSHOTS.map((s) => (
-          <Row
-            key={s.id}
-            active={s.current}
-            left={
-              <>
-                <span className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[10px]">{s.id}</span>
-                <span className="truncate">{s.label}</span>
-              </>
-            }
-            right={
-              <span className="flex items-center gap-2">
-                <span className="text-[10px] text-muted-foreground/70">{s.t}</span>
-                {!s.current && <RotateCcw className="h-3 w-3 text-muted-foreground hover:text-[#ff7480]" />}
-              </span>
-            }
-          />
-        ))}
-      </div>
-    </PanelSection>
+    <>
+      <PanelSection title="Deployments">
+        <div className="flex flex-col gap-1">
+          {deps.map((d) => (
+            <Row
+              key={d.id}
+              active={d.current}
+              left={
+                <>
+                  <Rocket className={`h-3 w-3 ${d.current ? "text-emerald-400" : "text-muted-foreground/60"}`} />
+                  <span className="truncate">{d.label ?? d.id.slice(0, 8)}</span>
+                  <span className="rounded bg-white/[0.04] px-1 py-px text-[9px] uppercase tracking-wider text-muted-foreground/70">
+                    {d.status}
+                  </span>
+                </>
+              }
+              right={
+                <span className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground/70">{rel(d.started_at)}</span>
+                  {!d.current && (
+                    <button
+                      onClick={() => onRollback("deployment", d.id)}
+                      disabled={busy === d.id}
+                      title="Restore this deployment"
+                      className="grid h-5 w-5 place-items-center rounded hover:bg-white/[0.06] disabled:opacity-40"
+                    >
+                      <RotateCcw className="h-3 w-3 text-muted-foreground hover:text-[#ff7480]" />
+                    </button>
+                  )}
+                </span>
+              }
+            />
+          ))}
+        </div>
+      </PanelSection>
+
+      <PanelSection title="Snapshots — time travel">
+        <div className="flex flex-col gap-1">
+          {snaps.map((s, i) => (
+            <Row
+              key={s.id}
+              active={i === 0}
+              left={
+                <>
+                  <span className={`rounded px-1.5 py-0.5 font-mono text-[10px] ${
+                    s.change === "create" ? "bg-emerald-500/15 text-emerald-300"
+                      : s.change === "delete" ? "bg-red-500/15 text-red-300"
+                      : "bg-white/[0.06] text-foreground/80"
+                  }`}>{s.change[0].toUpperCase()}</span>
+                  <span className="truncate">{s.path}</span>
+                </>
+              }
+              right={
+                <span className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground/70">{rel(s.created_at)}</span>
+                  {i !== 0 && (
+                    <button
+                      onClick={() => onRollback("file", s.id)}
+                      disabled={busy === s.id}
+                      title="Restore this file"
+                      className="grid h-5 w-5 place-items-center rounded hover:bg-white/[0.06] disabled:opacity-40"
+                    >
+                      <RotateCcw className="h-3 w-3 text-muted-foreground hover:text-[#ff7480]" />
+                    </button>
+                  )}
+                </span>
+              }
+            />
+          ))}
+        </div>
+      </PanelSection>
+
+      {history.length > 0 && (
+        <PanelSection title="Rollback audit">
+          <div className="flex flex-col gap-1">
+            {history.slice(0, 10).map((h) => (
+              <Row
+                key={h.id}
+                left={
+                  <>
+                    <span className={`h-1.5 w-1.5 rounded-full ${h.succeeded ? "bg-emerald-400" : "bg-red-400"}`} />
+                    <span className="truncate text-muted-foreground">
+                      {h.scope} · {h.triggered_by ?? "system"} {h.reason ? `· ${h.reason}` : ""}
+                    </span>
+                  </>
+                }
+                right={<span className="text-[10px] text-muted-foreground/70">{rel(h.created_at)}</span>}
+              />
+            ))}
+          </div>
+        </PanelSection>
+      )}
+    </>
   );
 }
