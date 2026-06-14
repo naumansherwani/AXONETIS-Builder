@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, Command, LogOut, Rocket, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "@tanstack/react-router";
@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase3, SUPABASE3_READY } from "@/integrations/supabase3/client";
 import AxenMark from "./logo-lab/AxonMark";
+import PublishModal from "./PublishModal";
+import { supabaseLabelFor } from "@/lib/project-workspace";
 
 /**
  * FOUNDER OS TOP BAR — cinematic command bar.
@@ -18,6 +20,7 @@ import AxenMark from "./logo-lab/AxonMark";
 export default function TopBar() {
   const navigate = useNavigate();
   const { project, branch, environment, agentState, setProject, setBranch, setEnvironment, setPaletteOpen, setAgentState } = useBuilder();
+  const [publishOpen, setPublishOpen] = useState(false);
   const active = PROJECTS.find((p) => p.id === project)!;
 
   useEffect(() => {
@@ -101,7 +104,10 @@ export default function TopBar() {
           {PROJECTS.map((p) => (
             <DropdownMenuItem key={p.id} onClick={() => setProject(p.id as ProjectId)} className="gap-2">
               <span className="inline-block h-2 w-2 rounded-full" style={{ background: p.accent }} />
-              {p.name}
+              <span className="flex-1">{p.name}</span>
+              <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground/70">
+                {supabaseLabelFor(p.id as ProjectId)}
+              </span>
             </DropdownMenuItem>
           ))}
         </Selector>
@@ -137,6 +143,7 @@ export default function TopBar() {
 
         <Button
           size="sm"
+          onClick={() => setPublishOpen(true)}
           className="fb-pulse h-10 gap-2 rounded-lg bg-gradient-to-r from-[#E50914] via-[#cc0812] to-[#7c0610] px-5 text-[13px] font-semibold uppercase tracking-wider text-white shadow-[0_8px_30px_-8px_rgba(229,9,20,0.55)] hover:from-[#ff1521] hover:to-[#E50914]"
         >
           <Rocket className="h-3.5 w-3.5" />
@@ -156,6 +163,7 @@ export default function TopBar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      <PublishModal open={publishOpen} onClose={() => setPublishOpen(false)} />
     </motion.header>
   );
 }

@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
-import { Check, Octagon, Radio, Rocket, Send, X } from "lucide-react";
+import { Check, Octagon, Radio, Rocket, Send, X, ShieldCheck } from "lucide-react";
 import { useBuilder } from "@/lib/builder-state";
 import { sendBuilderCommand } from "@/lib/hostflow-api";
+import { PROJECTS } from "@/lib/projects";
+import { loadWorkspace, patchWorkspace, supabaseLabelFor, type ChatMsg } from "@/lib/project-workspace";
 
 type Agent = "founder" | "jimmy" | "sherlock";
-interface Msg { id: string; agent: Agent; text: string; thinking?: boolean }
+type Msg = ChatMsg;
 
 // Phase 6 LOCKED limits
 const MAX_CHARS = 5_000_000; // 5M chars per message
@@ -26,9 +28,26 @@ const AGENT_META: Record<Agent, { name: string; subtitle: string; rail: string; 
 
 export default function UnifiedChat() {
   const { project, branch, environment, bridgeStatus, lastBridgeEvent } = useBuilder();
-  const [messages, setMessages] = useState<Msg[]>(SEED);
+  const activeProject = PROJECTS.find((p) => p.id === project)!;
+
+  // Phase 7 — per-project independent chat history.
+  const [messages, setMessages] = useState<Msg[]>(() => {
+    const ws = loadWorkspace(project, SEED);
+    return ws.messages.length ? ws.messages : SEED;
+  });
+  const [fixIteration, setFixIteration] = useState<number>(() => loadWorkspace(project, SEED).fixLoopIteration);
   const [draft, setDraft] = useState("");
   const virtuosoRef = useRef<VirtuosoHandle>(null);
+
+  // Re-hydrate when project switches.
+  useEffect(() => {
+    const ws = loadWorkspace(project, SEED);
+    setMessages(ws.messages.length ? ws.messages : SEED);
+    setFixIteration(ws.fixLoopIteration);
+  }, [project]);
+
+  // Persist messages + fix-loop state per project.
+  useEffect(() => { patchWorkspace(project, { messages, fixLoopIteration: fixIteration }); }, [project, messages, fixIteration]);
 
   // Always-snap-to-bottom on new message (butter-smooth via virtuoso)
   useEffect(() => {
@@ -62,8 +81,22 @@ export default function UnifiedChat() {
               Unified Build Chat
             </span>
             <span className="ml-1 rounded bg-white/[0.04] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground/70">
-              ∞ history · 5M chars
+              ∞ history · 5M chars · 10k files
             </span>
+            {/* Phase 7 — active project + Supabase isolation chip */}
+            <span
+              className="ml-1 inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider"
+              style={{ borderColor: `${activeProject.accent}66`, background: `${activeProject.accent}1a`, color: "#fff" }}
+              title="Phase 7 — independent workspace, history & preview per project"
+            >
+              <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: activeProject.accent, boxShadow: `0 0 8px ${activeProject.accent}` }} />
+              {activeProject.shortName} · {supabaseLabelFor(project)}
+            </span>
+            {fixIteration > 0 && (
+              <span className="ml-1 inline-flex items-center gap-1 rounded-full border border-[#7c3aed]/40 bg-[#7c3aed]/15 px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-[#c4a8ff]">
+                <ShieldCheck className="h-2.5 w-2.5" /> Sherlock fix {fixIteration}/3
+              </span>
+            )}
           </div>
           <div className="hidden items-center gap-3 md:flex">
             {(["founder", "jimmy", "sherlock"] as Agent[]).map((a) => (
@@ -128,7 +161,7 @@ export default function UnifiedChat() {
         </form>
         <div className="mt-2 flex items-center justify-between px-1 text-[10px] uppercase tracking-widest text-muted-foreground/60">
           <span>
-            Phase 6 · bridge {bridgeStatus}
+            Phase 7 · {activeProject.shortName} · bridge {bridgeStatus}
             {lastBridgeEvent ? ` · ${lastBridgeEvent.summary}` : ""}
           </span>
           <span className="flex items-center gap-3">
