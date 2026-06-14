@@ -161,7 +161,7 @@ export default function UnifiedChat() {
         </form>
         <div className="mt-2 flex items-center justify-between px-1 text-[10px] uppercase tracking-widest text-muted-foreground/60">
           <span>
-            Phase 6 · bridge {bridgeStatus}
+            Phase 7 · {activeProject.shortName} · bridge {bridgeStatus}
             {lastBridgeEvent ? ` · ${lastBridgeEvent.summary}` : ""}
           </span>
           <span className="flex items-center gap-3">
