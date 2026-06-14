@@ -106,7 +106,7 @@ create index if not exists rollback_history_project_idx
 -- 4) Auto-snapshot trigger on project_files (only if table exists)
 --    Uses dynamic column lookup so it works even if project_files lacks env/branch/updated_by.
 -- ─────────────────────────────────────────────
-do $$
+do $phase6_snapshot$
 declare
   has_env boolean;
   has_branch boolean;
@@ -134,31 +134,30 @@ begin
       else change_kind := 'update';
       end if;
 
+      if (tg_op = 'DELETE') then
+        insert into public.file_versions (project_id, env, branch, path, content, checksum, change, author)
+        values (old.project_id, %s, %s, old.path, null, null, change_kind, null);
+        return old;
+      end if;
+
       insert into public.file_versions (project_id, env, branch, path, content, checksum, change, author)
-      values (
-        coalesce(new.project_id, old.project_id),
-        %s,
-        %s,
-        coalesce(new.path, old.path),
-        case when tg_op = 'DELETE' then null else new.content end,
-        %s,
-        change_kind,
-        %s
-      );
-      return coalesce(new, old);
+      values (new.project_id, %s, %s, new.path, new.content, %s, change_kind, %s);
+      return new;
     end $body$;
   $f$,
-    case when has_env        then $$coalesce(new.env, old.env)$$ else $$'sandbox'::public.preview_env$$ end,
-    case when has_branch     then $$coalesce(new.branch, old.branch)$$ else $$'main'$$ end,
-    case when has_checksum   then $$case when tg_op = 'DELETE' then null else new.checksum end$$ else $$null$$ end,
-    case when has_updated_by then $$case when tg_op = 'DELETE' then null else new.updated_by end$$ else $$null$$ end
+    case when has_env        then 'old.env' else '''sandbox''::public.preview_env' end,
+    case when has_branch     then 'old.branch' else '''main''' end,
+    case when has_env        then 'new.env' else '''sandbox''::public.preview_env' end,
+    case when has_branch     then 'new.branch' else '''main''' end,
+    case when has_checksum   then 'new.checksum' else 'null' end,
+    case when has_updated_by then 'new.updated_by' else 'null' end
   );
 
   drop trigger if exists project_files_snapshot on public.project_files;
   create trigger project_files_snapshot
     after insert or update or delete on public.project_files
     for each row execute function public.snapshot_project_file();
-end $$;
+end $phase6_snapshot$;
 
 -- ─────────────────────────────────────────────
 -- 5) Grants (Data API access)
