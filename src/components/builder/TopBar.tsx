@@ -30,9 +30,15 @@ export default function TopBar() {
       if (e.key === "2") setAgentState("jimmy");
       if (e.key === "3") setAgentState("sherlock");
     };
+    const onPublish = () => setPublishOpen(true);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("axonetis:publish", onPublish as EventListener);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("axonetis:publish", onPublish as EventListener);
+    };
   }, [setAgentState]);
+
 
   async function handleSignOut() {
     if (SUPABASE3_READY) await supabase3.auth.signOut();

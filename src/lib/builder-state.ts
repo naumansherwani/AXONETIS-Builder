@@ -13,6 +13,7 @@ export type AgentState = "standby" | "jimmy" | "sherlock";
 
 
 export type BottomTabId =
+  | "command"
   | "files"
   | "code"
   | "database"

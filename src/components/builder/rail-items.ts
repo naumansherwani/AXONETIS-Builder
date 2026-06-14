@@ -3,10 +3,11 @@
  * LEFT rail = project navigation. RIGHT rail = workspace (Files · DB · Agents · Logs · Deploy).
  */
 import {
-  Activity, BookOpen, Boxes, Brain, Code2, Database, FileCode2, FileText, Files,
+  Activity, BookOpen, Boxes, Brain, Code2, Compass, Database, FileCode2, FileText, Files,
   Folder, GitBranch, Github, History, Layers, LineChart, Rocket, ScrollText,
   ShieldCheck, Terminal, Users,
 } from "lucide-react";
+
 import type { BottomTabId } from "@/lib/builder-state";
 import type { RailItem } from "./SideRail";
 
@@ -28,7 +29,9 @@ export const LEFT_RAIL_ITEMS: RailItem[] = [
 ];
 
 export const RIGHT_RAIL_ITEMS: RailItem[] = [
+  { id: "command",    label: "Command",    icon: Compass,    hint: "Founder Command Center — all projects, pipeline, agents, cost." },
   { id: "files",      label: "Files",      icon: Files,      hint: "Project file tree." },
+
   { id: "database",   label: "Database",   icon: Database,   hint: "Tables, RLS, live query runner." },
   { id: "agents",     label: "Agents",     icon: Users,      hint: "Jimmy, Sherlock, 8 advisors — live status." },
   { id: "dualbrain",  label: "Dual-Brain", icon: ShieldCheck,hint: "Jimmy plan → code → Sherlock verify → founder approve." },
