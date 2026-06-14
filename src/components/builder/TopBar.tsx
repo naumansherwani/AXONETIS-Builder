@@ -20,6 +20,7 @@ import { supabaseLabelFor } from "@/lib/project-workspace";
 export default function TopBar() {
   const navigate = useNavigate();
   const { project, branch, environment, agentState, setProject, setBranch, setEnvironment, setPaletteOpen, setAgentState } = useBuilder();
+  const [publishOpen, setPublishOpen] = useState(false);
   const active = PROJECTS.find((p) => p.id === project)!;
 
   useEffect(() => {
