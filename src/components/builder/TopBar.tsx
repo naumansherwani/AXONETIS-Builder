@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, Command, LogOut, Rocket, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "@tanstack/react-router";
@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase3, SUPABASE3_READY } from "@/integrations/supabase3/client";
 import AxenMark from "./logo-lab/AxonMark";
+import PublishModal from "./PublishModal";
+import { supabaseLabelFor } from "@/lib/project-workspace";
 
 /**
  * FOUNDER OS TOP BAR — cinematic command bar.
