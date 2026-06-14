@@ -12,26 +12,40 @@ import { LEFT_RAIL_ITEMS, RIGHT_RAIL_ITEMS } from "./rail-items";
 import HorizontalSplit from "./HorizontalSplit";
 import type { BridgeStatus, PreviewBridgeEvent } from "@/lib/preview-bridge";
 import type { PreviewEnv, PreviewFileChange } from "@/lib/preview-engine";
+import { loadWorkspace, patchWorkspace } from "@/lib/project-workspace";
 
-/**
- * FOUNDER OS SHELL
- * ┌──────────────────── TopBar (92px, cinematic) ────────────────────┐
- * │ LeftRail │ [Drawer] │ Unified Chat │ Live Preview│ [Drawer] │Right│
- * │  (64)    │  (340)?  │    ~40%      │    ~60%     │  (340)?  │Rail │
- * └──────────────────── StatusBar (24) ─────────────────────────────┘
- */
+const ACTIVE_PROJECT_KEY = "axonetis.phase7.activeProject.v1";
+
 export default function BuilderShell() {
-  const [project, setProject] = useState<ProjectId>(DEFAULT_PROJECT);
-  const [branch, setBranch] = useState<Branch>("main");
-  const [environment, setEnvironment] = useState<Environment>("Sandbox");
+  const [project, setProject] = useState<ProjectId>(() => {
+    if (typeof window === "undefined") return DEFAULT_PROJECT;
+    return (localStorage.getItem(ACTIVE_PROJECT_KEY) as ProjectId | null) ?? DEFAULT_PROJECT;
+  });
+  const initialWs = useMemo(() => loadWorkspace(project, []), [project]);
+  const [branch, setBranch] = useState<Branch>(initialWs.branch);
+  const [environment, setEnvironment] = useState<Environment>(initialWs.environment);
+  const [previewEnv, setPreviewEnv] = useState<PreviewEnv>(initialWs.previewEnv);
   const [bottomTab, setBottomTab] = useState<BottomTabId | null>(null);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("single");
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [agentState, setAgentState] = useState<AgentState>("standby");
   const [bridgeStatus, setBridgeStatus] = useState<BridgeStatus>("standby");
   const [lastBridgeEvent, setLastBridgeEvent] = useState<PreviewBridgeEvent | null>(null);
-  const [previewEnv, setPreviewEnv] = useState<PreviewEnv>("sandbox");
   const [lastPreviewChange, setLastPreviewChange] = useState<PreviewFileChange | null>(null);
+
+  // Phase 7 — when project switches, hydrate isolated state from its workspace.
+  useEffect(() => {
+    const ws = loadWorkspace(project, []);
+    setBranch(ws.branch);
+    setEnvironment(ws.environment);
+    setPreviewEnv(ws.previewEnv);
+    setLastBridgeEvent(null);
+    setLastPreviewChange(null);
+    try { localStorage.setItem(ACTIVE_PROJECT_KEY, project); } catch { /* noop */ }
+  }, [project]);
+
+  // Persist branch / env / previewEnv changes back into the active project's workspace.
+  useEffect(() => { patchWorkspace(project, { branch, environment, previewEnv }); }, [project, branch, environment, previewEnv]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
