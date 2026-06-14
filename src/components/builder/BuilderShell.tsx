@@ -100,7 +100,10 @@ export default function BuilderShell() {
             <SideRail side="left" items={LEFT_RAIL_ITEMS} label="Navigate" />
             <SidePanelDrawer side="left" />
 
-            <main className="flex min-w-0 flex-1 flex-col">
+            <main className="relative flex min-w-0 flex-1 flex-col">
+              {/* Phase 7 — continuous ribbon that links chat + preview top corners */}
+              <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-20 h-px bg-gradient-to-r from-[#E50914]/0 via-[#E50914]/70 to-[#7c3aed]/0" />
+              <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-20 h-[3px] bg-gradient-to-r from-transparent via-[#E50914]/30 to-transparent blur-sm" />
               <HorizontalSplit
                 left={<UnifiedChat />}
                 right={<LivePreview />}
