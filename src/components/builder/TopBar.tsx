@@ -104,7 +104,10 @@ export default function TopBar() {
           {PROJECTS.map((p) => (
             <DropdownMenuItem key={p.id} onClick={() => setProject(p.id as ProjectId)} className="gap-2">
               <span className="inline-block h-2 w-2 rounded-full" style={{ background: p.accent }} />
-              {p.name}
+              <span className="flex-1">{p.name}</span>
+              <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground/70">
+                {supabaseLabelFor(p.id as ProjectId)}
+              </span>
             </DropdownMenuItem>
           ))}
         </Selector>
