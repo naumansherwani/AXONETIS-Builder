@@ -58,7 +58,7 @@ export default function LivePreview() {
   return (
     <div className="flex h-full flex-col">
       {/* Preview toolbar */}
-      <div className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.06] bg-background/40 px-3 backdrop-blur-xl">
+      <div className="relative flex h-14 shrink-0 items-center justify-between border-b border-white/[0.06] bg-background/40 px-3 backdrop-blur-xl">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#E50914]/40 to-transparent" />
         <div className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-emerald-400 fb-blink" />
