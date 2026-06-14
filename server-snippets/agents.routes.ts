@@ -15,15 +15,8 @@
  */
 
 import { Router, type Request, type Response } from "express";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { supabase3 as supabase } from "../integrations/supabase3/client.js";
 import { randomUUID } from "crypto";
-
-// ── Supabase 3 admin client (service role, server-side only) ──────────
-const supabase: SupabaseClient = createClient(
-  process.env.SUPABASE3_URL!,
-  process.env.SUPABASE3_SERVICE_ROLE_KEY!,
-  { auth: { persistSession: false } },
-);
 
 // ── Types (must mirror frontend src/lib/hostflow-api.ts) ──────────────
 type AgentSlug =
