@@ -192,13 +192,19 @@ create policy rollback_history_read on public.rollback_history
 -- 7) Realtime
 -- ─────────────────────────────────────────────
 do $$ begin
-  alter publication supabase_realtime add table public.file_versions;
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    alter publication supabase_realtime add table public.file_versions;
+  end if;
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  alter publication supabase_realtime add table public.deployments;
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    alter publication supabase_realtime add table public.deployments;
+  end if;
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  alter publication supabase_realtime add table public.rollback_history;
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    alter publication supabase_realtime add table public.rollback_history;
+  end if;
 exception when duplicate_object then null; end $$;
