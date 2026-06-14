@@ -1,29 +1,41 @@
 -- ============================================================
--- ⚠️ YEH SUPABASE 3 SQL HAI (Phase 6 — Version Control & Recovery)
--- Paste in: Supabase 3 SQL editor (founder ke self-hosted instance)
--- Idempotent: safely re-runnable.
+-- ⚠️ SUPABASE 3 SQL — Phase 6 (Version Control & Recovery)
+-- SELF-CONTAINED: creates its own enums if missing.
+-- Idempotent: safe to re-run any number of times.
 --
 -- Tables:
---   file_versions     — every project_files write snapshots here (truth log)
---   deployments       — sandbox→production publish history (with diff summary)
---   rollback_history  — every restore action (audit trail)
+--   file_versions     — append-only snapshot of every project_files write
+--   deployments       — sandbox→production publish history
+--   rollback_history  — audit log of every restore action
 -- ============================================================
 
--- 1) Enum: deployment_status
-do $$
-begin
+-- ─────────────────────────────────────────────
+-- 0) ENUMS (create if missing — no dependency on Phase 5)
+-- ─────────────────────────────────────────────
+
+do $$ begin
+  create type public.preview_env as enum ('sandbox', 'production');
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  create type public.project_file_change as enum ('create', 'update', 'delete');
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
   create type public.deployment_status as enum ('pending', 'building', 'live', 'failed', 'rolled_back');
 exception when duplicate_object then null;
 end $$;
 
--- 2) Enum: rollback_scope
-do $$
-begin
+do $$ begin
   create type public.rollback_scope as enum ('file', 'deployment', 'project');
 exception when duplicate_object then null;
 end $$;
 
--- 3) file_versions — append-only snapshot of every project_files mutation
+-- ─────────────────────────────────────────────
+-- 1) file_versions
+-- ─────────────────────────────────────────────
 create table if not exists public.file_versions (
   id uuid primary key default gen_random_uuid(),
   project_id text not null,
@@ -45,7 +57,9 @@ create index if not exists file_versions_lookup_idx
 create index if not exists file_versions_recent_idx
   on public.file_versions (project_id, created_at desc);
 
--- 4) deployments — every publish (sandbox→production) lands here
+-- ─────────────────────────────────────────────
+-- 2) deployments
+-- ─────────────────────────────────────────────
 create table if not exists public.deployments (
   id uuid primary key default gen_random_uuid(),
   project_id text not null,
@@ -70,12 +84,14 @@ create unique index if not exists deployments_current_unique
   on public.deployments (project_id, target_env)
   where current = true;
 
--- 5) rollback_history — audit every restore
+-- ─────────────────────────────────────────────
+-- 3) rollback_history
+-- ─────────────────────────────────────────────
 create table if not exists public.rollback_history (
   id uuid primary key default gen_random_uuid(),
   project_id text not null,
   scope public.rollback_scope not null,
-  target_id uuid not null,         -- file_versions.id OR deployments.id
+  target_id uuid not null,
   reason text,
   triggered_by text,
   succeeded boolean not null default false,
@@ -86,51 +102,79 @@ create table if not exists public.rollback_history (
 create index if not exists rollback_history_project_idx
   on public.rollback_history (project_id, created_at desc);
 
--- 6) Auto-snapshot trigger on project_files (writes go via service_role)
-create or replace function public.snapshot_project_file()
-returns trigger language plpgsql security definer set search_path = public as $$
+-- ─────────────────────────────────────────────
+-- 4) Auto-snapshot trigger on project_files (only if table exists)
+--    Uses dynamic column lookup so it works even if project_files lacks env/branch/updated_by.
+-- ─────────────────────────────────────────────
+do $$
 declare
-  change_kind public.project_file_change;
+  has_env boolean;
+  has_branch boolean;
+  has_updated_by boolean;
+  has_checksum boolean;
 begin
-  if (tg_op = 'INSERT') then change_kind := 'create';
-  elsif (tg_op = 'DELETE') then change_kind := 'delete';
-  else change_kind := 'update';
+  if not exists (select 1 from pg_class where relname = 'project_files' and relnamespace = 'public'::regnamespace) then
+    raise notice 'project_files table not found — skipping snapshot trigger. Run Phase 5 first, then re-run this migration.';
+    return;
   end if;
 
-  insert into public.file_versions (project_id, env, branch, path, content, checksum, change, author)
-  values (
-    coalesce(new.project_id, old.project_id),
-    coalesce(new.env, old.env),
-    coalesce(new.branch, old.branch),
-    coalesce(new.path, old.path),
-    case when tg_op = 'DELETE' then null else new.content end,
-    case when tg_op = 'DELETE' then null else new.checksum end,
-    change_kind,
-    case when tg_op = 'DELETE' then null else new.updated_by end
+  select exists(select 1 from information_schema.columns where table_schema='public' and table_name='project_files' and column_name='env') into has_env;
+  select exists(select 1 from information_schema.columns where table_schema='public' and table_name='project_files' and column_name='branch') into has_branch;
+  select exists(select 1 from information_schema.columns where table_schema='public' and table_name='project_files' and column_name='updated_by') into has_updated_by;
+  select exists(select 1 from information_schema.columns where table_schema='public' and table_name='project_files' and column_name='checksum') into has_checksum;
+
+  execute format($f$
+    create or replace function public.snapshot_project_file()
+    returns trigger language plpgsql security definer set search_path = public as $body$
+    declare
+      change_kind public.project_file_change;
+    begin
+      if (tg_op = 'INSERT') then change_kind := 'create';
+      elsif (tg_op = 'DELETE') then change_kind := 'delete';
+      else change_kind := 'update';
+      end if;
+
+      insert into public.file_versions (project_id, env, branch, path, content, checksum, change, author)
+      values (
+        coalesce(new.project_id, old.project_id),
+        %s,
+        %s,
+        coalesce(new.path, old.path),
+        case when tg_op = 'DELETE' then null else new.content end,
+        %s,
+        change_kind,
+        %s
+      );
+      return coalesce(new, old);
+    end $body$;
+  $f$,
+    case when has_env        then $$coalesce(new.env, old.env)$$ else $$'sandbox'::public.preview_env$$ end,
+    case when has_branch     then $$coalesce(new.branch, old.branch)$$ else $$'main'$$ end,
+    case when has_checksum   then $$case when tg_op = 'DELETE' then null else new.checksum end$$ else $$null$$ end,
+    case when has_updated_by then $$case when tg_op = 'DELETE' then null else new.updated_by end$$ else $$null$$ end
   );
-  return coalesce(new, old);
+
+  drop trigger if exists project_files_snapshot on public.project_files;
+  create trigger project_files_snapshot
+    after insert or update or delete on public.project_files
+    for each row execute function public.snapshot_project_file();
 end $$;
 
-drop trigger if exists project_files_snapshot on public.project_files;
-create trigger project_files_snapshot
-  after insert or update or delete on public.project_files
-  for each row execute function public.snapshot_project_file();
-
--- 7) updated_at maintenance trigger reuse for deployments
-drop trigger if exists deployments_set_updated_at on public.deployments;
--- (deployments has no updated_at column — finished_at is the lifecycle marker)
-
--- 8) Grants
+-- ─────────────────────────────────────────────
+-- 5) Grants (Data API access)
+-- ─────────────────────────────────────────────
 grant select on public.file_versions to authenticated;
-grant all on public.file_versions to service_role;
-grant select on public.deployments to authenticated;
-grant all on public.deployments to service_role;
+grant all    on public.file_versions to service_role;
+grant select on public.deployments   to authenticated;
+grant all    on public.deployments   to service_role;
 grant select on public.rollback_history to authenticated;
-grant all on public.rollback_history to service_role;
+grant all    on public.rollback_history to service_role;
 
--- 9) RLS — read for authenticated; writes server-side only
-alter table public.file_versions enable row level security;
-alter table public.deployments enable row level security;
+-- ─────────────────────────────────────────────
+-- 6) RLS
+-- ─────────────────────────────────────────────
+alter table public.file_versions    enable row level security;
+alter table public.deployments      enable row level security;
 alter table public.rollback_history enable row level security;
 
 drop policy if exists file_versions_read on public.file_versions;
@@ -145,7 +189,9 @@ drop policy if exists rollback_history_read on public.rollback_history;
 create policy rollback_history_read on public.rollback_history
   for select to authenticated using (true);
 
--- 10) Realtime
+-- ─────────────────────────────────────────────
+-- 7) Realtime
+-- ─────────────────────────────────────────────
 do $$ begin
   alter publication supabase_realtime add table public.file_versions;
 exception when duplicate_object then null; end $$;
