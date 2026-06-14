@@ -25,7 +25,7 @@ export const PROJECTS: ProjectDef[] = [
     id: "rapidpay",
     name: "Rapid Pay™",
     shortName: "Rapid Pay",
-    previewUrl: "https://rapidpay.hostflowai.net",
+    previewUrl: "https://aiarapidpay.hostflowai.net",
     accent: "#7c3aed",
   },
   {
