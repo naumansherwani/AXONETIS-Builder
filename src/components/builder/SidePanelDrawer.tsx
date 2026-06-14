@@ -86,6 +86,7 @@ function renderPanel(
     case "activity":  return <ActivityFeedPanel />;
     case "memory":    return <MemoryPanel />;
     case "dualbrain": return <DualBrainPanel />;
+    case "command":   return <CommandCenterPanel />;
     default:
       return <GenericPanel icon={Icon as never} title={label} hint={hint} />;
   }
