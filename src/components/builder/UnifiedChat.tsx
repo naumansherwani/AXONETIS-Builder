@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
-import { Check, Octagon, Radio, Rocket, Send, X } from "lucide-react";
+import { Check, Octagon, Radio, Rocket, Send, X, ShieldCheck } from "lucide-react";
 import { useBuilder } from "@/lib/builder-state";
 import { sendBuilderCommand } from "@/lib/hostflow-api";
+import { PROJECTS } from "@/lib/projects";
+import { loadWorkspace, patchWorkspace, supabaseLabelFor, type ChatMsg } from "@/lib/project-workspace";
 
 type Agent = "founder" | "jimmy" | "sherlock";
-interface Msg { id: string; agent: Agent; text: string; thinking?: boolean }
+type Msg = ChatMsg;
 
 // Phase 6 LOCKED limits
 const MAX_CHARS = 5_000_000; // 5M chars per message
@@ -26,9 +28,26 @@ const AGENT_META: Record<Agent, { name: string; subtitle: string; rail: string; 
 
 export default function UnifiedChat() {
   const { project, branch, environment, bridgeStatus, lastBridgeEvent } = useBuilder();
-  const [messages, setMessages] = useState<Msg[]>(SEED);
+  const activeProject = PROJECTS.find((p) => p.id === project)!;
+
+  // Phase 7 — per-project independent chat history.
+  const [messages, setMessages] = useState<Msg[]>(() => {
+    const ws = loadWorkspace(project, SEED);
+    return ws.messages.length ? ws.messages : SEED;
+  });
+  const [fixIteration, setFixIteration] = useState<number>(() => loadWorkspace(project, SEED).fixLoopIteration);
   const [draft, setDraft] = useState("");
   const virtuosoRef = useRef<VirtuosoHandle>(null);
+
+  // Re-hydrate when project switches.
+  useEffect(() => {
+    const ws = loadWorkspace(project, SEED);
+    setMessages(ws.messages.length ? ws.messages : SEED);
+    setFixIteration(ws.fixLoopIteration);
+  }, [project]);
+
+  // Persist messages + fix-loop state per project.
+  useEffect(() => { patchWorkspace(project, { messages, fixLoopIteration: fixIteration }); }, [project, messages, fixIteration]);
 
   // Always-snap-to-bottom on new message (butter-smooth via virtuoso)
   useEffect(() => {
