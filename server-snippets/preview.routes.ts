@@ -8,13 +8,7 @@
 //   app.use("/api/preview", previewRouter);
 // ============================================================
 import { Router, type Request, type Response } from "express";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.SUPABASE3_URL!,
-  process.env.SUPABASE3_SERVICE_ROLE_KEY!,
-  { auth: { persistSession: false } },
-);
+import { supabase3 as supabase } from "../integrations/supabase3/client.js";
 
 const PROJECT_PREVIEW_URLS: Record<string, { sandbox: string; production: string }> = {
   hostflowai: {
