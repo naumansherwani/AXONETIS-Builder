@@ -143,6 +143,7 @@ export default function TopBar() {
 
         <Button
           size="sm"
+          onClick={() => setPublishOpen(true)}
           className="fb-pulse h-10 gap-2 rounded-lg bg-gradient-to-r from-[#E50914] via-[#cc0812] to-[#7c0610] px-5 text-[13px] font-semibold uppercase tracking-wider text-white shadow-[0_8px_30px_-8px_rgba(229,9,20,0.55)] hover:from-[#ff1521] hover:to-[#E50914]"
         >
           <Rocket className="h-3.5 w-3.5" />
