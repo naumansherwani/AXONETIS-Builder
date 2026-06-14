@@ -29,7 +29,9 @@ export const LEFT_RAIL_ITEMS: RailItem[] = [
 ];
 
 export const RIGHT_RAIL_ITEMS: RailItem[] = [
+  { id: "command",    label: "Command",    icon: Compass,    hint: "Founder Command Center — all projects, pipeline, agents, cost." },
   { id: "files",      label: "Files",      icon: Files,      hint: "Project file tree." },
+
   { id: "database",   label: "Database",   icon: Database,   hint: "Tables, RLS, live query runner." },
   { id: "agents",     label: "Agents",     icon: Users,      hint: "Jimmy, Sherlock, 8 advisors — live status." },
   { id: "dualbrain",  label: "Dual-Brain", icon: ShieldCheck,hint: "Jimmy plan → code → Sherlock verify → founder approve." },
