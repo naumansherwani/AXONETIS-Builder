@@ -73,7 +73,7 @@ export default function HorizontalSplit({
           document.body.style.cursor = "col-resize";
           document.body.style.userSelect = "none";
         }}
-        className="group relative z-30 w-[10px] shrink-0 cursor-col-resize bg-black/40 hover:bg-[#E50914]/25 transition-colors"
+        className="group relative z-10 w-[10px] shrink-0 cursor-col-resize bg-transparent hover:bg-[#E50914]/15 transition-colors"
       >
         <div className="pointer-events-none absolute inset-y-0 left-0 w-px bg-white/[0.12]" />
         <div className="pointer-events-none absolute inset-y-0 right-0 w-px bg-white/[0.12]" />
