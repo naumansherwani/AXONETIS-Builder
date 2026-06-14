@@ -106,7 +106,7 @@ create index if not exists rollback_history_project_idx
 -- 4) Auto-snapshot trigger on project_files (only if table exists)
 --    Uses dynamic column lookup so it works even if project_files lacks env/branch/updated_by.
 -- ─────────────────────────────────────────────
-do $$
+do $phase6_snapshot$
 declare
   has_env boolean;
   has_branch boolean;
@@ -134,31 +134,30 @@ begin
       else change_kind := 'update';
       end if;
 
+      if (tg_op = 'DELETE') then
+        insert into public.file_versions (project_id, env, branch, path, content, checksum, change, author)
+        values (old.project_id::text, %s, %s, old.path::text, null, null, change_kind, null);
+        return old;
+      end if;
+
       insert into public.file_versions (project_id, env, branch, path, content, checksum, change, author)
-      values (
-        coalesce(new.project_id, old.project_id),
-        %s,
-        %s,
-        coalesce(new.path, old.path),
-        case when tg_op = 'DELETE' then null else new.content end,
-        %s,
-        change_kind,
-        %s
-      );
-      return coalesce(new, old);
+      values (new.project_id::text, %s, %s, new.path::text, new.content::text, %s, change_kind, %s);
+      return new;
     end $body$;
   $f$,
-    case when has_env        then $$coalesce(new.env, old.env)$$ else $$'sandbox'::public.preview_env$$ end,
-    case when has_branch     then $$coalesce(new.branch, old.branch)$$ else $$'main'$$ end,
-    case when has_checksum   then $$case when tg_op = 'DELETE' then null else new.checksum end$$ else $$null$$ end,
-    case when has_updated_by then $$case when tg_op = 'DELETE' then null else new.updated_by end$$ else $$null$$ end
+    case when has_env        then 'old.env::public.preview_env' else '''sandbox''::public.preview_env' end,
+    case when has_branch     then 'old.branch::text' else '''main''' end,
+    case when has_env        then 'new.env::public.preview_env' else '''sandbox''::public.preview_env' end,
+    case when has_branch     then 'new.branch::text' else '''main''' end,
+    case when has_checksum   then 'new.checksum::text' else 'null' end,
+    case when has_updated_by then 'new.updated_by::text' else 'null' end
   );
 
   drop trigger if exists project_files_snapshot on public.project_files;
   create trigger project_files_snapshot
     after insert or update or delete on public.project_files
     for each row execute function public.snapshot_project_file();
-end $$;
+end $phase6_snapshot$;
 
 -- ─────────────────────────────────────────────
 -- 5) Grants (Data API access)
@@ -193,13 +192,19 @@ create policy rollback_history_read on public.rollback_history
 -- 7) Realtime
 -- ─────────────────────────────────────────────
 do $$ begin
-  alter publication supabase_realtime add table public.file_versions;
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    alter publication supabase_realtime add table public.file_versions;
+  end if;
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  alter publication supabase_realtime add table public.deployments;
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    alter publication supabase_realtime add table public.deployments;
+  end if;
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  alter publication supabase_realtime add table public.rollback_history;
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    alter publication supabase_realtime add table public.rollback_history;
+  end if;
 exception when duplicate_object then null; end $$;
