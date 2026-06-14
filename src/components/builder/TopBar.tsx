@@ -163,6 +163,7 @@ export default function TopBar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      <PublishModal open={publishOpen} onClose={() => setPublishOpen(false)} />
     </motion.header>
   );
 }
