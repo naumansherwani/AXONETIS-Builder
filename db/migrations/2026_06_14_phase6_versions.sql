@@ -136,21 +136,21 @@ begin
 
       if (tg_op = 'DELETE') then
         insert into public.file_versions (project_id, env, branch, path, content, checksum, change, author)
-        values (old.project_id, %s, %s, old.path, null, null, change_kind, null);
+        values (old.project_id::text, %s, %s, old.path::text, null, null, change_kind, null);
         return old;
       end if;
 
       insert into public.file_versions (project_id, env, branch, path, content, checksum, change, author)
-      values (new.project_id, %s, %s, new.path, new.content, %s, change_kind, %s);
+      values (new.project_id::text, %s, %s, new.path::text, new.content::text, %s, change_kind, %s);
       return new;
     end $body$;
   $f$,
-    case when has_env        then 'old.env' else '''sandbox''::public.preview_env' end,
-    case when has_branch     then 'old.branch' else '''main''' end,
-    case when has_env        then 'new.env' else '''sandbox''::public.preview_env' end,
-    case when has_branch     then 'new.branch' else '''main''' end,
-    case when has_checksum   then 'new.checksum' else 'null' end,
-    case when has_updated_by then 'new.updated_by' else 'null' end
+    case when has_env        then 'old.env::public.preview_env' else '''sandbox''::public.preview_env' end,
+    case when has_branch     then 'old.branch::text' else '''main''' end,
+    case when has_env        then 'new.env::public.preview_env' else '''sandbox''::public.preview_env' end,
+    case when has_branch     then 'new.branch::text' else '''main''' end,
+    case when has_checksum   then 'new.checksum::text' else 'null' end,
+    case when has_updated_by then 'new.updated_by::text' else 'null' end
   );
 
   drop trigger if exists project_files_snapshot on public.project_files;
