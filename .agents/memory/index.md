@@ -26,6 +26,7 @@ NEXATECT DOMAIN TREE LOCKED Jun 20 2026: Parent **NEXATECT™** (The Sovereign A
 OPENROUTER 3-KEY HYBRID TIER LOCKED Jun 20 2026: 3 OR keys live on Hetzner. OR1=PAID (next-month upgrade, Jimmy+founder). OR2/OR3=FREE (Sherlock, advisors, public users). Free users NEVER touch OR1. Per-user daily caps. routing_config remains source of truth. See mem://features/openrouter-keys-hybrid-tier-LOCKED.
 
 ## Memories
+- [AXONETIS Unified Disruptive Blueprint LOCKED](mem://features/axonetis-unified-disruptive-blueprint-LOCKED) — THE single founder-locked unified UI/phase blueprint (Jun 20 2026). Hybrid arch, agent hierarchy, model map, cinematic design, build order 3.9→3.10→11→9→10→12, 12-tool registry, full phase UI, tables, /rpc/ endpoints, limits, constitutional principles. Supersedes prior UI/phase blueprints on conflict.
 - [Rust Migration Roadmap All 4 Products LOCKED](mem://features/rust-migration-roadmap-all-4-products-LOCKED) — Builder→HostFlow→AneXVoT→AXOMAIL. Per-product phases A/B/C/D. AI Human personality rules.
 - [NEXATECT Domain Tree LOCKED](mem://features/nexatect-domain-tree-LOCKED) — Final org tree + product domains (axonetis.com, anexvotaipay.com, aiaxomail.com). Hetzner API host api.aiaxonetis.com.
 - [OpenRouter 3-Key Hybrid Tier LOCKED](mem://features/openrouter-keys-hybrid-tier-LOCKED) — Tier matrix: free users → OR3 only, founder/Jimmy → OR1 paid. Daily caps. routing_config still wins.
