@@ -34,7 +34,7 @@ const AGENT_META: Record<Agent, { name: string; subtitle: string; rail: string; 
 };
 
 export default function UnifiedChat() {
-  const { project, branch, environment, bridgeStatus, lastBridgeEvent } = useBuilder();
+  const { project, branch, environment, bridgeStatus } = useBuilder();
   const activeProject = PROJECTS.find((p) => p.id === project)!;
 
   // Phase 7 — per-project independent chat history.
