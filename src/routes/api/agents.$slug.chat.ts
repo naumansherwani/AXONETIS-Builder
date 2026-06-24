@@ -99,12 +99,37 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
           auth: { persistSession: false, autoRefreshToken: false },
         });
 
+        // Resolve founder user_id from forwarded bearer token (agent_threads.user_id NOT NULL).
+        const authHeader = request.headers.get("authorization") ?? "";
+        const token = authHeader.toLowerCase().startsWith("bearer ")
+          ? authHeader.slice(7).trim()
+          : "";
+        if (!token) {
+          return Response.json(
+            { error: "Missing Authorization bearer token (Supabase 3 session required)" },
+            { status: 401 },
+          );
+        }
+        const { data: userRes, error: userErr } = await supabase.auth.getUser(token);
+        if (userErr || !userRes?.user) {
+          return Response.json(
+            { error: `Invalid session: ${userErr?.message ?? "no user"}` },
+            { status: 401 },
+          );
+        }
+        const userId = userRes.user.id;
+
         // 1. Ensure thread
         let threadId = body.threadId?.trim() || null;
         if (!threadId) {
           const { data: t, error: tErr } = await supabase
             .from("agent_threads")
-            .insert({ project_id: projectId, agent_slug: slug, title: prompt.slice(0, 80) })
+            .insert({
+              project_id: projectId,
+              agent_slug: slug,
+              title: prompt.slice(0, 80),
+              user_id: userId,
+            })
             .select("id")
             .single();
           if (tErr || !t) {
