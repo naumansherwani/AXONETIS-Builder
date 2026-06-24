@@ -7,7 +7,7 @@ type: feature
 # AXONETIS — FINAL IMPLEMENTATION BLUEPRINT (Founder Lock Version)
 
 **Status:** LOCKED. Supersedes all earlier builder blueprints in memory.
-**Domain:** aiaxonetis.hostflowai.net · Private founder-only.
+**Domain:** aiaxonetis.nexatect.com · Private founder-only.
 **Phase 1 SQL:** ✅ RUN & VERIFIED on Hetzner Supabase 3 (Jun 12 2026) — 11 ai_agent_identities, user_roles seeded, all 8 core + 7 mirror tables live.
 
 ## Workflow rule (LOCKED — never break)

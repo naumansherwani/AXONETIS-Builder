@@ -12,16 +12,16 @@ import { supabase3 as supabase } from "../integrations/supabase3/client.js";
 
 const PROJECT_PREVIEW_URLS: Record<string, { sandbox: string; production: string }> = {
   hostflowai: {
-    sandbox: "https://sandbox.hostflowai.net",
-    production: "https://hostflowai.net",
+    sandbox: "https://sandbox.nexatect.com",
+    production: "https://nexatect.com",
   },
   rapidpay: {
-    sandbox: "https://sandbox.rapidpay.hostflowai.net",
-    production: "https://rapidpay.hostflowai.net",
+    sandbox: "https://sandbox.rapidpay.nexatect.com",
+    production: "https://rapidpay.nexatect.com",
   },
   founderbuilder: {
-    sandbox: "https://sandbox.aiaxonetis.hostflowai.net",
-    production: "https://aiaxonetis.hostflowai.net",
+    sandbox: "https://sandbox.aiaxonetis.nexatect.com",
+    production: "https://aiaxonetis.nexatect.com",
   },
 };
 

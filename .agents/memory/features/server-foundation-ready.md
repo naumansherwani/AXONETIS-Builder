@@ -7,7 +7,7 @@ type: feature
 # AXONETIS Server Foundation — VERIFIED READY (Jun 2026)
 
 Founder confirmed `hostflow-server` repo (Hetzner) has all foundation files in place.
-Domain: **aiaxonetis.hostflowai.net** · Brand: **AXONETIS™**
+Domain: **aiaxonetis.nexatect.com** · Brand: **AXONETIS™**
 
 ## Files already on server — DO NOT recreate / duplicate
 

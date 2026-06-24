@@ -18,11 +18,11 @@ Founder ran this himself. Do NOT propose rewrites, "cleaner" versions, or duplic
 - `localhost:3004` → status.axonetis.com
 - `localhost:3005` → blog · `:3006` changelog · `:3007` community · `:3008` affiliate
 - `localhost:54321` → auth.axonetis.com (self-hosted Supabase)
-- `localhost:8080` → api.hostflowai.net
-- `/var/www/hostflowai` → hostflowai.net + all industry subdomains (ttl, airline, healthcare, carrental, education, ee, logistics, railways, aiaxomail)
-- `/var/www/anexvot-ai-pay` → anexvotaipay.hostflowai.net
+- `localhost:8080` → api.nexatect.com
+- `/var/www/hostflowai` → nexatect.com + all industry subdomains (ttl, airline, healthcare, carrental, education, ee, logistics, railways, aiaxomail)
+- `/var/www/anexvot-ai-pay` → anexvotaipay.nexatect.com
 - `/var/www/axonetis-cdn` → cdn.axonetis.com
-- `aiaxonetis.hostflowai.net` → 301 redir to `https://axonetis.com{uri}`
+- `aiaxonetis.nexatect.com` → 301 redir to `https://axonetis.com{uri}`
 
 ## On-demand TLS
 Global block uses `ask http://localhost:8088/check-domain` — Rust runtime authorizes wildcard preview certs. Do NOT change this contract.

@@ -1,12 +1,12 @@
 ---
 name: Phase 9 Trojan Horse CRM — Home = Founder OS sidebar (LOCKED)
-description: Jimmy+Sherlock+Founder ka combined AI CRM koi naya standalone app NAHI hai. Yeh founder ke existing Founder OS (hostflowai.net/founder) sidebar ke andar already-reserved entry "Jimmy+Founder Builders" + "Enterprise CRM" + "AI Revenue Intelligence" + "AI Email Orchestrator" + "AI Agents Command Center" sections ke andar banega. Subdomain crm.aiaxonetis.hostflowai.net DROP. Sab kuch Founder OS ke andar.
+description: Jimmy+Sherlock+Founder ka combined AI CRM koi naya standalone app NAHI hai. Yeh founder ke existing Founder OS (nexatect.com/founder) sidebar ke andar already-reserved entry "Jimmy+Founder Builders" + "Enterprise CRM" + "AI Revenue Intelligence" + "AI Email Orchestrator" + "AI Agents Command Center" sections ke andar banega. Subdomain crm.aiaxonetis.nexatect.com DROP. Sab kuch Founder OS ke andar.
 type: constraint
 ---
 
 # Phase 9 Trojan Horse CRM — Lives INSIDE Founder OS (LOCKED)
 
-## Founder ki photo se confirmed sidebar structure (Founder OS — hostflowai.net/founder)
+## Founder ki photo se confirmed sidebar structure (Founder OS — nexatect.com/founder)
 1. Overview
 2. Executive HQ
 3. Revenue
@@ -23,7 +23,7 @@ type: constraint
 Top header: `Founder OS · HostFlow AI` · `Overview · FOUNDER COMMAND CENTER` · global search · Jimmy John — Autopilot CEO badge · crown empire state.
 
 ## LOCKED rules
-1. **Phase 9 Trojan Horse CRM ka koi naya app/subdomain NAHI banega.** Pehle blueprint mein `crm.aiaxonetis.hostflowai.net` likha tha — **DROP**.
+1. **Phase 9 Trojan Horse CRM ka koi naya app/subdomain NAHI banega.** Pehle blueprint mein `crm.aiaxonetis.nexatect.com` likha tha — **DROP**.
 2. CRM ka pura UI in 5 existing Founder OS sections ke andar render hoga:
    - **Enterprise CRM** = accounts, contacts, deals, pipeline, Salesforce mirror tables view
    - **AI Revenue Intelligence** = forecasts, deal scoring, churn, expansion signals
@@ -43,7 +43,7 @@ Top header: `Founder OS · HostFlow AI` · `Overview · FOUNDER COMMAND CENTER` 
 5. **Phase 10** (rrweb/marketplace/voice/browser-use) → wapis Lovable Builder UI.
 
 ## Hard NO
-- ❌ `crm.aiaxonetis.hostflowai.net` subdomain — cancelled.
+- ❌ `crm.aiaxonetis.nexatect.com` subdomain — cancelled.
 - ❌ Standalone CRM React app — cancelled.
 - ❌ Founder OS sidebar mein naye duplicate entries — sirf 5 existing entries fill karni hain.
 - ❌ AI/CRM code Lovable repo mein — Jimmy founder account mein self-commit kare.

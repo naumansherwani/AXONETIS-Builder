@@ -14,11 +14,11 @@ export default defineConfig({
   },
   vite: {
     server: {
-      allowedHosts: ["aiaxonetis.hostflowai.net", ".hostflowai.net"],
+      allowedHosts: ["aiaxonetis.nexatect.com", ".nexatect.com"],
       host: "0.0.0.0",
     },
     preview: {
-      allowedHosts: ["aiaxonetis.hostflowai.net", ".hostflowai.net"],
+      allowedHosts: ["aiaxonetis.nexatect.com", ".nexatect.com"],
       host: "0.0.0.0",
     },
   },

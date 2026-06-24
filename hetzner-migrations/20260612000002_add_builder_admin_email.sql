@@ -1,6 +1,6 @@
 -- =====================================================================
 -- AXONETIS — Phase 1 patch: add hostflowaibuilder@gmail.com as founder/admin
--- Target: Hetzner Supabase 3 (aiaxonetis.hostflowai.net)
+-- Target: Hetzner Supabase 3 (aiaxonetis.nexatect.com)
 -- Safe to re-run (idempotent).
 -- =====================================================================
 
@@ -13,7 +13,7 @@ set search_path = public
 as $$
 declare
   founder_emails constant text[] := array[
-    'naumansherwani@hostflowai.net',
+    'naumansherwani@nexatect.com',
     'naumankhansherwani@gmail.com',
     'hostflowaibuilder@gmail.com'
   ];
