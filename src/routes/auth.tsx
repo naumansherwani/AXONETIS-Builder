@@ -8,6 +8,7 @@ import KernelLogo from "@/components/builder/KernelLogo";
 
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Sign in — Founder AI Builder™" },
