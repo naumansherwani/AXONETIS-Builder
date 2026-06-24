@@ -18,7 +18,7 @@ export const PROJECTS: ProjectDef[] = [
     id: "hostflowai",
     name: "HostFlow AI™",
     shortName: "HostFlow",
-    previewUrl: "https://nexatect.com",
+    previewUrl: "https://hostflowai.net",
     accent: "#E50914",
   },
   {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
-import { Check, ChevronDown, ChevronUp, Octagon, Radio, Rocket, Send, X, ShieldCheck } from "lucide-react";
+import { ChevronDown, ChevronUp, Radio, Send, ShieldCheck } from "lucide-react";
 import { useBuilder } from "@/lib/builder-state";
 import { chatWithAgent, sendBuilderCommand, type AgentSlug } from "@/lib/hostflow-api";
 import { PROJECTS } from "@/lib/projects";
@@ -34,7 +34,7 @@ const AGENT_META: Record<Agent, { name: string; subtitle: string; rail: string; 
 };
 
 export default function UnifiedChat() {
-  const { project, branch, environment, bridgeStatus, lastBridgeEvent } = useBuilder();
+  const { project, branch, environment, bridgeStatus } = useBuilder();
   const activeProject = PROJECTS.find((p) => p.id === project)!;
 
   // Phase 7 — per-project independent chat history.
@@ -148,46 +148,30 @@ export default function UnifiedChat() {
 
   return (
     <div className="flex h-full flex-col bg-gradient-to-b from-[#06060a] to-[#040406]">
-      {/* HEADER */}
+      {/* HEADER — minimal, no clutter */}
       <div className="relative flex h-14 shrink-0 items-center justify-between border-b border-white/[0.06] bg-background/40 px-5 backdrop-blur-xl">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#E50914]/40 to-transparent" />
-        <div className="flex items-center gap-5">
-          <div className="flex items-center gap-2">
-            <Radio className="h-3.5 w-3.5 text-[#ff6b73]" />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-foreground/80">
-              Unified Build Chat
+        <div className="flex min-w-0 items-center gap-3">
+          <Radio className="h-3.5 w-3.5 shrink-0 text-[#ff6b73]" />
+          <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-foreground/80">
+            Build Chat
+          </span>
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider"
+            style={{ borderColor: `${activeProject.accent}66`, background: `${activeProject.accent}1a`, color: "#fff" }}
+          >
+            <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: activeProject.accent, boxShadow: `0 0 8px ${activeProject.accent}` }} />
+            {activeProject.shortName} · {supabaseLabelFor(project)}
+          </span>
+          {fixIteration > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-[#7c3aed]/40 bg-[#7c3aed]/15 px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-[#c4a8ff]">
+              <ShieldCheck className="h-2.5 w-2.5" /> Sherlock {fixIteration}/3
             </span>
-            <span className="ml-1 rounded bg-white/[0.04] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground/70">
-              ∞ history · 5M chars · 10k files
-            </span>
-            {/* Phase 7 — active project + Supabase isolation chip */}
-            <span
-              className="ml-1 inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider"
-              style={{ borderColor: `${activeProject.accent}66`, background: `${activeProject.accent}1a`, color: "#fff" }}
-              title="Phase 7 — independent workspace, history & preview per project"
-            >
-              <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: activeProject.accent, boxShadow: `0 0 8px ${activeProject.accent}` }} />
-              {activeProject.shortName} · {supabaseLabelFor(project)}
-            </span>
-            {fixIteration > 0 && (
-              <span className="ml-1 inline-flex items-center gap-1 rounded-full border border-[#7c3aed]/40 bg-[#7c3aed]/15 px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-[#c4a8ff]">
-                <ShieldCheck className="h-2.5 w-2.5" /> Sherlock fix {fixIteration}/3
-              </span>
-            )}
-          </div>
-          <div className="hidden items-center gap-3 md:flex">
-            {(["founder", "jimmy", "sherlock"] as Agent[]).map((a) => (
-              <AgentPresence key={a} agent={a} />
-            ))}
-          </div>
+          )}
         </div>
-
-        <div className="flex items-center gap-1.5">
-          <ActionBtn icon={Octagon} label="Stop" />
-          <ActionBtn icon={Check} label="Approve" tone="emerald" />
-          <ActionBtn icon={X} label="Reject" tone="red" />
-          <ActionBtn icon={Rocket} label="Deploy" tone="accent" />
-        </div>
+        <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground/50">
+          {bridgeStatus}
+        </span>
       </div>
 
       {/* STREAM — virtualized for unlimited history */}
@@ -205,15 +189,16 @@ export default function UnifiedChat() {
             </div>
           )}
         />
-        <div className="absolute bottom-3 right-4 z-20 flex flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#07070b]/90 shadow-[0_0_22px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+        {/* Scroll nav — bottom-LEFT so it never overlaps the splitter handle on the right */}
+        <div className="absolute bottom-3 left-4 z-20 flex flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#07070b]/85 shadow-[0_0_22px_rgba(0,0,0,0.55)] backdrop-blur-xl">
           <button
             type="button"
             title="Scroll to first message"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => virtuosoRef.current?.scrollToIndex({ index: 0, behavior: "smooth", align: "start" })}
-            className="grid h-9 w-9 place-items-center text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
+            className="grid h-8 w-8 place-items-center text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
           >
-            <ChevronUp className="h-4 w-4" />
+            <ChevronUp className="h-3.5 w-3.5" />
           </button>
           <div className="h-px bg-white/[0.08]" />
           <button
@@ -221,9 +206,9 @@ export default function UnifiedChat() {
             title="Scroll to latest message"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => virtuosoRef.current?.scrollToIndex({ index: messages.length - 1, behavior: "smooth", align: "end" })}
-            className="grid h-9 w-9 place-items-center text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
+            className="grid h-8 w-8 place-items-center text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
           >
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
@@ -263,33 +248,13 @@ export default function UnifiedChat() {
             <Send className="h-4 w-4" />
           </button>
         </form>
-        <div className="mt-2 flex items-center justify-between px-1 text-[10px] uppercase tracking-widest text-muted-foreground/60">
-          <span>
-            Phase 7 · {activeProject.shortName} · bridge {bridgeStatus}
-            {lastBridgeEvent ? ` · ${lastBridgeEvent.summary}` : ""}
-          </span>
-          <span className="flex items-center gap-3">
-            <span className={`font-mono ${overLimit ? "text-red-400" : charCount > MAX_CHARS * 0.9 ? "text-amber-400" : "text-muted-foreground/60"}`}>
-              {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()}
-            </span>
-            <span className="font-mono">⌘ ↵ send</span>
+        <div className="mt-2 flex items-center justify-between px-1 text-[10px] uppercase tracking-widest text-muted-foreground/50">
+          <span className="font-mono">⌘ ↵ send</span>
+          <span className={`font-mono ${overLimit ? "text-red-400" : charCount > MAX_CHARS * 0.9 ? "text-amber-400" : "text-muted-foreground/50"}`}>
+            {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()}
           </span>
         </div>
       </div>
-    </div>
-  );
-}
-
-function AgentPresence({ agent }: { agent: Agent }) {
-  const m = AGENT_META[agent];
-  return (
-    <div className="flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-2.5 py-1">
-      <span className={`grid h-5 w-5 place-items-center rounded-full border text-[10px] font-bold ${m.chip}`}>
-        {m.initial}
-      </span>
-      <span className="text-[11px] font-medium text-foreground/85">{m.name}</span>
-      <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60">{m.subtitle}</span>
-      <span className={`ml-0.5 h-1.5 w-1.5 rounded-full ${m.rail}`} />
     </div>
   );
 }
@@ -320,24 +285,6 @@ function MessageRow({ msg }: { msg: Msg }) {
         )}
       </div>
     </motion.div>
-  );
-}
-
-function ActionBtn({
-  icon: Icon, label, tone,
-}: { icon: typeof Check; label: string; tone?: "emerald" | "red" | "accent" }) {
-  const cls =
-    tone === "emerald"
-      ? "border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10"
-      : tone === "red"
-      ? "border-red-500/30 text-red-300 hover:bg-red-500/10"
-      : tone === "accent"
-      ? "border-[#E50914]/40 text-[#ff6b73] hover:bg-[#E50914]/10"
-      : "border-white/[0.08] text-muted-foreground hover:text-foreground";
-  return (
-    <button className={`flex h-7 items-center gap-1.5 rounded-md border bg-white/[0.02] px-2.5 text-[10px] uppercase tracking-wider transition-colors ${cls}`}>
-      <Icon className="h-3 w-3" /> {label}
-    </button>
   );
 }
 
