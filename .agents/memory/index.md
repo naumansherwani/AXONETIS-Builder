@@ -5,7 +5,7 @@ Project: Self-hosted AI agent builder — **AXONETIS AI Builder™** (formerly A
 Founder: Muhammad Nauman Sherwani. Roman Urdu/Hindi — reply same style, keep short.
 Backend endpoint workflow LOCKED: for hostflowai-server, write exact copy-paste TypeScript endpoint code for founder to run manually. No vague contracts only.
 NO Docker / NO containers. Architecture: iframe + postMessage bridge + Supabase project_files (truth) + Realtime HMR reload. Same trick as Lovable.
-3 products: HostFlow AI™, Rapid Pay™, AXONETIS AI Builder™. 3 separate Supabase instances.
+3 products: HostFlow AI™ (Supabase 1 = NEXATECT parent brain, holds AI/Groq keys + global config), **AneXVoT AI Pay™** (Supabase 2, formerly Rapid Pay — NEVER use old name), AXONETIS AI Builder™ (Supabase 3, Jimmy/Sherlock threads). Rust engine (`/root/hostflow-engine` on Hetzner :8088) = single pure-compute brain serving all 3 products. Builder owns Supabase 3 writes; Rust stays stateless (no Supabase touch).
 Repos LOCKED: founder-ai-builder (Lovable, frontend only) + hostflowai-server (founder manual, Hetzner). Workflow: Lovable builds ONE phase → founder says ruko → git pull → review → "agla phase" → next. NEVER touch hostflowai-server repo. NEVER run SQL until founder confirms server ready.
 FULL-FILE OVERWRITE ONLY (LOCKED): Never ask founder to sed/edit/patch ANY file. Always send COMPLETE file content as one copy-paste block — even for 1-char changes. See mem://features/founder-full-file-overwrite-only-LOCKED.
 RUST AI HUMAN RUNTIME LOCKED: Future AXONETIS runtime is Rust-first AI Human — Jimmy/Sherlock with eyes/face/hands/cursor; Python/Webhook/WebSocket/API glue is not the future product direction.

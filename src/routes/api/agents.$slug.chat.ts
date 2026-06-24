@@ -1,19 +1,21 @@
 /**
- * Phase A.1 — Builder-side proxy route for Jimmy/Sherlock/Advisor chat.
+ * Phase A.1 — Builder-side proxy route for Jimmy/Sherlock chat.
  *
- * Split (3-process-split-LOCKED Option B):
- *   - This repo = UI + thin proxy ONLY (no LLM SDK calls here).
- *   - Rust NEXATECT-Engine :8088 = brain (Jimmy/Sherlock ensembles).
+ * Split (3-process-split-LOCKED Option B + Jun 24 2026 finalization):
+ *   - This repo = UI + thin proxy + ALL Supabase 3 writes.
+ *   - Rust hostflow-engine :8088 = PURE COMPUTE brain (stateless, no Supabase).
+ *     Route: POST /api/agents/:agent/chat  body: { message: string }
+ *     Returns: JSON (ensemble result — text extracted defensively below).
  *   - hostflow-server = files/projects/deploy bridge.
  *
  * Flow:
- *   1. Client POSTs { projectId, threadId?, prompt } to /api/agents/<slug>/chat
- *   2. We ensure a thread exists, insert user message into Supabase 3
- *      `agent_thread_messages` (service role).
- *   3. Fire-and-forget POST to Rust `:8088/chat/<slug>` with { threadId,
- *      projectId, prompt }. Rust writes the assistant reply back into the
- *      same Supabase 3 table; UnifiedChat picks it up via Realtime.
- *   4. Return 202 { threadId, messageId, status: "queued" } immediately.
+ *   1. Validate slug + body.
+ *   2. Ensure thread row in `agent_threads`.
+ *   3. Insert user message into `agent_thread_messages`.
+ *   4. AWAIT Rust ensemble (up to 120s) — Rust is sync.
+ *   5. Insert assistant message; full Rust JSON kept in `metadata`.
+ *   6. Return { threadId, userMessageId, assistantMessageId }.
+ *      UnifiedChat Realtime sub picks up the assistant row instantly.
  *
  * Env required on Hetzner (pm2 axonetis-builder):
  *   SUPABASE3_URL, SUPABASE3_SERVICE_ROLE_KEY
@@ -23,12 +25,38 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 
 const ALLOWED_SLUGS = new Set(["jimmy", "sherlock"]);
+const RUST_TIMEOUT_MS = 120_000;
 
 type ChatBody = {
   projectId?: string;
   threadId?: string | null;
   prompt?: string;
 };
+
+/**
+ * Defensive text extraction — Rust `run_ensemble` returns unknown JSON shape.
+ * Try common fields, fall back to stringified JSON so the user always sees
+ * something instead of a blank bubble.
+ */
+function extractText(payload: unknown): string {
+  if (typeof payload === "string") return payload;
+  if (!payload || typeof payload !== "object") return JSON.stringify(payload);
+  const p = payload as Record<string, unknown>;
+  const candidates = [
+    p.text,
+    p.content,
+    p.best,
+    p.reply,
+    p.message,
+    p.output,
+    (p.best as Record<string, unknown> | undefined)?.text,
+    (p.best as Record<string, unknown> | undefined)?.content,
+  ];
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim()) return c;
+  }
+  return JSON.stringify(payload, null, 2);
+}
 
 export const Route = createFileRoute("/api/agents/$slug/chat")({
   server: {
@@ -89,7 +117,7 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
         }
 
         // 2. Insert user message
-        const { data: msg, error: mErr } = await supabase
+        const { data: userMsg, error: uErr } = await supabase
           .from("agent_thread_messages")
           .insert({
             thread_id: threadId,
@@ -99,32 +127,77 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
           })
           .select("id")
           .single();
-        if (mErr || !msg) {
+        if (uErr || !userMsg) {
           return Response.json(
-            { error: `Failed to insert message: ${mErr?.message ?? "unknown"}` },
+            { error: `Failed to insert user message: ${uErr?.message ?? "unknown"}` },
             { status: 500 },
           );
         }
 
-        // 3. Fire-and-forget to Rust brain (Rust writes the assistant reply
-        //    back into agent_thread_messages — Realtime delivers it to UI).
-        const brainURL = process.env.RUST_BRAIN_URL ?? "http://127.0.0.1:8088";
-        void fetch(`${brainURL.replace(/\/$/, "")}/chat/${slug}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            threadId,
-            projectId,
-            messageId: msg.id,
-            prompt,
-          }),
-        }).catch((err) => {
-          console.error(`[agents.chat] Rust brain forward failed:`, err);
-        });
+        // 3. Call Rust ensemble (sync, await up to 120s)
+        const brainURL = (process.env.RUST_BRAIN_URL ?? "http://127.0.0.1:8088").replace(/\/$/, "");
+        let assistantText = "";
+        let rustPayload: unknown = null;
+        let rustError: string | null = null;
+
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), RUST_TIMEOUT_MS);
+        try {
+          const r = await fetch(`${brainURL}/api/agents/${slug}/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: prompt }),
+            signal: ctrl.signal,
+          });
+          if (!r.ok) {
+            rustError = `Rust ${r.status}: ${await r.text().catch(() => "")}`.slice(0, 500);
+          } else {
+            rustPayload = await r.json().catch(() => null);
+            assistantText = extractText(rustPayload);
+          }
+        } catch (err) {
+          rustError = err instanceof Error ? err.message : String(err);
+        } finally {
+          clearTimeout(timer);
+        }
+
+        if (rustError && !assistantText) {
+          assistantText = `⚠️ Brain unreachable: ${rustError}`;
+        }
+
+        // 4. Insert assistant message (full Rust JSON in metadata for debug)
+        const { data: aMsg, error: aErr } = await supabase
+          .from("agent_thread_messages")
+          .insert({
+            thread_id: threadId,
+            role: "assistant",
+            agent_slug: slug,
+            parent_message_id: userMsg.id,
+            parts: [{ type: "text", text: assistantText }],
+            metadata: rustPayload ? { ensemble: rustPayload } : { error: rustError },
+          })
+          .select("id")
+          .single();
+        if (aErr || !aMsg) {
+          return Response.json(
+            {
+              threadId,
+              userMessageId: userMsg.id,
+              assistantText,
+              warning: `Assistant message insert failed: ${aErr?.message ?? "unknown"}`,
+            },
+            { status: 200 },
+          );
+        }
 
         return Response.json(
-          { threadId, messageId: msg.id, status: "queued" as const },
-          { status: 202 },
+          {
+            threadId,
+            userMessageId: userMsg.id,
+            assistantMessageId: aMsg.id,
+            rustError, // null on success
+          },
+          { status: 200 },
         );
       },
     },
