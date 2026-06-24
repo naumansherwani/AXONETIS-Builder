@@ -32,7 +32,7 @@ export const PROJECTS: ProjectDef[] = [
     id: "founderbuilder",
     name: "AXONETIS AI Builder™",
     shortName: "AXONETIS",
-    previewUrl: "https://aiaxonetis.nexatect.com",
+    previewUrl: "https://founderbuilder.axonetis.com",
     accent: "#1a0933",
   },
 ];

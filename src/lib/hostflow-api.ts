@@ -142,7 +142,11 @@ export interface AgentChatRequest {
 }
 export interface AgentChatResponse {
   threadId: string;
-  messageId: string;
+  userMessageId?: string;
+  assistantMessageId?: string;
+  assistantText?: string;
+  warning?: string;
+  rustError?: string | null;
   status: "queued" | "streaming" | "done";
 }
 export async function chatWithAgent(slug: AgentSlug, body: AgentChatRequest) {
@@ -157,6 +161,7 @@ export async function chatWithAgent(slug: AgentSlug, body: AgentChatRequest) {
   const res = await fetch(`/api/agents/${slug}/chat`, {
     method: "POST",
     headers,
+    credentials: "same-origin",
     body: JSON.stringify(body),
   });
   if (!res.ok) {
