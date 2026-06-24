@@ -248,16 +248,10 @@ export default function UnifiedChat() {
             <Send className="h-4 w-4" />
           </button>
         </form>
-        <div className="mt-2 flex items-center justify-between px-1 text-[10px] uppercase tracking-widest text-muted-foreground/60">
-          <span>
-            Phase 7 · {activeProject.shortName} · bridge {bridgeStatus}
-            {lastBridgeEvent ? ` · ${lastBridgeEvent.summary}` : ""}
-          </span>
-          <span className="flex items-center gap-3">
-            <span className={`font-mono ${overLimit ? "text-red-400" : charCount > MAX_CHARS * 0.9 ? "text-amber-400" : "text-muted-foreground/60"}`}>
-              {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()}
-            </span>
-            <span className="font-mono">⌘ ↵ send</span>
+        <div className="mt-2 flex items-center justify-between px-1 text-[10px] uppercase tracking-widest text-muted-foreground/50">
+          <span className="font-mono">⌘ ↵ send</span>
+          <span className={`font-mono ${overLimit ? "text-red-400" : charCount > MAX_CHARS * 0.9 ? "text-amber-400" : "text-muted-foreground/50"}`}>
+            {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()}
           </span>
         </div>
       </div>
