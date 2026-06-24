@@ -1,12 +1,14 @@
 /**
- * Phase A2 — GitHub tab (Monaco diff editor).
- * Frontend-only viewer for diffs. Real branch/commit data arrives in Phase A3
- * via /api/github/* (founder repo); for now shows a sample diff so the layout,
- * theme, and diff UX are locked in.
+ * Phase A2 — GitHub tab (Monaco diff editor via @monaco-editor/react).
+ * Frontend-only viewer for diffs. Branch/commit data wires in Phase A3.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { GitBranch, GitCommit, ChevronDown } from "lucide-react";
-import type { editor } from "monaco-editor";
+import { DiffEditor, loader } from "@monaco-editor/react";
+
+loader.config({
+  paths: { vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs" },
+});
 
 const SAMPLE_LEFT = `export default function UnifiedChat() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -42,60 +44,7 @@ const FILES: FakeFile[] = [
 
 export default function GitHubPanel() {
   const [active, setActive] = useState(0);
-  const hostRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<editor.IStandaloneDiffEditor | null>(null);
   const file = FILES[active];
-
-  // Mount Monaco once.
-  useEffect(() => {
-    if (!hostRef.current) return;
-    let disposed = false;
-    (async () => {
-      const monaco = await import("monaco-editor");
-      if (disposed || !hostRef.current) return;
-      monaco.editor.defineTheme("axonetis-dark", {
-        base: "vs-dark", inherit: true, rules: [],
-        colors: {
-          "editor.background": "#040406",
-          "editor.foreground": "#e6e6ea",
-          "editorGutter.background": "#040406",
-          "diffEditor.insertedTextBackground": "#22c55e22",
-          "diffEditor.removedTextBackground": "#E5091422",
-          "diffEditor.insertedLineBackground": "#22c55e10",
-          "diffEditor.removedLineBackground": "#E5091410",
-        },
-      });
-      const ed = monaco.editor.createDiffEditor(hostRef.current, {
-        theme: "axonetis-dark",
-        renderSideBySide: true,
-        readOnly: true,
-        automaticLayout: true,
-        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-        fontSize: 12,
-        minimap: { enabled: false },
-        scrollBeyondLastLine: false,
-      });
-      ed.setModel({
-        original: monaco.editor.createModel(file.left,  "typescript"),
-        modified: monaco.editor.createModel(file.right, "typescript"),
-      });
-      editorRef.current = ed;
-    })();
-    return () => { disposed = true; editorRef.current?.dispose(); editorRef.current = null; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Swap models when active file changes.
-  useEffect(() => {
-    (async () => {
-      if (!editorRef.current) return;
-      const monaco = await import("monaco-editor");
-      editorRef.current.setModel({
-        original: monaco.editor.createModel(file.left,  "typescript"),
-        modified: monaco.editor.createModel(file.right, "typescript"),
-      });
-    })();
-  }, [file]);
 
   const stats = useMemo(() => {
     const add = file.right.split("\n").length - (file.status === "M" ? file.left.split("\n").length : 0);
@@ -135,7 +84,24 @@ export default function GitHubPanel() {
             </button>
           ))}
         </aside>
-        <div ref={hostRef} className="min-h-0 flex-1" />
+        <div className="min-h-0 flex-1">
+          <DiffEditor
+            height="100%"
+            language="typescript"
+            theme="vs-dark"
+            original={file.left}
+            modified={file.right}
+            options={{
+              readOnly: true,
+              renderSideBySide: true,
+              minimap: { enabled: false },
+              fontSize: 12,
+              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+              scrollBeyondLastLine: false,
+              automaticLayout: true,
+            }}
+          />
+        </div>
       </div>
     </div>
   );
