@@ -12,7 +12,7 @@ export const PromptInput = React.forwardRef<HTMLFormElement, PromptInputProps>(
     <form
       ref={ref}
       className={cn(
-        "fb-glass flex flex-col gap-2 rounded-xl p-2 shadow-[0_8px_40px_-12px_oklch(0.58_0.24_25_/_0.25)]",
+        "fb-glass flex flex-col gap-2 rounded-lg p-2 shadow-[0_8px_34px_-18px_oklch(0.58_0.24_25_/_0.22)]",
         className,
       )}
       {...props}
@@ -28,7 +28,7 @@ export const PromptInputTextarea = React.forwardRef<
   <textarea
     ref={ref}
     className={cn(
-      "max-h-[260px] min-h-[44px] w-full resize-none overflow-y-auto bg-transparent px-3 py-2.5 text-[14px] leading-relaxed outline-none placeholder:text-muted-foreground/70",
+      "max-h-[220px] min-h-[42px] w-full resize-none overflow-y-auto bg-transparent px-3 py-2.5 text-[14px] leading-relaxed outline-none placeholder:text-muted-foreground/70",
       className,
     )}
     {...props}

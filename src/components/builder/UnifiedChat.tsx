@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
 import { motion } from "framer-motion";
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
-import { Bot, ChevronDown, ChevronUp, Mic, Paperclip, Radio, ShieldCheck, Slash } from "lucide-react";
+import { ChevronDown, ChevronUp, Mic, Paperclip, Radio, Send, ShieldCheck, Slash } from "lucide-react";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useBuilder } from "@/lib/builder-state";
 import {
@@ -43,6 +42,11 @@ const SEED: Msg[] = [
   { id: "3", agent: "sherlock", text: "Diagnostics nominal. No errors in the bridge. Awaiting first build instruction." },
 ];
 
+const resolveAgent = (prompt: string): UnifiedAgentSlug => {
+  const p = prompt.toLowerCase();
+  return p.includes("sherlock") || p.includes("/scan") || p.includes("/fix") || p.includes("/review") ? "sherlock" : "jimmy";
+};
+
 const AGENT_META: Record<Agent, { name: string; subtitle: string; rail: string; chip: string; ring: string; initial: string }> = {
   founder: { name: "Founder", subtitle: "Operator", rail: "bg-white shadow-[0_0_18px_rgba(255,255,255,0.6)]", chip: "bg-white/[0.08] text-white border-white/20", ring: "ring-white/30", initial: "F" },
   jimmy: { name: "Jimmy", subtitle: "Build Agent", rail: "bg-[#E50914] shadow-[0_0_18px_#E50914]", chip: "bg-[#E50914]/15 text-[#ff7480] border-[#E50914]/40", ring: "ring-[#E50914]/50", initial: "J" },
@@ -60,7 +64,6 @@ export default function UnifiedChat() {
   const [fixIteration, setFixIteration] = useState<number>(() => loadWorkspace(project, SEED).fixLoopIteration);
   const [threadId, setThreadId] = useState<string | undefined>(() => loadWorkspace(project, SEED).jimmyThreadId);
   const [draft, setDraft] = useState("");
-  const [selectedAgent, setSelectedAgent] = useState<UnifiedAgentSlug>("jimmy");
   const [status, setStatus] = useState<ChatStatus>("ready");
   const [queue, setQueue] = useState<string[]>([]);
   const [attachments, setAttachments] = useState<UploadedAttachment[]>([]);
@@ -140,6 +143,7 @@ export default function UnifiedChat() {
   const busy = status === "submitted" || status === "streaming";
 
   const executePrompt = useCallback((prompt: string) => {
+    const targetAgent = resolveAgent(prompt);
     const placeholderId = `j-${Date.now() + 1}`;
     const streamId = `stream-${Date.now()}`;
     const attachmentNote = attachments.length
@@ -153,14 +157,14 @@ export default function UnifiedChat() {
     setMessages((prev) => [
       ...prev,
       { id: `f-${Date.now()}`, agent: "founder", text: prompt },
-      { id: placeholderId, agent: selectedAgent, text: `${selectedAgent === "sherlock" ? "Auditing" : "Thinking"}…`, thinking: true },
+      { id: placeholderId, agent: targetAgent, text: `${targetAgent === "sherlock" ? "Auditing" : "Working"}…`, thinking: true },
     ]);
     setAttachments([]);
 
     const ctrl = new AbortController();
     abortRef.current = ctrl;
 
-    void chatWithAgent(selectedAgent, { projectId: project, threadId, prompt: `${prompt}${attachmentNote}`, streamId }, { signal: ctrl.signal })
+    void chatWithAgent(targetAgent, { projectId: project, threadId, prompt: `${prompt}${attachmentNote}`, streamId }, { signal: ctrl.signal })
       .then((ack) => {
         if (!threadId && ack.threadId) setThreadId(ack.threadId);
         if (ack.assistantText) {
@@ -170,7 +174,7 @@ export default function UnifiedChat() {
             const currentPlaceholder = pendingPlaceholderRef.current;
             const idx = currentPlaceholder ? next.findIndex((m) => m.id === currentPlaceholder) : -1;
             if (idx >= 0) {
-              next[idx] = { id: ack.assistantMessageId ?? currentPlaceholder ?? `j-${Date.now()}`, agent: selectedAgent, text: cleaned };
+              next[idx] = { id: ack.assistantMessageId ?? currentPlaceholder ?? `j-${Date.now()}`, agent: targetAgent, text: cleaned };
               pendingPlaceholderRef.current = null;
             }
             return next;
@@ -196,7 +200,7 @@ export default function UnifiedChat() {
         setStatus("ready");
         textareaRef.current?.focus();
       });
-  }, [attachments, branch, environment, project, selectedAgent, threadId]);
+  }, [attachments, branch, environment, project, threadId]);
 
   const submit = useCallback(() => {
     const prompt = draft.trim();
@@ -290,18 +294,18 @@ export default function UnifiedChat() {
   }, [project]);
 
   return (
-    <div className="flex h-full flex-col bg-gradient-to-b from-[#06060a] to-[#040406]">
-      <div className="relative flex h-14 shrink-0 items-center justify-between border-b border-white/[0.06] bg-background/40 px-5 backdrop-blur-xl">
+    <div className="flex h-full flex-col bg-background">
+      <div className="relative grid h-12 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background/70 px-4 backdrop-blur-xl">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#E50914]/40 to-transparent" />
         <div className="flex min-w-0 items-center gap-3">
-          <Radio className="h-3.5 w-3.5 shrink-0 text-[#ff6b73]" />
-          <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-foreground/80">Build Chat</span>
+          <Radio className="h-3.5 w-3.5 shrink-0 text-primary" />
+          <span className="truncate text-[11px] font-semibold uppercase tracking-[0.26em] text-foreground/85">Build Chat</span>
           <span
-            className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider"
             style={{ borderColor: `${activeProject.accent}66`, background: `${activeProject.accent}1a`, color: "#fff" }}
           >
             <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: activeProject.accent, boxShadow: `0 0 8px ${activeProject.accent}` }} />
-            {activeProject.shortName} · {supabaseLabelFor(project).replace("Supabase", "SB")}
+            {activeProject.shortName}
           </span>
           {fixIteration > 0 && (
             <span className="inline-flex items-center gap-1 rounded-full border border-[#7c3aed]/40 bg-[#7c3aed]/15 px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-[#c4a8ff]">
@@ -309,7 +313,7 @@ export default function UnifiedChat() {
             </span>
           )}
         </div>
-        <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground/50">{bridgeStatus}</span>
+        <span className="shrink-0 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/50">{bridgeStatus}</span>
       </div>
 
       <div className="relative min-h-0 flex-1">
@@ -321,36 +325,37 @@ export default function UnifiedChat() {
           className="fb-no-scrollbar"
           style={{ height: "100%" }}
           itemContent={(_i, msg) => (
-            <div className="px-6 py-2.5">
+            <div className="px-4 py-2.5">
               <MessageRow msg={msg} />
             </div>
           )}
         />
-        <div className="pointer-events-none absolute bottom-3 left-3 z-20 flex flex-col gap-1.5">
+        <div className="pointer-events-none absolute bottom-3 left-2 z-20 flex flex-col overflow-hidden rounded-full border border-border bg-background/80 shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl">
           <button
             type="button"
             title="Scroll to top"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => virtuosoRef.current?.scrollToIndex({ index: 0, behavior: "smooth", align: "start" })}
-            className="pointer-events-auto grid h-6 w-6 place-items-center rounded-full border border-white/10 bg-black/60 text-muted-foreground/80 backdrop-blur transition-colors hover:bg-white/10 hover:text-foreground"
+            className="pointer-events-auto grid h-6 w-6 place-items-center text-muted-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
           >
             <ChevronUp className="h-3 w-3" />
           </button>
+          <span className="mx-1 h-px bg-border" />
           <button
             type="button"
             title="Scroll to latest"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => virtuosoRef.current?.scrollToIndex({ index: messages.length - 1, behavior: "smooth", align: "end" })}
-            className="pointer-events-auto grid h-6 w-6 place-items-center rounded-full border border-white/10 bg-black/60 text-muted-foreground/80 backdrop-blur transition-colors hover:bg-white/10 hover:text-foreground"
+            className="pointer-events-auto grid h-6 w-6 place-items-center text-muted-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
           >
             <ChevronDown className="h-3 w-3" />
           </button>
         </div>
       </div>
 
-      <div className="shrink-0 border-t border-white/[0.06] bg-background/40 p-4 backdrop-blur-xl">
+      <div className="shrink-0 border-t border-border bg-background/75 p-3 backdrop-blur-xl">
         <input ref={fileInputRef} type="file" multiple className="hidden" onChange={onAttach} />
-        <PromptInput onSubmit={(e) => { e.preventDefault(); submit(); }} onPointerDown={(e) => e.stopPropagation()}>
+        <PromptInput className="rounded-lg" onSubmit={(e) => { e.preventDefault(); submit(); }} onPointerDown={(e) => e.stopPropagation()}>
           <PromptInputTextarea
             ref={textareaRef}
             value={draft}
@@ -363,8 +368,9 @@ export default function UnifiedChat() {
             }}
             onWheel={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
-            placeholder={selectedAgent === "sherlock" ? "Ask Sherlock to audit, debug, or verify…" : "Tell Jimmy what to build…"}
+            placeholder="Tell Jimmy what to build…"
             rows={1}
+            className="fb-no-scrollbar pr-2"
             onInput={(e) => {
               const t = e.currentTarget;
               t.style.height = "auto";
@@ -374,16 +380,10 @@ export default function UnifiedChat() {
           <PromptInputFooter>
             <TooltipProvider delayDuration={150}>
               <div className="flex min-w-0 items-center gap-1.5">
-                <Select value={selectedAgent} onValueChange={(value) => setSelectedAgent(value as UnifiedAgentSlug)}>
-                  <SelectTrigger className="h-8 w-[120px] rounded-lg border-white/[0.08] bg-white/[0.02] px-2 text-[11px]">
-                    <Bot className="mr-1.5 h-3.5 w-3.5" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="jimmy">Jimmy</SelectItem>
-                    <SelectItem value="sherlock">Sherlock</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="inline-flex h-8 items-center gap-2 rounded-md border border-border bg-accent/30 px-2.5 text-[11px] font-semibold text-foreground">
+                  <span className="grid h-4 w-4 place-items-center rounded bg-primary text-[9px] text-primary-foreground">J</span>
+                  Jimmy
+                </div>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => fileInputRef.current?.click()}>
@@ -408,8 +408,8 @@ export default function UnifiedChat() {
                   </TooltipTrigger>
                   <TooltipContent>Hold to talk</TooltipContent>
                 </Tooltip>
-                <div className="hidden items-center gap-1.5 rounded-md border border-white/[0.06] bg-white/[0.02] px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground/70 sm:flex">
-                  <Slash className="h-3 w-3" /> /fix /scan /deploy /rollback
+                <div className="hidden items-center gap-1.5 rounded-md border border-border bg-accent/25 px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground/70 lg:flex">
+                  <Slash className="h-3 w-3" /> tools
                 </div>
               </div>
             </TooltipProvider>
@@ -417,7 +417,9 @@ export default function UnifiedChat() {
               {queue.length > 0 && (
                 <span className="rounded-md border border-white/[0.06] px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">Queue {queue.length}</span>
               )}
-              <PromptInputSubmit status={status} disabled={!draft.trim() || overLimit} onStop={stop} />
+              <PromptInputSubmit status={status} disabled={!draft.trim() || overLimit} onStop={stop}>
+                {status === "ready" ? <Send className="h-3.5 w-3.5" /> : undefined}
+              </PromptInputSubmit>
             </div>
           </PromptInputFooter>
         </PromptInput>
@@ -429,8 +431,8 @@ export default function UnifiedChat() {
             ))}
           </div>
         )}
-        <div className="mt-2 flex items-center justify-between px-1 text-[10px] uppercase tracking-widest text-muted-foreground/50">
-          <span className="font-mono">Phase 3.9.1 audit · {busy ? "agent running" : "ready"}</span>
+        <div className="mt-2 flex items-center justify-between px-1 text-[10px] uppercase tracking-widest text-muted-foreground/45">
+          <span className="font-mono">Phase 3.9 · {busy ? "working" : "ready"}</span>
           <span className={`font-mono ${overLimit ? "text-red-400" : charCount > MAX_CHARS * 0.9 ? "text-amber-400" : "text-muted-foreground/50"}`}>
             {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()}
           </span>
@@ -448,14 +450,14 @@ function MessageRow({ msg }: { msg: Msg }) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 80, damping: 15 }}
-      className="flex gap-4"
+      className="grid grid-cols-[2px_30px_minmax(0,1fr)] gap-3"
     >
-      <div className={`mt-1 w-[3px] shrink-0 rounded-full ${m.rail}`} />
-      <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl border text-xs font-bold ${m.chip} ring-2 ${m.ring}`}>{m.initial}</div>
+      <div className={`mt-1 w-[2px] shrink-0 rounded-full ${m.rail}`} />
+      <div className={`grid h-[30px] w-[30px] shrink-0 place-items-center rounded-lg border text-[11px] font-bold ${m.chip} ring-1 ${m.ring}`}>{m.initial}</div>
       <div className="min-w-0 flex-1">
-        <div className="mb-1.5 flex items-baseline gap-2.5">
+        <div className="mb-1 flex min-w-0 items-baseline gap-2">
           <span className="text-[13px] font-semibold">{m.name}</span>
-          <span className="text-[10px] uppercase tracking-widest text-muted-foreground/60">{m.subtitle}</span>
+          <span className="truncate text-[10px] uppercase tracking-widest text-muted-foreground/55">{m.subtitle}</span>
         </div>
         {msg.thinking ? <Shimmer className="text-[14px]" duration={2}>{msg.text}</Shimmer> : <MessageResponse>{msg.text}</MessageResponse>}
       </div>

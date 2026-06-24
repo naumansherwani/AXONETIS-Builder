@@ -71,26 +71,25 @@ export default function HorizontalSplit({
 
   return (
     <div ref={containerRef} className="relative flex h-full min-h-0 w-full min-w-0">
-      <div className="min-h-0 min-w-0 overflow-hidden pr-2" style={{ flexBasis: `${leftPct}%` }}>
+      <div className="min-h-0 min-w-0 overflow-hidden" style={{ flexBasis: `${leftPct}%` }}>
         {left}
       </div>
       <div
         role="separator"
         aria-orientation="vertical"
         aria-label="Resize chat and preview"
-        className="relative z-10 w-[8px] shrink-0 bg-transparent"
+        className="relative z-10 w-[5px] shrink-0 bg-transparent"
       >
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-px bg-white/[0.12]" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-px bg-white/[0.12]" />
+        <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-border transition-colors" />
         <button
           type="button"
           aria-label="Drag to resize chat and preview"
           onPointerDown={startDrag}
           onDoubleClick={() => setLeftPct(initial * 100)}
-          className="group absolute left-1/2 top-1/2 grid h-12 w-5 -translate-x-1/2 -translate-y-1/2 cursor-col-resize place-items-center rounded-full border border-white/[0.08] bg-[#07070b]/95 text-muted-foreground shadow-[0_0_18px_rgba(0,0,0,0.55)] transition-colors hover:border-[#E50914]/50 hover:bg-[#E50914]/15 hover:text-[#ff7480]"
+          className="group absolute left-1/2 top-1/2 grid h-10 w-4 -translate-x-1/2 -translate-y-1/2 cursor-col-resize place-items-center rounded-full border border-border bg-background/90 text-muted-foreground shadow-[0_8px_26px_rgba(0,0,0,0.45)] transition-colors hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
           title="Resize preview"
         >
-          <GripVertical className="h-4 w-4" />
+          <GripVertical className="h-3 w-3" />
         </button>
       </div>
       <div className="min-h-0 min-w-0 flex-1 overflow-hidden">{right}</div>
