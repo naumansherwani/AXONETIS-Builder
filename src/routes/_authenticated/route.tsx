@@ -18,6 +18,20 @@ export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
     if (!SUPABASE3_READY) return { user: null };
+    // Preview/dev hosts: skip Supabase user check — founder works here even
+    // before magic-link SMTP is wired on the Hetzner instance.
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      const isPreview =
+        host === "localhost" ||
+        host.endsWith(".lovableproject.com") ||
+        host.endsWith(".lovable.dev") ||
+        host.endsWith(".lovable.app") ||
+        host.includes("id-preview--") ||
+        host.startsWith("preview--") ||
+        host === "aiaxonetis.hostflowai.net";
+      if (isPreview) return { user: null };
+    }
     const { data, error } = await supabase3.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
     return { user: data.user };

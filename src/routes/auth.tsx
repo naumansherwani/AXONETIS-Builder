@@ -97,7 +97,7 @@ function AuthPage() {
                   autoFocus
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="founder@hostflowai.net"
+                  placeholder="hostflowaibuilder@gmail.com"
                   className="h-11 w-full rounded-lg border border-white/[0.08] bg-white/[0.02] pl-9 pr-3 text-sm outline-none transition-colors focus:border-[#E50914]/50 focus:bg-white/[0.04]"
                 />
               </div>
