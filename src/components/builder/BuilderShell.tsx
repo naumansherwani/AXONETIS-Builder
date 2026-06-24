@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { BuilderCtx, type AgentState, type BottomTabId, type PreviewMode } from "@/lib/builder-state";
 import { DEFAULT_PROJECT, type Branch, type Environment, type ProjectId } from "@/lib/projects";
 import TopBar from "./TopBar";
-import LivePreview from "./LivePreview";
+import WorkspaceTabs from "./workspace/WorkspaceTabs";
 import UnifiedChat from "./UnifiedChat";
 import StatusBar from "./StatusBar";
 import CommandPalette from "./CommandPalette";
@@ -106,7 +106,7 @@ export default function BuilderShell() {
               <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-20 h-[3px] bg-gradient-to-r from-transparent via-[#E50914]/30 to-transparent blur-sm" />
               <HorizontalSplit
                 left={<UnifiedChat />}
-                right={<LivePreview />}
+                right={<WorkspaceTabs />}
                 initial={0.4}
               />
             </main>
