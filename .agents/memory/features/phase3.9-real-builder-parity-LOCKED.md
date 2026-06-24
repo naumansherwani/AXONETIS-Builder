@@ -22,7 +22,7 @@ type: feature
                                       checksum sync, deploy runner)
         ↑                                       ↑
         └────── postMessage iframe ──── [Preview sandboxes]
-                                        hostflowai.net / rapidpay / aiaxonetis
+                                        nexatect.com / rapidpay / aiaxonetis
 ```
 
 - Frontend NEVER calls OpenRouter/Groq directly.
@@ -56,7 +56,7 @@ Implementation: install `bun x ai-elements@latest add conversation message promp
 
 Trigger: top-bar **Publish** button. Modal shows:
 
-- **Live URL** with copy button (`{project}.aiaxonetis.hostflowai.net`)
+- **Live URL** with copy button (`{project}.aiaxonetis.nexatect.com`)
 - **Last published**: timestamp + commit short SHA
 - **Status badge**: Up-to-date / Changes pending / Building / Failed
 - **Update button**: triggers new deploy (frontend changes only)
@@ -92,7 +92,7 @@ share_links       (id, project_id, token, expires_at, created_by)
 Route: `/builder/settings/domains`
 
 Sections:
-1. **Lovable-style URL** — editable slug `{slug}.aiaxonetis.hostflowai.net`; uniqueness check.
+1. **Lovable-style URL** — editable slug `{slug}.aiaxonetis.nexatect.com`; uniqueness check.
 2. **Custom domains list** — status pills (Verifying / Active / Offline / Failed); Configure / Remove actions.
 3. **Connect existing domain** — input domain → shows A `185.158.133.1` + TXT records → "Verify now" button (polls DNS).
 4. **Buy new domain** — search + register via founder's registrar API (stub Phase 4.1).

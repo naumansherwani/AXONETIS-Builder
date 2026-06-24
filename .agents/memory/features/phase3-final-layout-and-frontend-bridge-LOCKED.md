@@ -14,9 +14,9 @@ Founder confirmed this is the final Builder layout target:
 - **Top bar** = AXONETIS logo + project/sandbox switcher + Preview/Code/Share/Publish actions.
 - **Side drawer / rails** = Files, Code, Agents, Logs, Database, Deploy, Versions, Analytics panels.
 - Project sandbox switcher loads exact domains in iframe:
-  - HostFlow AI → `https://hostflowai.net`
-  - Rapid Pay → `https://rapidpay.hostflowai.net`
-  - AXONETIS → `https://aiaxonetis.hostflowai.net`
+  - HostFlow AI → `https://nexatect.com`
+  - Rapid Pay → `https://rapidpay.nexatect.com`
+  - AXONETIS → `https://aiaxonetis.nexatect.com`
 - Preview communicates via **postMessage** both ways: route changes, clicks, runtime errors, bridge status return into Builder UI/chat/logs.
 
 ## Non-negotiable architecture locks

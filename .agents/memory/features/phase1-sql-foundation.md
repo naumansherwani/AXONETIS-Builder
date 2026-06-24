@@ -11,7 +11,7 @@ type: feature
 - `hetzner-migrations/20260612000002_add_builder_admin_email.sql` — adds `hostflowaibuilder@gmail.com` as 3rd founder/admin
 
 **Founder/admin emails (LOCKED, all 3):**
-1. naumansherwani@hostflowai.net
+1. naumansherwani@nexatect.com
 2. naumankhansherwani@gmail.com
 3. hostflowaibuilder@gmail.com
 

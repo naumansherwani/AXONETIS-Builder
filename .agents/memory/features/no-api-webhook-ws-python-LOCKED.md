@@ -39,7 +39,7 @@ Jo kaam pehle webhook/API/WebSocket/Python karta tha — ab **Jimmy + Sherlock e
 
 ## Next Steps (Phase B — Rust-only, no banned tech)
 1. **SSE streaming endpoints** on axum: `GET /chat/jimmy/stream`, `GET /chat/sherlock/stream`, `GET /activity/stream` — token-by-token via `axum::response::sse`. NO WebSocket.
-2. **Builder UI rewire** — UnifiedChat already uses `EventSource` (SSE). Point it at Rust runtime (`https://aiaxonetis.hostflowai.net/chat/jimmy/stream`).
+2. **Builder UI rewire** — UnifiedChat already uses `EventSource` (SSE). Point it at Rust runtime (`https://aiaxonetis.nexatect.com/chat/jimmy/stream`).
 3. **Auto-fix dual-brain loop** in Rust: Jimmy writes → Sherlock audits → max 3 iterations → final. Pure Rust `tokio::spawn`, no webhook callbacks.
 4. **Tool execution** (file write, git commit, deploy) — Rust functions Jimmy calls directly via judge output JSON. NO external API orchestrator.
 5. Phase 3.9 deploy-hook → Rust git+pm2 invocation, NOT a webhook receiver.

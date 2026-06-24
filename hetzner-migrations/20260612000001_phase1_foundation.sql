@@ -1,6 +1,6 @@
 -- ============================================================================
 -- AXONETIS AI Builder™ — Phase 1 Foundation
--- Target: Supabase 3 (self-hosted Hetzner) — aiaxonetis.hostflowai.net
+-- Target: Supabase 3 (self-hosted Hetzner) — aiaxonetis.nexatect.com
 -- Architecture: Supabase = source of truth · TS contracts · Node/Bun runtime ·
 --               OpenRouter (primary) · Groq (failover)
 -- Aligned with verified server repo `hostflow-server`:
@@ -70,7 +70,7 @@ set search_path = public
 as $$
 declare
   founder_emails constant text[] := array[
-    'naumansherwani@hostflowai.net',
+    'naumansherwani@nexatect.com',
     'naumankhansherwani@gmail.com'
   ];
 begin
@@ -91,17 +91,17 @@ create trigger on_auth_user_created
 
 -- Backfill: any already-existing auth user whose email matches the founder
 -- list gets admin+founder roles immediately (covers users created BEFORE
--- this trigger existed, e.g. naumansherwani@hostflowai.net + naumankhansherwani@gmail.com).
+-- this trigger existed, e.g. naumansherwani@nexatect.com + naumankhansherwani@gmail.com).
 insert into public.user_roles (user_id, role)
 select u.id, 'admin'::public.app_role
 from auth.users u
-where u.email in ('naumansherwani@hostflowai.net','naumankhansherwani@gmail.com')
+where u.email in ('naumansherwani@nexatect.com','naumankhansherwani@gmail.com')
 on conflict do nothing;
 
 insert into public.user_roles (user_id, role)
 select u.id, 'founder'::public.app_role
 from auth.users u
-where u.email in ('naumansherwani@hostflowai.net','naumankhansherwani@gmail.com')
+where u.email in ('naumansherwani@nexatect.com','naumankhansherwani@gmail.com')
 on conflict do nothing;
 
 

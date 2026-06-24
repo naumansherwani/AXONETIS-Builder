@@ -23,7 +23,7 @@ type: feature
 
 ### Founder Account = `hostflowai-server` repo (Jimmy ka ghar)
 - Jimmy chatbox + **GitHub token already wired** in founder account.
-- **Trojan Horse CRM (Phase 9)** wahin banega → `crm.aiaxonetis.hostflowai.net`.
+- **Trojan Horse CRM (Phase 9)** wahin banega → `crm.aiaxonetis.nexatect.com`.
 - Salesforce mirror tables → **Supabase 2**.
 - Jimmy khud apna CRM code commit karega **via GitHub token** = self-building loop.
 - **Real dogfooding**: Jimmy apne aap ko use karke CRM banayega → proof ke woh Claude-tier hai.

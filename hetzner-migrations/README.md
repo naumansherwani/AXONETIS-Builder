@@ -16,7 +16,7 @@ Ya Supabase Studio → SQL Editor mein paste karke run.
 `20260612000001_phase1_foundation.sql` mein `handle_new_user()` function ke andar:
 
 ```sql
-founder_email constant text := 'founder@hostflowai.net'; -- TODO: set real email
+founder_email constant text := 'founder@nexatect.com'; -- TODO: set real email
 ```
 
 Apne actual auth email se replace karo, phir migration chalao. Pehla signup auto-admin role assign kar dega.

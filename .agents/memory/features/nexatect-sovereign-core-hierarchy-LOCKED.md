@@ -30,7 +30,7 @@ NEXATECT™ Sovereign Core
 - Full form: **N**ext-Generation **E**xecution **X**ecution **A**utonomous **TEC**hnology **T**reasury
 - 4 sovereign cores = product pillars (each can be its own Rust crate / pm2 process)
 - 8 industry agents = HostFlow AI advisors layer (run under AANRIS runtime, coordinated by Jimmy + audited by Sherlock)
-- Domain `aiaxonetis.hostflowai.net` is **temporary** during transition — final domain TBD
+- Domain `aiaxonetis.nexatect.com` is **temporary** during transition — final domain TBD
 
 ## Rust Migration Mapping
 | Sovereign Core | Rust crate (target) | pm2 process | Status |

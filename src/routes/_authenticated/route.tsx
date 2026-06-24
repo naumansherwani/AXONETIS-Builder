@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_authenticated")({
         host.endsWith(".lovable.app") ||
         host.includes("id-preview--") ||
         host.startsWith("preview--") ||
-        host === "aiaxonetis.hostflowai.net";
+        host === "aiaxonetis.nexatect.com";
       if (isPreview) return { user: null };
     }
     const { data, error } = await supabase3.auth.getUser();
@@ -55,7 +55,7 @@ function GatedShell() {
         host.endsWith(".lovable.dev") ||
         host.includes("id-preview--") ||
         host.startsWith("preview--") ||
-        host === "aiaxonetis.hostflowai.net";
+        host === "aiaxonetis.nexatect.com";
       if (isPreview) {
         localStorage.setItem(UNLOCK_KEY, "1");
         setUnlocked(true);
