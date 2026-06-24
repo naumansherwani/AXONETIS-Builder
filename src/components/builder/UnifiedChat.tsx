@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
-import { Check, Octagon, Radio, Rocket, Send, X, ShieldCheck } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Octagon, Radio, Rocket, Send, X, ShieldCheck } from "lucide-react";
 import { useBuilder } from "@/lib/builder-state";
 import { chatWithAgent, sendBuilderCommand, type AgentSlug } from "@/lib/hostflow-api";
 import { PROJECTS } from "@/lib/projects";
@@ -10,6 +10,7 @@ import {
   subscribeThread,
   fetchThreadMessages,
   extractText,
+  cleanAgentText,
   UNIFIED_CHAT_SLUGS,
 } from "@/lib/agent-stream";
 
