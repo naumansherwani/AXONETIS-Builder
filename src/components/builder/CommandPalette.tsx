@@ -1,32 +1,39 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Boxes, Database, GitBranch, LogOut, Rocket, ScrollText, Terminal, Users } from "lucide-react";
-import { useBuilder, type BottomTabId } from "@/lib/builder-state";
+import { Boxes, Database, GitBranch, LogOut, Monitor, Rocket, ScrollText, Terminal, Files as FilesIcon, Compass } from "lucide-react";
+import { useBuilder } from "@/lib/builder-state";
 import {
   CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator,
 } from "@/components/ui/command";
 import { PROJECTS, type ProjectId } from "@/lib/projects";
 import { supabase3, SUPABASE3_READY } from "@/integrations/supabase3/client";
+import type { TabKind } from "./workspace/tab-registry";
+
+const TABS: { id: TabKind; label: string; icon: typeof Database }[] = [
+  { id: "preview",  label: "Preview",  icon: Monitor },
+  { id: "terminal", label: "Terminal", icon: Terminal },
+  { id: "github",   label: "GitHub",   icon: GitBranch },
+  { id: "logs",     label: "Logs",     icon: ScrollText },
+  { id: "database", label: "Database", icon: Database },
+  { id: "runtime",  label: "Runtime",  icon: Boxes },
+  { id: "files",    label: "Files",    icon: FilesIcon },
+  { id: "command",  label: "Command",  icon: Compass },
+];
 
 export default function CommandPalette() {
   const navigate = useNavigate();
-  const { paletteOpen, setPaletteOpen, setProject, setBottomTab } = useBuilder();
+  const { paletteOpen, setPaletteOpen, setProject } = useBuilder();
 
   const run = (fn: () => void) => { fn(); setPaletteOpen(false); };
+
+  const openTab = (id: TabKind) => {
+    const fn = (window as unknown as { axonetisOpenTab?: (k: TabKind) => void }).axonetisOpenTab;
+    if (fn) fn(id);
+  };
 
   async function handleSignOut() {
     if (SUPABASE3_READY) await supabase3.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
-
-  const tabs: { id: BottomTabId; label: string; icon: typeof Database }[] = [
-    { id: "database", label: "Database", icon: Database },
-    { id: "agents",   label: "Agents",   icon: Users },
-    { id: "runtime",  label: "Runtime",  icon: Boxes },
-    { id: "git",      label: "Git",      icon: GitBranch },
-    { id: "logs",     label: "Logs",     icon: ScrollText },
-    { id: "deploy",   label: "Deploy",   icon: Rocket },
-    { id: "terminal", label: "Terminal", icon: Terminal },
-  ];
 
   return (
     <CommandDialog open={paletteOpen} onOpenChange={setPaletteOpen}>
@@ -46,8 +53,8 @@ export default function CommandPalette() {
         <CommandSeparator />
 
         <CommandGroup heading="Open tab">
-          {tabs.map((t) => (
-            <CommandItem key={t.id} onSelect={() => run(() => setBottomTab(t.id))}>
+          {TABS.map((t) => (
+            <CommandItem key={t.id} onSelect={() => run(() => openTab(t.id))}>
               <t.icon className="mr-2 h-4 w-4 text-[#ff6b73]" />
               {t.label}
             </CommandItem>
@@ -57,7 +64,7 @@ export default function CommandPalette() {
         <CommandSeparator />
 
         <CommandGroup heading="Actions">
-          <CommandItem onSelect={() => run(() => alert("Phase 2 wires Publish."))}>
+          <CommandItem onSelect={() => run(() => alert("Phase B wires Publish."))}>
             <Rocket className="mr-2 h-4 w-4 text-[#ff6b73]" />
             Publish to Production
           </CommandItem>
