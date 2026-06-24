@@ -259,20 +259,6 @@ export default function UnifiedChat() {
   );
 }
 
-function AgentPresence({ agent }: { agent: Agent }) {
-  const m = AGENT_META[agent];
-  return (
-    <div className="flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-2.5 py-1">
-      <span className={`grid h-5 w-5 place-items-center rounded-full border text-[10px] font-bold ${m.chip}`}>
-        {m.initial}
-      </span>
-      <span className="text-[11px] font-medium text-foreground/85">{m.name}</span>
-      <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60">{m.subtitle}</span>
-      <span className={`ml-0.5 h-1.5 w-1.5 rounded-full ${m.rail}`} />
-    </div>
-  );
-}
-
 function MessageRow({ msg }: { msg: Msg }) {
   const m = AGENT_META[msg.agent];
   return (
@@ -299,24 +285,6 @@ function MessageRow({ msg }: { msg: Msg }) {
         )}
       </div>
     </motion.div>
-  );
-}
-
-function ActionBtn({
-  icon: Icon, label, tone,
-}: { icon: typeof Check; label: string; tone?: "emerald" | "red" | "accent" }) {
-  const cls =
-    tone === "emerald"
-      ? "border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10"
-      : tone === "red"
-      ? "border-red-500/30 text-red-300 hover:bg-red-500/10"
-      : tone === "accent"
-      ? "border-[#E50914]/40 text-[#ff6b73] hover:bg-[#E50914]/10"
-      : "border-white/[0.08] text-muted-foreground hover:text-foreground";
-  return (
-    <button className={`flex h-7 items-center gap-1.5 rounded-md border bg-white/[0.02] px-2.5 text-[10px] uppercase tracking-wider transition-colors ${cls}`}>
-      <Icon className="h-3 w-3" /> {label}
-    </button>
   );
 }
 
