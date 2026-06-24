@@ -31,6 +31,8 @@ export interface ProjectWorkspace {
   messages: ChatMsg[];
   /** 0 = idle, 1..3 = active Sherlock auto-fix pass. */
   fixLoopIteration: number;
+  /** Phase A.1 — Supabase 3 thread id for Jimmy chat on this project. */
+  jimmyThreadId?: string;
   updatedAt: string;
 }
 
@@ -61,6 +63,7 @@ export function loadWorkspace(projectId: ProjectId, seed: ChatMsg[]): ProjectWor
     previewEnv: "sandbox",
     messages: seed,
     fixLoopIteration: 0,
+    jimmyThreadId: undefined,
     updatedAt: new Date().toISOString(),
   };
   all[projectId] = fresh;
