@@ -3,9 +3,15 @@ import { motion } from "framer-motion";
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import { Check, Octagon, Radio, Rocket, Send, X, ShieldCheck } from "lucide-react";
 import { useBuilder } from "@/lib/builder-state";
-import { sendBuilderCommand } from "@/lib/hostflow-api";
+import { chatWithAgent, sendBuilderCommand, type AgentSlug } from "@/lib/hostflow-api";
 import { PROJECTS } from "@/lib/projects";
 import { loadWorkspace, patchWorkspace, supabaseLabelFor, type ChatMsg } from "@/lib/project-workspace";
+import {
+  subscribeThread,
+  fetchThreadMessages,
+  extractText,
+  UNIFIED_CHAT_SLUGS,
+} from "@/lib/agent-stream";
 
 type Agent = "founder" | "jimmy" | "sherlock";
 type Msg = ChatMsg;
@@ -36,23 +42,65 @@ export default function UnifiedChat() {
     return ws.messages.length ? ws.messages : SEED;
   });
   const [fixIteration, setFixIteration] = useState<number>(() => loadWorkspace(project, SEED).fixLoopIteration);
+  const [threadId, setThreadId] = useState<string | undefined>(() => loadWorkspace(project, SEED).jimmyThreadId);
   const [draft, setDraft] = useState("");
   const virtuosoRef = useRef<VirtuosoHandle>(null);
+  const pendingPlaceholderRef = useRef<string | null>(null);
+  const seenMessageIdsRef = useRef<Set<string>>(new Set());
 
   // Re-hydrate when project switches.
   useEffect(() => {
     const ws = loadWorkspace(project, SEED);
     setMessages(ws.messages.length ? ws.messages : SEED);
     setFixIteration(ws.fixLoopIteration);
+    setThreadId(ws.jimmyThreadId);
+    seenMessageIdsRef.current = new Set();
   }, [project]);
 
   // Persist messages + fix-loop state per project.
-  useEffect(() => { patchWorkspace(project, { messages, fixLoopIteration: fixIteration }); }, [project, messages, fixIteration]);
+  useEffect(() => {
+    patchWorkspace(project, { messages, fixLoopIteration: fixIteration, jimmyThreadId: threadId });
+  }, [project, messages, fixIteration, threadId]);
 
   // Always-snap-to-bottom on new message (butter-smooth via virtuoso)
   useEffect(() => {
     virtuosoRef.current?.scrollToIndex({ index: messages.length - 1, behavior: "smooth", align: "end" });
   }, [messages.length]);
+
+  // Phase A.1 — Supabase 3 Realtime: subscribe to this project's Jimmy thread.
+  // Worker on `axonetis-builder` inserts assistant + sherlock rows; they land here.
+  useEffect(() => {
+    if (!threadId) return;
+    // Backfill historic messages once per thread switch.
+    void fetchThreadMessages(threadId).then((rows) => {
+      rows.forEach((r) => seenMessageIdsRef.current.add(r.id));
+    });
+    const unsub = subscribeThread(threadId, {
+      onMessage: (row) => {
+        if (seenMessageIdsRef.current.has(row.id)) return;
+        seenMessageIdsRef.current.add(row.id);
+        if (row.role !== "agent") return;
+        const slug = (row.agent_slug ?? "jimmy") as AgentSlug;
+        if (!UNIFIED_CHAT_SLUGS.has(slug)) return; // 8 advisors stay out of unified chat
+        const text = extractText(row) || "(empty reply)";
+        const agent: Agent = slug === "sherlock" ? "sherlock" : "jimmy";
+        setMessages((prev) => {
+          const next = [...prev];
+          const placeholderId = pendingPlaceholderRef.current;
+          const idx = placeholderId ? next.findIndex((m) => m.id === placeholderId) : -1;
+          if (idx >= 0 && agent === "jimmy") {
+            next[idx] = { id: row.id, agent, text };
+            pendingPlaceholderRef.current = null;
+          } else {
+            next.push({ id: row.id, agent, text });
+          }
+          return next;
+        });
+      },
+      onError: (err) => console.warn("[UnifiedChat] thread stream error:", err),
+    });
+    return unsub;
+  }, [threadId]);
 
   const charCount = draft.length;
   const overLimit = charCount > MAX_CHARS;
@@ -60,14 +108,29 @@ export default function UnifiedChat() {
   const submit = () => {
     const prompt = draft.trim();
     if (!prompt || overLimit) return;
+    const placeholderId = `j-${Date.now() + 1}`;
+    pendingPlaceholderRef.current = placeholderId;
     setMessages((prev) => [
       ...prev,
       { id: `f-${Date.now()}`, agent: "founder", text: prompt },
-      { id: `j-${Date.now() + 1}`, agent: "jimmy", text: "Working on it…", thinking: true },
+      { id: placeholderId, agent: "jimmy", text: "Working on it…", thinking: true },
     ]);
-    void sendBuilderCommand({ projectId: project, branch, environment, prompt }).catch(() => undefined);
     setDraft("");
+
+    // Phase A.1 — POST to axonetis-builder /api/agents/jimmy/chat.
+    // Worker writes assistant row to Supabase 3 → Realtime fires → replaces placeholder.
+    void chatWithAgent("jimmy", { projectId: project, threadId, prompt })
+      .then((ack) => {
+        if (!threadId && ack.threadId) setThreadId(ack.threadId);
+      })
+      .catch((err) => {
+        console.warn("[UnifiedChat] chatWithAgent failed:", err);
+        // Mirror command into legacy bridge so bridge status panel still ticks.
+        void sendBuilderCommand({ projectId: project, branch, environment, prompt }).catch(() => undefined);
+      });
   };
+
+
 
   return (
     <div className="flex h-full flex-col bg-gradient-to-b from-[#06060a] to-[#040406]">
