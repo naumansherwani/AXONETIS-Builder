@@ -3,6 +3,7 @@
  * Left = Unified Build Chat, Right = Live Preview iframe.
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { GripVertical } from "lucide-react";
 
 interface Props {
   left: ReactNode;
@@ -59,25 +60,38 @@ export default function HorizontalSplit({
     };
   }, [onMove, stop]);
 
+  const startDrag = (e: React.PointerEvent<HTMLElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+    draggingRef.current = true;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  };
+
   return (
     <div ref={containerRef} className="relative flex h-full min-h-0 w-full min-w-0">
-      <div className="min-h-0 min-w-0 overflow-hidden" style={{ flexBasis: `${leftPct}%` }}>
+      <div className="min-h-0 min-w-0 overflow-hidden pr-2" style={{ flexBasis: `${leftPct}%` }}>
         {left}
       </div>
       <div
         role="separator"
         aria-orientation="vertical"
-        onPointerDown={(e) => {
-          (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
-          draggingRef.current = true;
-          document.body.style.cursor = "col-resize";
-          document.body.style.userSelect = "none";
-        }}
-        className="group relative z-10 w-[10px] shrink-0 cursor-col-resize bg-transparent hover:bg-[#E50914]/15 transition-colors"
+        aria-label="Resize chat and preview"
+        className="relative z-10 w-[8px] shrink-0 bg-transparent"
       >
         <div className="pointer-events-none absolute inset-y-0 left-0 w-px bg-white/[0.12]" />
         <div className="pointer-events-none absolute inset-y-0 right-0 w-px bg-white/[0.12]" />
-        <div className="pointer-events-none absolute left-1/2 top-1/2 h-16 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/30 shadow-[0_0_12px_rgba(229,9,20,0.5)] transition-all group-hover:bg-[#E50914] group-hover:shadow-[0_0_22px_rgba(229,9,20,0.95)]" />
+        <button
+          type="button"
+          aria-label="Drag to resize chat and preview"
+          onPointerDown={startDrag}
+          onDoubleClick={() => setLeftPct(initial * 100)}
+          className="group absolute left-1/2 top-1/2 grid h-12 w-5 -translate-x-1/2 -translate-y-1/2 cursor-col-resize place-items-center rounded-full border border-white/[0.08] bg-[#07070b]/95 text-muted-foreground shadow-[0_0_18px_rgba(0,0,0,0.55)] transition-colors hover:border-[#E50914]/50 hover:bg-[#E50914]/15 hover:text-[#ff7480]"
+          title="Resize preview"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
       </div>
       <div className="min-h-0 min-w-0 flex-1 overflow-hidden">{right}</div>
     </div>
