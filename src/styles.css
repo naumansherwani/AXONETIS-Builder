@@ -228,5 +228,6 @@
 }
 
 /* Hide scrollbar but keep scroll */
-.fb-no-scrollbar::-webkit-scrollbar { display: none; }
-.fb-no-scrollbar { scrollbar-width: none; }
+.fb-no-scrollbar::-webkit-scrollbar,
+.fb-no-scrollbar *::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.fb-no-scrollbar, .fb-no-scrollbar * { scrollbar-width: none; -ms-overflow-style: none; }
