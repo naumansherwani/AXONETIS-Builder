@@ -203,7 +203,11 @@ export default function UnifiedChat() {
             value={draft}
             onChange={(e) => setDraft(e.target.value.slice(0, MAX_CHARS))}
             onKeyDown={(e) => {
-              if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); submit(); }
+              // Enter = send, Shift+Enter (or Ctrl/Cmd+Enter) = newline
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                submit();
+              }
             }}
             placeholder="Tell Jimmy what to build, or ask Sherlock to debug…"
             rows={1}
