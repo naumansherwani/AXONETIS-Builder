@@ -211,27 +211,48 @@ export default function UnifiedChat() {
       <div className="shrink-0 border-t border-white/[0.06] bg-background/40 p-4 backdrop-blur-xl">
         <form
           onSubmit={(e) => { e.preventDefault(); submit(); }}
+          onPointerDown={(e) => e.stopPropagation()}
           className="fb-glass flex items-end gap-2.5 rounded-2xl p-2.5 shadow-[0_8px_40px_-12px_rgba(229,9,20,0.25)]"
         >
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value.slice(0, MAX_CHARS))}
             onKeyDown={(e) => {
-              // Enter = send, Shift+Enter (or Ctrl/Cmd+Enter) = newline
               if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                 e.preventDefault();
                 submit();
               }
             }}
+            onWheel={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
             placeholder="Tell Jimmy what to build, or ask Sherlock to debug…"
             rows={1}
-            className="max-h-40 min-h-[44px] flex-1 resize-none bg-transparent px-3 py-2.5 text-[14px] outline-none placeholder:text-muted-foreground/70"
+            className="max-h-[320px] min-h-[44px] flex-1 resize-none overflow-y-auto bg-transparent px-3 py-2.5 text-[14px] outline-none placeholder:text-muted-foreground/70"
             onInput={(e) => {
               const t = e.currentTarget;
               t.style.height = "auto";
-              t.style.height = `${Math.min(t.scrollHeight, 160)}px`;
+              t.style.height = `${Math.min(t.scrollHeight, 320)}px`;
             }}
           />
+          {/* Scroll arrows for chat stream (Lovable parity) */}
+          <div className="flex flex-col gap-1">
+            <button
+              type="button"
+              title="Scroll to top"
+              onClick={() => virtuosoRef.current?.scrollToIndex({ index: 0, behavior: "smooth", align: "start" })}
+              className="grid h-5 w-7 place-items-center rounded-md border border-white/10 bg-white/[0.04] text-muted-foreground hover:bg-white/[0.08] hover:text-foreground"
+            >
+              <ChevronUp className="h-3 w-3" />
+            </button>
+            <button
+              type="button"
+              title="Scroll to latest"
+              onClick={() => virtuosoRef.current?.scrollToIndex({ index: messages.length - 1, behavior: "smooth", align: "end" })}
+              className="grid h-5 w-7 place-items-center rounded-md border border-white/10 bg-white/[0.04] text-muted-foreground hover:bg-white/[0.08] hover:text-foreground"
+            >
+              <ChevronDown className="h-3 w-3" />
+            </button>
+          </div>
           <button
             type="submit"
             disabled={!draft.trim() || overLimit}
