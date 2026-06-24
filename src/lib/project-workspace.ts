@@ -1,7 +1,7 @@
 /**
  * Phase 7 — Multi-Project Builder isolation layer.
  *
- * Every project (HostFlow AI, Rapid Pay, AXONETIS Builder…) gets its own
+ * Every project (HostFlow AI, ANEXVOT AI PAY, AXONETIS Builder…) gets its own
  * independent workspace: chat history, branch, environment, preview env,
  * Sherlock fix-loop counter. State is keyed by `projectId` and persisted
  * to localStorage so switching projects round-trips cleanly.

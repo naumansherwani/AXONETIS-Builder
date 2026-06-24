@@ -16,7 +16,7 @@ export interface RailItemFull extends RailItem {
 }
 
 export const LEFT_RAIL_ITEMS: RailItem[] = [
-  { id: "projects",   label: "Projects",   icon: Code2,      hint: "Switch between HostFlow, Rapid Pay, AXONETIS." },
+  { id: "projects",   label: "Projects",   icon: Code2,      hint: "Switch between HostFlow, ANEXVOT AI PAY, AXONETIS." },
   { id: "code",       label: "Code",       icon: FileCode2,  hint: "Editor with AI inline suggestions." },
   { id: "blueprints", label: "Blueprints", icon: Layers,     hint: "Locked architecture docs per project." },
   { id: "knowledge",  label: "Knowledge",  icon: BookOpen,   hint: "RAG corpus indexed for the agents." },

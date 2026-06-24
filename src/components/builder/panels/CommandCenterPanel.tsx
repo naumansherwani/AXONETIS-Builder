@@ -3,7 +3,7 @@
  *
  * Single unified dashboard the founder lives in: aggregates deploy pipeline
  * state, agent health, cost/telemetry, per-project preview health, and the
- * Sherlock auto-fix loop counter — across ALL projects (HostFlow / Rapid Pay
+ * Sherlock auto-fix loop counter — across ALL projects (HostFlow / ANEXVOT AI PAY
  * / AXONETIS). Read-only aggregation layer; NO duplicate logic — pulls from
  * the same primitives the existing Deploy/Analytics/Activity panels use.
  *

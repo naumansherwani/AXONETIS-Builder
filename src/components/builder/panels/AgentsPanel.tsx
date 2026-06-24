@@ -95,7 +95,7 @@ export default function AgentsPanel() {
       .catch(() => { /* keep seed */ });
     listRapidPayAgents()
       .then((rows) => { if (alive && rows?.length) setRapidPayAgents(rows.map(mapRapidPayAgent)); })
-      .catch(() => { /* Rapid Pay lives in Supabase 2 later; keep locked seed contract */ });
+      .catch(() => { /* ANEXVOT AI PAY lives in Supabase 2 later; keep locked seed contract */ });
     return () => { alive = false; };
   }, []);
 
@@ -137,9 +137,9 @@ export default function AgentsPanel() {
         </div>
       </PanelSection>
 
-      <PanelSection title="Rapid Pay · Supabase 2 Future" action={<span className="text-[10px] text-muted-foreground/60">16 + 3 security</span>}>
+      <PanelSection title="ANEXVOT AI PAY · Supabase 2 Future" action={<span className="text-[10px] text-muted-foreground/60">16 + 3 security</span>}>
         <div className="mb-2 rounded-md border border-amber-400/15 bg-amber-400/[0.03] px-2 py-1.5 text-[10px] leading-relaxed text-muted-foreground/85">
-          routing_config → OpenRouter → Groq → Ollama. Rapid Pay is not inserted into Supabase 3.
+          routing_config → OpenRouter → Groq → Ollama. ANEXVOT AI PAY is not inserted into Supabase 3.
         </div>
         <div className="flex flex-col gap-0.5">
           {rapidPayAgents.map((a) => <RapidPayRow key={a.slug} agent={a} />)}
