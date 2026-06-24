@@ -145,12 +145,21 @@ export interface AgentChatResponse {
   messageId: string;
   status: "queued" | "streaming" | "done";
 }
-export function chatWithAgent(slug: AgentSlug, body: AgentChatRequest) {
-  return callHostFlowServer<AgentChatResponse>(`/api/agents/${slug}/chat`, {
+export async function chatWithAgent(slug: AgentSlug, body: AgentChatRequest) {
+  // Phase A.1 (3-process-split-LOCKED Option B): same-origin TanStack proxy
+  // → inserts user msg into Supabase 3 → forwards to Rust brain :8088.
+  const res = await fetch(`/api/agents/${slug}/chat`, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`chatWithAgent ${slug} failed (${res.status}): ${text}`);
+  }
+  return (await res.json()) as AgentChatResponse;
 }
+
 
 // Sherlock scan
 export function runSherlockScan(projectId: ProjectId, target?: string) {

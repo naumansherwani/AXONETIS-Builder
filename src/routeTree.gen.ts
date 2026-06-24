@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as ApiAgentsSlugChatRouteImport } from './routes/api/agents.$slug.chat'
 
 const LogoLabRoute = LogoLabRouteImport.update({
   id: '/logo-lab',
@@ -39,18 +40,25 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/callback',
   getParentRoute: () => AuthRoute,
 } as any)
+const ApiAgentsSlugChatRoute = ApiAgentsSlugChatRouteImport.update({
+  id: '/api/agents/$slug/chat',
+  path: '/api/agents/$slug/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/logo-lab': typeof LogoLabRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/api/agents/$slug/chat': typeof ApiAgentsSlugChatRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRouteWithChildren
   '/logo-lab': typeof LogoLabRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/': typeof AuthenticatedIndexRoute
+  '/api/agents/$slug/chat': typeof ApiAgentsSlugChatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -59,12 +67,18 @@ export interface FileRoutesById {
   '/logo-lab': typeof LogoLabRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/api/agents/$slug/chat': typeof ApiAgentsSlugChatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/logo-lab' | '/auth/callback'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/logo-lab'
+    | '/auth/callback'
+    | '/api/agents/$slug/chat'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/logo-lab' | '/auth/callback' | '/'
+  to: '/auth' | '/logo-lab' | '/auth/callback' | '/' | '/api/agents/$slug/chat'
   id:
     | '__root__'
     | '/_authenticated'
@@ -72,12 +86,14 @@ export interface FileRouteTypes {
     | '/logo-lab'
     | '/auth/callback'
     | '/_authenticated/'
+    | '/api/agents/$slug/chat'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   LogoLabRoute: typeof LogoLabRoute
+  ApiAgentsSlugChatRoute: typeof ApiAgentsSlugChatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -117,6 +133,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/api/agents/$slug/chat': {
+      id: '/api/agents/$slug/chat'
+      path: '/api/agents/$slug/chat'
+      fullPath: '/api/agents/$slug/chat'
+      preLoaderRoute: typeof ApiAgentsSlugChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -145,6 +168,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   LogoLabRoute: LogoLabRoute,
+  ApiAgentsSlugChatRoute: ApiAgentsSlugChatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
