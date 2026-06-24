@@ -20,11 +20,14 @@ export default defineConfig({
   },
   vite: {
     server: {
-      allowedHosts: ["aiaxonetis.nexatect.com", ".nexatect.com"],
+      // Builder is private, founder-only — served on founderbuilder.axonetis.com
+      // (Caddy → localhost:3000). Keep nexatect.com only as a 301 redirect at the
+      // edge — NOT a host this app should accept directly.
+      allowedHosts: ["founderbuilder.axonetis.com", ".axonetis.com"],
       host: "0.0.0.0",
     },
     preview: {
-      allowedHosts: ["aiaxonetis.nexatect.com", ".nexatect.com"],
+      allowedHosts: ["founderbuilder.axonetis.com", ".axonetis.com"],
       host: "0.0.0.0",
     },
   },
