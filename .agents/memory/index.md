@@ -1,7 +1,7 @@
 # Project Memory
 
 ## Core
-Project: Self-hosted AI agent builder — **AXONETIS AI Builder™** (formerly AXONET; renamed Jun 2026 because Axonet/Axxonet/Axionet/Axonis all taken). Coined name, 8 letters, acronym: Autonomous · Xclusive · Orchestration · Network · Enterprise · Technology · Intelligent · Sovereign. Hosted at axonetis.nexatect.com — hidden/founder-only. Edits founder's existing sites (HostFlow AI, Rapid Pay). Backend: self-hosted Supabase on Hetzner. Never mention Supabase — founder uses own instance. APIs via OpenRouter + Groq.
+Project: Self-hosted AI agent builder — **AXONETIS AI Builder™**. LIVE at **founderbuilder.axonetis.com** (founder-only, hidden, Caddy + Namecheap). **axonetis.com** root = future PUBLIC marketing site — DO NOT point builder there. FORBIDDEN: aiaxonetis.hostflowai.net, aiaxonetis.nexatect.com, any *.hostflowai.net. Edits founder's existing sites. Backend: self-hosted Supabase on Hetzner. Never mention Supabase. APIs via OpenRouter + Groq.
 Founder: Muhammad Nauman Sherwani. Roman Urdu/Hindi — reply same style, keep short.
 Backend endpoint workflow LOCKED: for hostflowai-server, write exact copy-paste TypeScript endpoint code for founder to run manually. No vague contracts only.
 NO Docker / NO containers. Architecture: iframe + postMessage bridge + Supabase project_files (truth) + Realtime HMR reload. Same trick as Lovable.
