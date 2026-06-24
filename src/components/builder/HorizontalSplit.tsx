@@ -2,7 +2,7 @@
  * Horizontal resizable splitter for the final Lovable-style workspace.
  * Left = Unified Build Chat, Right = Live Preview iframe.
  */
-import { useCallback, useEffect, useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { GripVertical } from "lucide-react";
 
 interface Props {
@@ -60,7 +60,7 @@ export default function HorizontalSplit({
     };
   }, [onMove, stop]);
 
-  const startDrag = (e: PointerEvent<HTMLElement>) => {
+  const startDrag = (e: ReactPointerEvent<HTMLElement>) => {
     e.preventDefault();
     e.stopPropagation();
     (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
