@@ -99,25 +99,32 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
           auth: { persistSession: false, autoRefreshToken: false },
         });
 
-        // Resolve founder user_id from forwarded bearer token (agent_threads.user_id NOT NULL).
+        // Resolve founder user_id from forwarded bearer token or GitHub founder session.
         const authHeader = request.headers.get("authorization") ?? "";
         const token = authHeader.toLowerCase().startsWith("bearer ")
           ? authHeader.slice(7).trim()
           : "";
-        if (!token) {
-          return Response.json(
-            { error: "Missing Authorization bearer token (Supabase 3 session required)" },
-            { status: 401 },
-          );
+        let userId = "";
+        if (token) {
+          const { data: userRes, error: userErr } = await supabase.auth.getUser(token);
+          if (userErr || !userRes?.user) {
+            return Response.json(
+              { error: `Invalid session: ${userErr?.message ?? "no user"}` },
+              { status: 401 },
+            );
+          }
+          userId = userRes.user.id;
+        } else {
+          const { readFounderSession, resolveFounderUserId } = await import("@/lib/founder-session.server");
+          const founderSession = readFounderSession(request);
+          if (!founderSession) {
+            return Response.json(
+              { error: "Founder GitHub session required. Login at /auth first." },
+              { status: 401 },
+            );
+          }
+          userId = await resolveFounderUserId(supabase, founderSession);
         }
-        const { data: userRes, error: userErr } = await supabase.auth.getUser(token);
-        if (userErr || !userRes?.user) {
-          return Response.json(
-            { error: `Invalid session: ${userErr?.message ?? "no user"}` },
-            { status: 401 },
-          );
-        }
-        const userId = userRes.user.id;
 
         // 1. Ensure thread
         let threadId = body.threadId?.trim() || null;
@@ -190,12 +197,12 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
           assistantText = `⚠️ Brain unreachable: ${rustError}`;
         }
 
-        // 4. Insert assistant message (full Rust JSON in metadata for debug)
+        // 4. Insert agent message (full Rust JSON in metadata for debug)
         const { data: aMsg, error: aErr } = await supabase
           .from("agent_thread_messages")
           .insert({
             thread_id: threadId,
-            role: "assistant",
+            role: "agent",
             agent_slug: slug,
             parent_message_id: userMsg.id,
             parts: [{ type: "text", text: assistantText }],
@@ -220,6 +227,8 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
             threadId,
             userMessageId: userMsg.id,
             assistantMessageId: aMsg.id,
+            assistantText,
+            status: "done",
             rustError, // null on success
           },
           { status: 200 },

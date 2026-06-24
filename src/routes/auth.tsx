@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Loader2, Mail } from "lucide-react";
-import { supabase3, SUPABASE3_READY } from "@/integrations/supabase3/client";
+import { Github, KeyRound, Loader2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import KernelLogo from "@/components/builder/KernelLogo";
 
@@ -11,7 +10,7 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Sign in — Founder AI Builder™" },
+      { title: "Founder Access — AXONETIS AI Builder™" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -20,35 +19,33 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [pat, setPat] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email) return;
-
-    if (!SUPABASE3_READY) {
-      setStatus("error");
-      setErrorMsg(
-        "Supabase 3 not configured yet. Set VITE_SUPABASE3_URL and VITE_SUPABASE3_ANON_KEY, then try again.",
-      );
-      // Bypass into the shell so founder can inspect Phase 1 visually.
-      setTimeout(() => navigate({ to: "/" }), 600);
-      return;
-    }
+    if (!username.trim() || !pat.trim()) return;
 
     setStatus("sending");
-    const { error } = await supabase3.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    setErrorMsg("");
+
+    const response = await fetch("/api/founder/github-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, pat }),
     });
-    if (error) {
+
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
       setStatus("error");
-      setErrorMsg(error.message);
+      setErrorMsg(payload?.error ?? "Founder access verify nahi hua.");
       return;
     }
+
     setStatus("sent");
+    navigate({ to: "/", replace: true });
   }
 
   return (
@@ -68,36 +65,47 @@ function AuthPage() {
         >
           <div className="mb-8 flex flex-col gap-2">
             <KernelLogo state="standby" size={22} />
-            <div className="mt-2 text-lg font-semibold leading-tight">AI Autonomous Agent Builder</div>
+            <div className="mt-2 text-lg font-semibold leading-tight">AXONETIS AI Builder™</div>
             <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              Kernel · F-OS · Founder-only
+              Founder OS · Private Workspace
             </div>
           </div>
 
 
-          <h1 className="mb-2 text-2xl font-semibold tracking-tight">Sovereign access</h1>
+          <h1 className="mb-2 text-2xl font-semibold tracking-tight">Founder access</h1>
           <p className="mb-8 text-sm text-muted-foreground">
-            Magic link sign-in. Founder-only workspace.
+            GitHub username aur personal access token se enter karein.
           </p>
 
           {status === "sent" ? (
             <div className="rounded-lg border border-[#E50914]/30 bg-[#E50914]/5 p-4 text-sm">
-              <div className="font-medium text-foreground">Magic link sent</div>
+              <div className="font-medium text-foreground">Access verified</div>
               <div className="mt-1 text-muted-foreground">
-                Check <span className="text-foreground">{email}</span> and click the link to enter.
+                Builder workspace open ho raha hai.
               </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="relative">
-                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
-                  type="email"
+                  type="text"
                   required
                   autoFocus
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="hostflowaibuilder@gmail.com"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="GitHub username"
+                  className="h-11 w-full rounded-lg border border-white/[0.08] bg-white/[0.02] pl-9 pr-3 text-sm outline-none transition-colors focus:border-[#E50914]/50 focus:bg-white/[0.04]"
+                />
+              </div>
+              <div className="relative">
+                <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="password"
+                  required
+                  value={pat}
+                  onChange={(e) => setPat(e.target.value)}
+                  placeholder="GitHub PAT"
                   className="h-11 w-full rounded-lg border border-white/[0.08] bg-white/[0.02] pl-9 pr-3 text-sm outline-none transition-colors focus:border-[#E50914]/50 focus:bg-white/[0.04]"
                 />
               </div>
@@ -110,10 +118,13 @@ function AuthPage() {
                 {status === "sending" ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Sending…
+                    Verifying…
                   </>
                 ) : (
-                  "Send magic link"
+                  <>
+                    <Github className="h-4 w-4" />
+                    Enter builder
+                  </>
                 )}
               </Button>
 
@@ -126,10 +137,10 @@ function AuthPage() {
           )}
 
           <div className="mt-8 flex items-center justify-between text-[10px] uppercase tracking-widest text-muted-foreground">
-            <span>v0.1 · Phase 1</span>
+            <span>v0.1 · Founder build</span>
             <span className="flex items-center gap-1.5">
-              <span className={`h-1.5 w-1.5 rounded-full ${SUPABASE3_READY ? "bg-emerald-400" : "bg-yellow-400 fb-blink"}`} />
-              {SUPABASE3_READY ? "Supabase 3 live" : "Supabase 3 pending"}
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              AXONETIS LIVE
             </span>
           </div>
         </motion.div>

@@ -122,6 +122,18 @@ export default function UnifiedChat() {
     void chatWithAgent("jimmy", { projectId: project, threadId, prompt })
       .then((ack) => {
         if (!threadId && ack.threadId) setThreadId(ack.threadId);
+        if (ack.assistantText) {
+          setMessages((prev) => {
+            const next = [...prev];
+            const placeholderId = pendingPlaceholderRef.current;
+            const idx = placeholderId ? next.findIndex((m) => m.id === placeholderId) : -1;
+            if (idx >= 0) {
+              next[idx] = { id: ack.assistantMessageId ?? placeholderId, agent: "jimmy", text: ack.assistantText ?? "" };
+              pendingPlaceholderRef.current = null;
+            }
+            return next;
+          });
+        }
       })
       .catch((err) => {
         console.warn("[UnifiedChat] chatWithAgent failed:", err);
