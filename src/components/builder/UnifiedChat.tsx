@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ChangeEvent } from "react";
 import { motion } from "framer-motion";
-import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
-import { ChevronDown, ChevronUp, Mic, Paperclip, Radio, Send, ShieldCheck, Slash } from "lucide-react";
+import { ChevronDown, ChevronUp, Mic, Paperclip, Radio, Send, ShieldCheck } from "lucide-react";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
@@ -18,7 +17,7 @@ import {
   type UploadedAttachment,
 } from "@/lib/hostflow-api";
 import { PROJECTS } from "@/lib/projects";
-import { loadWorkspace, patchWorkspace, supabaseLabelFor, type ChatMsg } from "@/lib/project-workspace";
+import { loadWorkspace, patchWorkspace, type ChatMsg } from "@/lib/project-workspace";
 import {
   subscribeThread,
   fetchThreadMessages,
@@ -32,9 +31,10 @@ type Msg = ChatMsg;
 type ChatStatus = "ready" | "submitted" | "streaming";
 type UnifiedAgentSlug = Extract<AgentSlug, "jimmy" | "sherlock">;
 
-// Phase 6 LOCKED limits
 const MAX_CHARS = 5_000_000;
 const MAX_ATTACHMENTS = 10_000;
+const SCROLL_STEP = 260;
+const BOTTOM_THRESHOLD = 24;
 
 const SEED: Msg[] = [
   { id: "1", agent: "founder", text: "Phase 1 shell ready ho gaya. Let's see the unified chat in action." },
@@ -68,7 +68,11 @@ export default function UnifiedChat() {
   const [queue, setQueue] = useState<string[]>([]);
   const [attachments, setAttachments] = useState<UploadedAttachment[]>([]);
   const [composerNotice, setComposerNotice] = useState("");
-  const virtuosoRef = useRef<VirtuosoHandle>(null);
+  const [atTop, setAtTop] = useState(true);
+  const [atBottom, setAtBottom] = useState(true);
+
+  const messagesRef = useRef<HTMLDivElement>(null);
+  const stickToBottomRef = useRef(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -78,6 +82,32 @@ export default function UnifiedChat() {
   const pendingPlaceholderRef = useRef<string | null>(null);
   const seenMessageIdsRef = useRef<Set<string>>(new Set());
 
+  // --- Scroll helpers ---
+  const updateScrollEdges = useCallback(() => {
+    const el = messagesRef.current;
+    if (!el) return;
+    const top = el.scrollTop <= 1;
+    const bottom = el.scrollHeight - el.scrollTop - el.clientHeight <= BOTTOM_THRESHOLD;
+    setAtTop(top);
+    setAtBottom(bottom);
+    stickToBottomRef.current = bottom;
+  }, []);
+
+  const scrollByDelta = useCallback((delta: number) => {
+    messagesRef.current?.scrollBy({ top: delta, behavior: "smooth" });
+  }, []);
+
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    const el = messagesRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior });
+  }, []);
+
+  const scrollToTop = useCallback((behavior: ScrollBehavior = "smooth") => {
+    messagesRef.current?.scrollTo({ top: 0, behavior });
+  }, []);
+
+  // Project switch — reset state
   useEffect(() => {
     const ws = loadWorkspace(project, SEED);
     setMessages(ws.messages.length ? ws.messages : SEED);
@@ -92,20 +122,26 @@ export default function UnifiedChat() {
     streamIdRef.current = null;
     setStatus("ready");
     seenMessageIdsRef.current = new Set();
+    stickToBottomRef.current = true;
   }, [project]);
 
+  // Persist workspace
   useEffect(() => {
     patchWorkspace(project, { messages, fixLoopIteration: fixIteration, jimmyThreadId: threadId });
   }, [project, messages, fixIteration, threadId]);
 
-  useEffect(() => {
-    virtuosoRef.current?.scrollToIndex({ index: messages.length - 1, behavior: "smooth", align: "end" });
-  }, [messages.length]);
+  // Auto-scroll only if user was at bottom
+  useLayoutEffect(() => {
+    if (stickToBottomRef.current) scrollToBottom("auto");
+    updateScrollEdges();
+  }, [messages, scrollToBottom, updateScrollEdges]);
 
+  // Focus textarea on project switch / after submit
   useEffect(() => {
     textareaRef.current?.focus();
   }, [project, status]);
 
+  // Realtime thread subscription
   useEffect(() => {
     if (!threadId) return;
     void fetchThreadMessages(threadId).then((rows) => {
@@ -154,6 +190,7 @@ export default function UnifiedChat() {
     streamIdRef.current = streamId;
     setStatus("streaming");
     setComposerNotice("");
+    stickToBottomRef.current = true;
     setMessages((prev) => [
       ...prev,
       { id: `f-${Date.now()}`, agent: "founder", text: prompt },
@@ -259,12 +296,8 @@ export default function UnifiedChat() {
       voiceChunksRef.current = [];
       const recorder = new MediaRecorder(stream);
       mediaRecorderRef.current = recorder;
-      recorder.ondataavailable = (event) => {
-        if (event.data.size) voiceChunksRef.current.push(event.data);
-      };
-      recorder.onstop = () => {
-        stream.getTracks().forEach((track) => track.stop());
-      };
+      recorder.ondataavailable = (event) => { if (event.data.size) voiceChunksRef.current.push(event.data); };
+      recorder.onstop = () => { stream.getTracks().forEach((track) => track.stop()); };
       recorder.start();
       setComposerNotice("Recording… release mic to transcribe.");
     } catch (err) {
@@ -293,8 +326,23 @@ export default function UnifiedChat() {
     recorder.stop();
   }, [project]);
 
+  // Keyboard navigation on message list (and Ctrl/Cmd+Arrow from anywhere inside chat)
+  const onListKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    const el = messagesRef.current;
+    if (!el) return;
+    switch (e.key) {
+      case "ArrowDown": e.preventDefault(); scrollByDelta(SCROLL_STEP / 3); break;
+      case "ArrowUp": e.preventDefault(); scrollByDelta(-SCROLL_STEP / 3); break;
+      case "PageDown": e.preventDefault(); scrollByDelta(el.clientHeight * 0.85); break;
+      case "PageUp": e.preventDefault(); scrollByDelta(-el.clientHeight * 0.85); break;
+      case "End": e.preventDefault(); scrollToBottom(); break;
+      case "Home": e.preventDefault(); scrollToTop(); break;
+    }
+  }, [scrollByDelta, scrollToBottom, scrollToTop]);
+
   return (
-    <div className="flex h-full flex-col bg-background">
+    <div className="flex h-full min-h-0 flex-col bg-background">
+      {/* Header */}
       <div className="relative grid h-12 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background/70 px-4 backdrop-blur-xl">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#E50914]/40 to-transparent" />
         <div className="flex min-w-0 items-center gap-3">
@@ -316,51 +364,76 @@ export default function UnifiedChat() {
         <span className="shrink-0 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/50">{bridgeStatus}</span>
       </div>
 
+      {/* Messages — native scroll, keyboard accessible */}
       <div className="relative min-h-0 flex-1">
-        <Virtuoso
-          ref={virtuosoRef}
-          data={messages}
-          followOutput="smooth"
-          initialTopMostItemIndex={messages.length - 1}
-          className="fb-no-scrollbar"
-          style={{ height: "100%" }}
-          itemContent={(_i, msg) => (
-            <div className="px-4 py-2.5">
-              <MessageRow msg={msg} />
-            </div>
-          )}
-        />
+        <div
+          ref={messagesRef}
+          tabIndex={0}
+          onScroll={updateScrollEdges}
+          onKeyDown={onListKeyDown}
+          className="fb-no-scrollbar h-full overflow-y-auto outline-none focus-visible:ring-0"
+        >
+          <div className="flex flex-col gap-0 py-2">
+            {messages.map((msg) => (
+              <div key={msg.id} className="px-4 py-2.5">
+                <MessageRow msg={msg} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Slim arrow rail */}
         <div className="pointer-events-none absolute bottom-3 left-2 z-20 flex flex-col overflow-hidden rounded-full border border-border bg-background/80 shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl">
           <button
             type="button"
-            title="Scroll to top"
+            title="Scroll up (↑/PgUp)"
+            disabled={atTop}
             onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => virtuosoRef.current?.scrollToIndex({ index: 0, behavior: "smooth", align: "start" })}
-            className="pointer-events-auto grid h-6 w-6 place-items-center text-muted-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
+            onClick={() => scrollByDelta(-SCROLL_STEP)}
+            className="pointer-events-auto grid h-6 w-6 place-items-center text-muted-foreground/80 transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
           >
             <ChevronUp className="h-3 w-3" />
           </button>
           <span className="mx-1 h-px bg-border" />
           <button
             type="button"
-            title="Scroll to latest"
+            title="Scroll down (↓/PgDn/End)"
+            disabled={atBottom}
             onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => virtuosoRef.current?.scrollToIndex({ index: messages.length - 1, behavior: "smooth", align: "end" })}
-            className="pointer-events-auto grid h-6 w-6 place-items-center text-muted-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
+            onClick={() => scrollByDelta(SCROLL_STEP)}
+            className="pointer-events-auto grid h-6 w-6 place-items-center text-muted-foreground/80 transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
           >
             <ChevronDown className="h-3 w-3" />
           </button>
         </div>
       </div>
 
+      {/* Composer — pinned bottom */}
       <div className="shrink-0 border-t border-border bg-background/75 p-3 backdrop-blur-xl">
         <input ref={fileInputRef} type="file" multiple className="hidden" onChange={onAttach} />
-        <PromptInput className="rounded-lg" onSubmit={(e) => { e.preventDefault(); submit(); }} onPointerDown={(e) => e.stopPropagation()}>
+        <PromptInput
+          className="rounded-lg"
+          onSubmit={(e) => { e.preventDefault(); submit(); }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
           <PromptInputTextarea
             ref={textareaRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value.slice(0, MAX_CHARS))}
             onKeyDown={(e) => {
+              if (e.key === "Escape") { (e.currentTarget as HTMLTextAreaElement).blur(); return; }
+              if ((e.ctrlKey || e.metaKey) && (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "PageUp" || e.key === "PageDown" || e.key === "Home" || e.key === "End")) {
+                const el = messagesRef.current;
+                if (!el) return;
+                e.preventDefault();
+                if (e.key === "ArrowUp") scrollByDelta(-SCROLL_STEP / 3);
+                else if (e.key === "ArrowDown") scrollByDelta(SCROLL_STEP / 3);
+                else if (e.key === "PageUp") scrollByDelta(-el.clientHeight * 0.85);
+                else if (e.key === "PageDown") scrollByDelta(el.clientHeight * 0.85);
+                else if (e.key === "Home") scrollToTop();
+                else if (e.key === "End") scrollToBottom();
+                return;
+              }
               if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                 e.preventDefault();
                 submit();
@@ -374,7 +447,7 @@ export default function UnifiedChat() {
             onInput={(e) => {
               const t = e.currentTarget;
               t.style.height = "auto";
-              t.style.height = `${Math.min(t.scrollHeight, 260)}px`;
+              t.style.height = `${Math.min(t.scrollHeight, 220)}px`;
             }}
           />
           <PromptInputFooter>
@@ -408,9 +481,6 @@ export default function UnifiedChat() {
                   </TooltipTrigger>
                   <TooltipContent>Hold to talk</TooltipContent>
                 </Tooltip>
-                <div className="hidden items-center gap-1.5 rounded-md border border-border bg-accent/25 px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground/70 lg:flex">
-                  <Slash className="h-3 w-3" /> tools
-                </div>
               </div>
             </TooltipProvider>
             <div className="flex items-center gap-2">
@@ -447,7 +517,7 @@ function MessageRow({ msg }: { msg: Msg }) {
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 80, damping: 15 }}
       className="grid grid-cols-[2px_30px_minmax(0,1fr)] gap-3"
