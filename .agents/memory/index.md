@@ -28,6 +28,7 @@ HETZNER CADDYFILE LIVE LOCKED Jun 22 2026: Founder ka actual /etc/caddy/Caddyfil
 NO CLOUDFLARE EVER LOCKED Jun 22 2026: System pehle Cloudflare ke through hijack ho chuka. Cloudflare DNS/Workers/R2/Tunnels — kabhi suggest nahi karna. DNS=Namecheap. SSL=Caddy Let's Encrypt HTTP-01. Wildcard=Caddy on-demand TLS (`ask localhost:8088/check-domain`). See mem://constraints/no-cloudflare-ever-LOCKED.
 
 ## Memories
+- [PM2 Process Split — Builder vs Rust LOCKED](mem://features/pm2-process-split-LOCKED) — Hetzner PM2 map Jun 24 2026. Builder code → `axonetis-builder` (id 4). Rust code → `axonetis-rust-human` (id 7). GitHub token "axonetis-builder" for Builder repo only. Phase A order (Supabase 3 SSE → snippet → publish → Sherlock 3-loop → polish, ~35cr).
 - [AXONETIS Unified Disruptive Blueprint LOCKED](mem://features/axonetis-unified-disruptive-blueprint-LOCKED) — THE single founder-locked unified UI/phase blueprint (Jun 20 2026). Hybrid arch, agent hierarchy, model map, cinematic design, build order 3.9→3.10→11→9→10→12, 12-tool registry, full phase UI, tables, /rpc/ endpoints, limits, constitutional principles. Supersedes prior UI/phase blueprints on conflict.
 - [Rust Migration Roadmap All 4 Products LOCKED](mem://features/rust-migration-roadmap-all-4-products-LOCKED) — Builder→HostFlow→AneXVoT→AXOMAIL. Per-product phases A/B/C/D. AI Human personality rules.
 - [NEXATECT Domain Tree LOCKED](mem://features/nexatect-domain-tree-LOCKED) — Final org tree + product domains (axonetis.com, anexvotaipay.com, aiaxomail.com). Hetzner API host api.aiaxonetis.com.
