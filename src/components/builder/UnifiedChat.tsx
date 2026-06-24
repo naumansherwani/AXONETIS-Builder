@@ -189,28 +189,28 @@ export default function UnifiedChat() {
             </div>
           )}
         />
-        {/* Scroll nav — bottom-LEFT so it never overlaps the splitter handle on the right */}
-        <div className="absolute bottom-3 left-4 z-20 flex flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#07070b]/85 shadow-[0_0_22px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+        {/* Scroll nav — slim circular pills, bottom-LEFT, never overlap splitter */}
+        <div className="pointer-events-none absolute bottom-3 left-3 z-20 flex flex-col gap-1.5">
           <button
             type="button"
-            title="Scroll to first message"
+            title="Scroll to top"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => virtuosoRef.current?.scrollToIndex({ index: 0, behavior: "smooth", align: "start" })}
-            className="grid h-8 w-8 place-items-center text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
+            className="pointer-events-auto grid h-6 w-6 place-items-center rounded-full border border-white/10 bg-black/60 text-muted-foreground/80 backdrop-blur transition-colors hover:bg-white/10 hover:text-foreground"
           >
-            <ChevronUp className="h-3.5 w-3.5" />
+            <ChevronUp className="h-3 w-3" />
           </button>
-          <div className="h-px bg-white/[0.08]" />
           <button
             type="button"
-            title="Scroll to latest message"
+            title="Scroll to latest"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => virtuosoRef.current?.scrollToIndex({ index: messages.length - 1, behavior: "smooth", align: "end" })}
-            className="grid h-8 w-8 place-items-center text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
+            className="pointer-events-auto grid h-6 w-6 place-items-center rounded-full border border-white/10 bg-black/60 text-muted-foreground/80 backdrop-blur transition-colors hover:bg-white/10 hover:text-foreground"
           >
-            <ChevronDown className="h-3.5 w-3.5" />
+            <ChevronDown className="h-3 w-3" />
           </button>
         </div>
+
       </div>
 
       {/* COMPOSER */}
