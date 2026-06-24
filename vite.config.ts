@@ -12,6 +12,12 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Hetzner runs Node (pm2), NOT Cloudflare Workers — override the default
+  // nitro preset so the build emits a Node server at .output/server/index.mjs
+  // which is what `node .output/server/index.mjs` (start script) runs.
+  nitro: {
+    preset: "node-server",
+  },
   vite: {
     server: {
       allowedHosts: ["aiaxonetis.nexatect.com", ".nexatect.com"],
