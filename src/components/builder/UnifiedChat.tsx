@@ -148,46 +148,30 @@ export default function UnifiedChat() {
 
   return (
     <div className="flex h-full flex-col bg-gradient-to-b from-[#06060a] to-[#040406]">
-      {/* HEADER */}
+      {/* HEADER — minimal, no clutter */}
       <div className="relative flex h-14 shrink-0 items-center justify-between border-b border-white/[0.06] bg-background/40 px-5 backdrop-blur-xl">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#E50914]/40 to-transparent" />
-        <div className="flex items-center gap-5">
-          <div className="flex items-center gap-2">
-            <Radio className="h-3.5 w-3.5 text-[#ff6b73]" />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-foreground/80">
-              Unified Build Chat
+        <div className="flex min-w-0 items-center gap-3">
+          <Radio className="h-3.5 w-3.5 shrink-0 text-[#ff6b73]" />
+          <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-foreground/80">
+            Build Chat
+          </span>
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider"
+            style={{ borderColor: `${activeProject.accent}66`, background: `${activeProject.accent}1a`, color: "#fff" }}
+          >
+            <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: activeProject.accent, boxShadow: `0 0 8px ${activeProject.accent}` }} />
+            {activeProject.shortName} · {supabaseLabelFor(project)}
+          </span>
+          {fixIteration > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-[#7c3aed]/40 bg-[#7c3aed]/15 px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-[#c4a8ff]">
+              <ShieldCheck className="h-2.5 w-2.5" /> Sherlock {fixIteration}/3
             </span>
-            <span className="ml-1 rounded bg-white/[0.04] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground/70">
-              ∞ history · 5M chars · 10k files
-            </span>
-            {/* Phase 7 — active project + Supabase isolation chip */}
-            <span
-              className="ml-1 inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider"
-              style={{ borderColor: `${activeProject.accent}66`, background: `${activeProject.accent}1a`, color: "#fff" }}
-              title="Phase 7 — independent workspace, history & preview per project"
-            >
-              <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: activeProject.accent, boxShadow: `0 0 8px ${activeProject.accent}` }} />
-              {activeProject.shortName} · {supabaseLabelFor(project)}
-            </span>
-            {fixIteration > 0 && (
-              <span className="ml-1 inline-flex items-center gap-1 rounded-full border border-[#7c3aed]/40 bg-[#7c3aed]/15 px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-[#c4a8ff]">
-                <ShieldCheck className="h-2.5 w-2.5" /> Sherlock fix {fixIteration}/3
-              </span>
-            )}
-          </div>
-          <div className="hidden items-center gap-3 md:flex">
-            {(["founder", "jimmy", "sherlock"] as Agent[]).map((a) => (
-              <AgentPresence key={a} agent={a} />
-            ))}
-          </div>
+          )}
         </div>
-
-        <div className="flex items-center gap-1.5">
-          <ActionBtn icon={Octagon} label="Stop" />
-          <ActionBtn icon={Check} label="Approve" tone="emerald" />
-          <ActionBtn icon={X} label="Reject" tone="red" />
-          <ActionBtn icon={Rocket} label="Deploy" tone="accent" />
-        </div>
+        <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground/50">
+          {bridgeStatus}
+        </span>
       </div>
 
       {/* STREAM — virtualized for unlimited history */}
