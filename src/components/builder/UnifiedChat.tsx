@@ -191,7 +191,7 @@ export default function UnifiedChat() {
       </div>
 
       {/* STREAM — virtualized for unlimited history */}
-      <div className="flex-1 min-h-0">
+      <div className="relative flex-1 min-h-0">
         <Virtuoso
           ref={virtuosoRef}
           data={messages}
@@ -205,6 +205,27 @@ export default function UnifiedChat() {
             </div>
           )}
         />
+        <div className="absolute bottom-3 right-4 z-20 flex flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#07070b]/90 shadow-[0_0_22px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+          <button
+            type="button"
+            title="Scroll to first message"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => virtuosoRef.current?.scrollToIndex({ index: 0, behavior: "smooth", align: "start" })}
+            className="grid h-9 w-9 place-items-center text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
+          >
+            <ChevronUp className="h-4 w-4" />
+          </button>
+          <div className="h-px bg-white/[0.08]" />
+          <button
+            type="button"
+            title="Scroll to latest message"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => virtuosoRef.current?.scrollToIndex({ index: messages.length - 1, behavior: "smooth", align: "end" })}
+            className="grid h-9 w-9 place-items-center text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
+          >
+            <ChevronDown className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {/* COMPOSER */}
@@ -234,25 +255,6 @@ export default function UnifiedChat() {
               t.style.height = `${Math.min(t.scrollHeight, 320)}px`;
             }}
           />
-          {/* Scroll arrows for chat stream (Lovable parity) */}
-          <div className="flex flex-col gap-1">
-            <button
-              type="button"
-              title="Scroll to top"
-              onClick={() => virtuosoRef.current?.scrollToIndex({ index: 0, behavior: "smooth", align: "start" })}
-              className="grid h-5 w-7 place-items-center rounded-md border border-white/10 bg-white/[0.04] text-muted-foreground hover:bg-white/[0.08] hover:text-foreground"
-            >
-              <ChevronUp className="h-3 w-3" />
-            </button>
-            <button
-              type="button"
-              title="Scroll to latest"
-              onClick={() => virtuosoRef.current?.scrollToIndex({ index: messages.length - 1, behavior: "smooth", align: "end" })}
-              className="grid h-5 w-7 place-items-center rounded-md border border-white/10 bg-white/[0.04] text-muted-foreground hover:bg-white/[0.08] hover:text-foreground"
-            >
-              <ChevronDown className="h-3 w-3" />
-            </button>
-          </div>
           <button
             type="submit"
             disabled={!draft.trim() || overLimit}
