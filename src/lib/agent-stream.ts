@@ -81,10 +81,33 @@ export function extractText(row: AgentMessageRow): string {
   if (!Array.isArray(row.parts)) return "";
   for (const p of row.parts) {
     if (p && typeof p === "object" && p.type === "text" && typeof p.text === "string") {
-      return p.text;
+      return cleanAgentText(p.text);
     }
   }
   return "";
+}
+
+/**
+ * Sanitize raw model output before showing in chat.
+ * - Strips `<think>...</think>` reasoning blocks (Qwen/DeepSeek).
+ * - If output is JSON with `final_answer`, extract that.
+ * - Removes stray ``` fences around plain text.
+ */
+export function cleanAgentText(raw: string): string {
+  let text = (raw ?? "").trim();
+  if (!text) return "";
+  // JSON wrapper from router workers: {"agent":"jimmy","final_answer":"...","candidates":[...]}
+  if (text.startsWith("{") && text.includes("final_answer")) {
+    try {
+      const obj = JSON.parse(text);
+      if (typeof obj.final_answer === "string") text = obj.final_answer;
+    } catch { /* ignore */ }
+  }
+  // Strip <think>…</think> (DOTALL)
+  text = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  // Strip a leading lone ```lang fence
+  text = text.replace(/^```[a-z]*\n?/i, "").replace(/```\s*$/i, "").trim();
+  return text;
 }
 
 /** Slugs the Unified Build Chat surface accepts (everything else is filtered out). */
