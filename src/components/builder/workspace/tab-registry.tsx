@@ -14,6 +14,8 @@ import DatabasePanel from "../panels/DatabasePanel";
 import RuntimePanel from "../panels/RuntimePanel";
 import FilesPanel from "../panels/FilesPanel";
 import CommandCenterPanel from "../panels/CommandCenterPanel";
+import TerminalPanel from "./TerminalPanel";
+import GitHubPanel from "./GitHubPanel";
 
 export type TabKind =
   | "preview" | "logs" | "database" | "runtime"
@@ -27,22 +29,6 @@ export interface TabDef {
   closable: boolean;
 }
 
-// Lazy stubs for tabs that arrive in Phase A2 — placeholder until built.
-function TerminalStub() {
-  return (
-    <div className="grid h-full place-items-center bg-background/40 text-[11px] uppercase tracking-widest text-muted-foreground">
-      Terminal · arriving in Phase A2
-    </div>
-  );
-}
-function GitHubStub() {
-  return (
-    <div className="grid h-full place-items-center bg-background/40 text-[11px] uppercase tracking-widest text-muted-foreground">
-      GitHub · arriving in Phase A2
-    </div>
-  );
-}
-
 export const TAB_REGISTRY: Record<TabKind, TabDef> = {
   preview:  { kind: "preview",  label: "Preview",  icon: Monitor,      render: LivePreview,         closable: false },
   logs:     { kind: "logs",     label: "Logs",     icon: ScrollText,   render: LogsPanel,           closable: true  },
@@ -50,8 +36,8 @@ export const TAB_REGISTRY: Record<TabKind, TabDef> = {
   runtime:  { kind: "runtime",  label: "Runtime",  icon: Boxes,        render: RuntimePanel,        closable: true  },
   files:    { kind: "files",    label: "Files",    icon: FilesIcon,    render: FilesPanel,          closable: true  },
   command:  { kind: "command",  label: "Command",  icon: Compass,      render: CommandCenterPanel,  closable: true  },
-  terminal: { kind: "terminal", label: "Terminal", icon: TerminalIcon, render: TerminalStub,        closable: true  },
-  github:   { kind: "github",   label: "GitHub",   icon: GitBranch,    render: GitHubStub,          closable: true  },
+  terminal: { kind: "terminal", label: "Terminal", icon: TerminalIcon, render: TerminalPanel,       closable: true  },
+  github:   { kind: "github",   label: "GitHub",   icon: GitBranch,    render: GitHubPanel,         closable: true  },
 };
 
 export const TAB_KINDS = Object.keys(TAB_REGISTRY) as TabKind[];
