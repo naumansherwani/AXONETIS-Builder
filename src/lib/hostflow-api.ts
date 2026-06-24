@@ -401,7 +401,7 @@ export function subscribeDualBrainRun(
 }
 
 // ────────────────────────────────────────────────────────────────────
-// Rapid Pay — Supabase 2 future endpoints (frontend contract only)
+// ANEXVOT AI PAY — Supabase 2 future endpoints (frontend contract only)
 // ────────────────────────────────────────────────────────────────────
 
 export const listRapidPayAgents = () => callHostFlowServer<RapidPayAgentInfo[]>("/api/rapidpay/agents");

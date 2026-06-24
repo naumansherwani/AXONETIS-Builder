@@ -1,5 +1,5 @@
 /**
- * Projects panel — switch between HostFlow / Rapid Pay / AXONETIS.
+ * Projects panel — switch between HostFlow / ANEXVOT AI PAY / AXONETIS.
  */
 import { useBuilder } from "@/lib/builder-state";
 import { PROJECTS, type ProjectId } from "@/lib/projects";

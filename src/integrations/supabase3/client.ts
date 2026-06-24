@@ -3,7 +3,7 @@
  *
  * This is a SEPARATE Supabase instance (self-hosted on Hetzner) used ONLY by
  * the Builder itself. It is isolated from HostFlow AI (Supabase 1) and
- * Rapid Pay (Supabase 2).
+ * ANEXVOT AI PAY (Supabase 2).
  *
  * Fill these constants when the Hetzner server is ready. Until then magic-link
  * submission will surface a clear error in the UI — by design.

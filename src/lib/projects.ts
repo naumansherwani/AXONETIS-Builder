@@ -23,11 +23,12 @@ export const PROJECTS: ProjectDef[] = [
   },
   {
     id: "rapidpay",
-    name: "Rapid Pay™",
-    shortName: "Rapid Pay",
-    previewUrl: "https://aiarapidpay.nexatect.com",
+    name: "ANEXVOT AI PAY™",
+    shortName: "ANEXVOT",
+    previewUrl: "https://anexvotaipay.nexatect.com",
     accent: "#7c3aed",
   },
+
   {
     id: "founderbuilder",
     name: "AXONETIS AI Builder™",
