@@ -4,7 +4,7 @@
  */
 import {
   Activity, BookOpen, Boxes, Brain, Code2, Compass, Database, FileCode2, FileText, Files,
-  Folder, GitBranch, Github, History, Layers, LineChart, Rocket, ScrollText,
+  Folder, GitBranch, History, Layers, LineChart, Rocket, ScrollText,
   ShieldCheck, Terminal, Users,
 } from "lucide-react";
 
@@ -24,7 +24,7 @@ export const LEFT_RAIL_ITEMS: RailItem[] = [
   { id: "documents",  label: "Documents",  icon: FileText,   hint: "Specs, blueprints, founder notes." },
   { id: "versions",   label: "Versions",   icon: History,    hint: "Time-travel — restore any past commit." },
   { id: "git",        label: "Git",        icon: GitBranch,  hint: "Diff preview, staged changes, history." },
-  { id: "github",     label: "GitHub",     icon: Github,     hint: "Repo sync, PRs, issues, release flow." },
+  { id: "github",     label: "GitHub",     icon: GitBranch,  hint: "Repo sync, PRs, issues, release flow." },
   { id: "terminal",   label: "Terminal",   icon: Terminal,   hint: "Server shell into Hetzner brain." },
 ];
 

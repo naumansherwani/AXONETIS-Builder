@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Github, KeyRound, Loader2, User } from "lucide-react";
+import { GitBranch, KeyRound, Loader2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import KernelLogo from "@/components/builder/KernelLogo";
 
@@ -122,7 +122,7 @@ function AuthPage() {
                   </>
                 ) : (
                   <>
-                    <Github className="h-4 w-4" />
+                    <GitBranch className="h-4 w-4" />
                     Enter builder
                   </>
                 )}
