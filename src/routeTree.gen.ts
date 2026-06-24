@@ -14,6 +14,8 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as ApiFounderSessionRouteImport } from './routes/api/founder.session'
+import { Route as ApiFounderGithubLoginRouteImport } from './routes/api/founder.github-login'
 import { Route as ApiAgentsSlugChatRouteImport } from './routes/api/agents.$slug.chat'
 
 const LogoLabRoute = LogoLabRouteImport.update({
@@ -40,6 +42,16 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/callback',
   getParentRoute: () => AuthRoute,
 } as any)
+const ApiFounderSessionRoute = ApiFounderSessionRouteImport.update({
+  id: '/api/founder/session',
+  path: '/api/founder/session',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiFounderGithubLoginRoute = ApiFounderGithubLoginRouteImport.update({
+  id: '/api/founder/github-login',
+  path: '/api/founder/github-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAgentsSlugChatRoute = ApiAgentsSlugChatRouteImport.update({
   id: '/api/agents/$slug/chat',
   path: '/api/agents/$slug/chat',
@@ -51,6 +63,8 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRouteWithChildren
   '/logo-lab': typeof LogoLabRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/api/founder/github-login': typeof ApiFounderGithubLoginRoute
+  '/api/founder/session': typeof ApiFounderSessionRoute
   '/api/agents/$slug/chat': typeof ApiAgentsSlugChatRoute
 }
 export interface FileRoutesByTo {
@@ -58,6 +72,8 @@ export interface FileRoutesByTo {
   '/logo-lab': typeof LogoLabRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/': typeof AuthenticatedIndexRoute
+  '/api/founder/github-login': typeof ApiFounderGithubLoginRoute
+  '/api/founder/session': typeof ApiFounderSessionRoute
   '/api/agents/$slug/chat': typeof ApiAgentsSlugChatRoute
 }
 export interface FileRoutesById {
@@ -67,6 +83,8 @@ export interface FileRoutesById {
   '/logo-lab': typeof LogoLabRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/api/founder/github-login': typeof ApiFounderGithubLoginRoute
+  '/api/founder/session': typeof ApiFounderSessionRoute
   '/api/agents/$slug/chat': typeof ApiAgentsSlugChatRoute
 }
 export interface FileRouteTypes {
@@ -76,9 +94,18 @@ export interface FileRouteTypes {
     | '/auth'
     | '/logo-lab'
     | '/auth/callback'
+    | '/api/founder/github-login'
+    | '/api/founder/session'
     | '/api/agents/$slug/chat'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/logo-lab' | '/auth/callback' | '/' | '/api/agents/$slug/chat'
+  to:
+    | '/auth'
+    | '/logo-lab'
+    | '/auth/callback'
+    | '/'
+    | '/api/founder/github-login'
+    | '/api/founder/session'
+    | '/api/agents/$slug/chat'
   id:
     | '__root__'
     | '/_authenticated'
@@ -86,6 +113,8 @@ export interface FileRouteTypes {
     | '/logo-lab'
     | '/auth/callback'
     | '/_authenticated/'
+    | '/api/founder/github-login'
+    | '/api/founder/session'
     | '/api/agents/$slug/chat'
   fileRoutesById: FileRoutesById
 }
@@ -93,6 +122,8 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   LogoLabRoute: typeof LogoLabRoute
+  ApiFounderGithubLoginRoute: typeof ApiFounderGithubLoginRoute
+  ApiFounderSessionRoute: typeof ApiFounderSessionRoute
   ApiAgentsSlugChatRoute: typeof ApiAgentsSlugChatRoute
 }
 
@@ -133,6 +164,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/api/founder/session': {
+      id: '/api/founder/session'
+      path: '/api/founder/session'
+      fullPath: '/api/founder/session'
+      preLoaderRoute: typeof ApiFounderSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/founder/github-login': {
+      id: '/api/founder/github-login'
+      path: '/api/founder/github-login'
+      fullPath: '/api/founder/github-login'
+      preLoaderRoute: typeof ApiFounderGithubLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/agents/$slug/chat': {
       id: '/api/agents/$slug/chat'
       path: '/api/agents/$slug/chat'
@@ -168,6 +213,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   LogoLabRoute: LogoLabRoute,
+  ApiFounderGithubLoginRoute: ApiFounderGithubLoginRoute,
+  ApiFounderSessionRoute: ApiFounderSessionRoute,
   ApiAgentsSlugChatRoute: ApiAgentsSlugChatRoute,
 }
 export const routeTree = rootRouteImport

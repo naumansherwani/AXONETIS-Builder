@@ -128,7 +128,7 @@ export default function UnifiedChat() {
             const placeholderId = pendingPlaceholderRef.current;
             const idx = placeholderId ? next.findIndex((m) => m.id === placeholderId) : -1;
             if (idx >= 0) {
-              next[idx] = { id: ack.assistantMessageId ?? placeholderId, agent: "jimmy", text: ack.assistantText ?? "" };
+              next[idx] = { id: ack.assistantMessageId ?? placeholderId ?? `j-${Date.now()}`, agent: "jimmy", text: ack.assistantText ?? "" };
               pendingPlaceholderRef.current = null;
             }
             return next;
