@@ -148,9 +148,15 @@ export interface AgentChatResponse {
 export async function chatWithAgent(slug: AgentSlug, body: AgentChatRequest) {
   // Phase A.1 (3-process-split-LOCKED Option B): same-origin TanStack proxy
   // → inserts user msg into Supabase 3 → forwards to Rust brain :8088.
+  // Forward Supabase 3 access token so the server can attribute the thread
+  // to the founder's auth.users.id (agent_threads.user_id is NOT NULL).
+  const { supabase3 } = await import("@/integrations/supabase3/client");
+  const { data: { session } } = await supabase3.auth.getSession();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
   const res = await fetch(`/api/agents/${slug}/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(body),
   });
   if (!res.ok) {
