@@ -139,6 +139,7 @@ export interface AgentChatRequest {
   projectId: ProjectId;
   threadId?: string;
   prompt: string;
+  streamId?: string;
 }
 export interface AgentChatResponse {
   threadId: string;
@@ -149,7 +150,7 @@ export interface AgentChatResponse {
   rustError?: string | null;
   status: "queued" | "streaming" | "done";
 }
-export async function chatWithAgent(slug: AgentSlug, body: AgentChatRequest) {
+export async function chatWithAgent(slug: AgentSlug, body: AgentChatRequest, options: { signal?: AbortSignal } = {}) {
   // Phase A.1 (3-process-split-LOCKED Option B): same-origin TanStack proxy
   // → inserts user msg into Supabase 3 → forwards to Rust brain :8088.
   // Forward Supabase 3 access token so the server can attribute the thread
@@ -163,12 +164,58 @@ export async function chatWithAgent(slug: AgentSlug, body: AgentChatRequest) {
     headers,
     credentials: "same-origin",
     body: JSON.stringify(body),
+    signal: options.signal,
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(`chatWithAgent ${slug} failed (${res.status}): ${text}`);
   }
   return (await res.json()) as AgentChatResponse;
+}
+
+export async function cancelAgentStream(streamId: string) {
+  return callHostFlowServer<{ ok: boolean; status?: string }>(`/api/agents/stream/${streamId}/cancel`, {
+    method: "POST",
+  });
+}
+
+export interface UploadedAttachment {
+  id?: string;
+  url: string;
+  name: string;
+  contentType?: string;
+  size?: number;
+}
+
+export async function uploadAttachment(projectId: ProjectId, file: File) {
+  if (!HOSTFLOW_API_BASE) {
+    throw new Error("Upload endpoint pending: VITE_HOSTFLOW_SERVER_URL is not configured.");
+  }
+  const form = new FormData();
+  form.set("projectId", projectId);
+  form.set("file", file);
+  const response = await fetch(`${HOSTFLOW_API_BASE.replace(/\/$/, "")}/api/uploads`, {
+    method: "POST",
+    body: form,
+  });
+  if (!response.ok) throw new Error(`Upload endpoint pending or failed (${response.status}).`);
+  return (await response.json()) as UploadedAttachment;
+}
+
+export async function transcribeVoice(projectId: ProjectId, audio: Blob) {
+  if (!HOSTFLOW_API_BASE) {
+    throw new Error("Voice endpoint pending: VITE_HOSTFLOW_SERVER_URL is not configured.");
+  }
+  const form = new FormData();
+  form.set("projectId", projectId);
+  form.set("audio", audio, "voice.webm");
+  const response = await fetch(`${HOSTFLOW_API_BASE.replace(/\/$/, "")}/api/voice/transcribe`, {
+    method: "POST",
+    body: form,
+  });
+  if (!response.ok) throw new Error(`Voice endpoint pending or failed (${response.status}).`);
+  const payload = (await response.json()) as { text?: string; transcript?: string };
+  return (payload.text ?? payload.transcript ?? "").trim();
 }
 
 

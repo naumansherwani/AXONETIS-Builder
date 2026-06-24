@@ -49,13 +49,13 @@ export function PromptInputSubmit({ status = "ready", onStop, disabled, classNam
   const busy = status === "submitted" || status === "streaming";
   return (
     <Button
+      {...props}
       type={busy ? "button" : "submit"}
       size="icon"
       aria-label={busy ? "Stop response" : "Send message"}
       onClick={busy ? onStop : props.onClick}
       disabled={busy ? false : disabled}
       className={cn("h-9 w-9 shrink-0 rounded-lg", className)}
-      {...props}
     >
       {busy ? <Square className="h-3.5 w-3.5" /> : <ArrowUp className="h-4 w-4" />}
     </Button>
