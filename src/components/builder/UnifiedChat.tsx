@@ -189,15 +189,16 @@ export default function UnifiedChat() {
             </div>
           )}
         />
-        <div className="absolute bottom-3 right-4 z-20 flex flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#07070b]/90 shadow-[0_0_22px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+        {/* Scroll nav — bottom-LEFT so it never overlaps the splitter handle on the right */}
+        <div className="absolute bottom-3 left-4 z-20 flex flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#07070b]/85 shadow-[0_0_22px_rgba(0,0,0,0.55)] backdrop-blur-xl">
           <button
             type="button"
             title="Scroll to first message"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => virtuosoRef.current?.scrollToIndex({ index: 0, behavior: "smooth", align: "start" })}
-            className="grid h-9 w-9 place-items-center text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
+            className="grid h-8 w-8 place-items-center text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
           >
-            <ChevronUp className="h-4 w-4" />
+            <ChevronUp className="h-3.5 w-3.5" />
           </button>
           <div className="h-px bg-white/[0.08]" />
           <button
@@ -205,9 +206,9 @@ export default function UnifiedChat() {
             title="Scroll to latest message"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => virtuosoRef.current?.scrollToIndex({ index: messages.length - 1, behavior: "smooth", align: "end" })}
-            className="grid h-9 w-9 place-items-center text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
+            className="grid h-8 w-8 place-items-center text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
           >
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
