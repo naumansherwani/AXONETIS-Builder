@@ -3,9 +3,15 @@ import { motion } from "framer-motion";
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import { Check, Octagon, Radio, Rocket, Send, X, ShieldCheck } from "lucide-react";
 import { useBuilder } from "@/lib/builder-state";
-import { sendBuilderCommand } from "@/lib/hostflow-api";
+import { chatWithAgent, sendBuilderCommand, type AgentSlug } from "@/lib/hostflow-api";
 import { PROJECTS } from "@/lib/projects";
 import { loadWorkspace, patchWorkspace, supabaseLabelFor, type ChatMsg } from "@/lib/project-workspace";
+import {
+  subscribeThread,
+  fetchThreadMessages,
+  extractText,
+  UNIFIED_CHAT_SLUGS,
+} from "@/lib/agent-stream";
 
 type Agent = "founder" | "jimmy" | "sherlock";
 type Msg = ChatMsg;
