@@ -28,6 +28,7 @@ HETZNER CADDYFILE LIVE LOCKED Jun 22 2026: Founder ka actual /etc/caddy/Caddyfil
 NO CLOUDFLARE EVER LOCKED Jun 22 2026: System pehle Cloudflare ke through hijack ho chuka. Cloudflare DNS/Workers/R2/Tunnels — kabhi suggest nahi karna. DNS=Namecheap. SSL=Caddy Let's Encrypt HTTP-01. Wildcard=Caddy on-demand TLS (`ask localhost:8088/check-domain`). See mem://constraints/no-cloudflare-ever-LOCKED.
 
 ## Memories
+- [AXONETIS SSH Bridge LOCKED](mem://features/axonetis-ssh-bridge-LOCKED) — Jun 25 2026. Real PTY terminal in browser. PM2 `axonetis-ssh-bridge` (node-pty + ws on 127.0.0.1:8090), Caddy /ssh → :8090, spawns /bin/bash as root (no SSH hop). Frontend xterm WS.
 - [3-Process Split LOCKED Option B](mem://features/3-process-split-LOCKED) — Jun 24 2026. Builder (UI+proxy) / Rust brain (LLM) / hostflow-server (bridge). Builder repo = `/opt/hostflow-ecosystem/rapid-dialogue-guide`. NO LLM SDKs in builder.
 - [Phase Order LOCKED (post A.1)](mem://features/phase-order-LOCKED) — After Phase A.1 finishes: 3.9.1 Chatbox → 3.9.2 Sidebar → 3.9.3 Domains → 3.9.4 Versions → 3.10 Tool Registry → 3.10.9 Agents Runtime → 3.10.10 Supabase 3 Tables → Phase 9 → 10 → 11. No mixing, ek waqt ek phase.
 - [Phase A.1 LOCKED — Jimmy/Sherlock Supabase 3 wiring](mem://features/phase-a1-jimmy-sherlock-supabase3-wiring-LOCKED) — Jun 24 2026. UnifiedChat → chatWithAgent + Supabase 3 Realtime thread stream. Server snippet `agents.worker.ts` ready for axonetis-builder paste (OpenRouter→Groq→Ollama failover + auto Sherlock audit).
