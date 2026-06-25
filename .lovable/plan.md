@@ -1,63 +1,59 @@
+# Phase A3 — Real Wiring (No Dummy Anywhere)
 
-Bhai, pehle ek ek line padh li. Yeh request bahut bara hai (2 full tracks + rename) aur tumhare paas sirf ~35 credits hain. Agar main ek hi turn me sab build karun, 8-12 credits jaayenge aur quality compromise hogi. Isliye **strict phased plan** — har phase ke baad ruko, verify karo, "agla" bolo.
+Bhai sab confirm. Yeh bara kaam hai — 4 tracks. Strict phase split, har track ke baad ruko, "agla" bolo.
 
-## Pre-flight (zero new files, no duplicates)
+## Locked decisions (tumhare confirmation se)
 
-Existing audit jo main use karunga (already in tree, NO duplicate banega):
-- `UnifiedChat.tsx` → Track B me sirf is file ko refactor karunga, naya chat component NAHI.
-- `BuilderShell.tsx` + `HorizontalSplit.tsx` + `VerticalSplit.tsx` → Track A me right-pane ko dockable tab system me extend karunga, naya shell NAHI.
-- `panels/*` (CodePanel, LogsPanel, DatabasePanel, etc.) already exist → tabs ke andar inhi ko mount karunga, naye panels NAHI.
-- `projects.ts` me `Rapid Pay` → `ANEXVOT AI PAY` rename (1 line).
+1. **Real SSH terminal** — Hetzner pe naya PM2 process `axonetis-ssh-bridge` (Node + `ws` + `node-pty`) port `:8090`, Caddy `/ssh` → `:8090`. Frontend xterm WebSocket. Auth: root password env var (`HETZNER_ROOT_PASS`) — tumhare existing `ssh root@88.198.208.90` flow ka exact replica, browser ke andar.
+2. **8 GitHub accounts** — founder picker (dropdown in GitHub tab header). Har account ka PAT separate secret: `GITHUB_PAT_1` … `GITHUB_PAT_8` + label registry. Switch karte hi repos/branches/PRs reload.
+3. **Single GitHub tab** — side-rail se duplicate `GIT` icon remove. Ek `GITHUB` tab, sub-tabs: Commits / Branches / PRs / Diff.
+4. **Chat right arrow rail REMOVE** — chat sirf native scroll + keyboard.
+5. **Left NAVIGATE rail** — add vertical scroll-thumb + up/down arrows column (jaisa pic 7 mein).
+6. **Mobile-only keyboard auto-pop** — `matchMedia('(pointer: coarse)')` check; desktop pe focus auto nahi.
+7. **Deep audit** — har existing button/feature: ya to real wire, ya hide. Zero dummy.
 
-## Phase R (Rename — 1 credit, do abhi)
-- `src/lib/projects.ts`: "Rapid Pay" → "ANEXVOT AI PAY", shortName "RP" → "AVP", url `idarapidpay.nexatect.com` → `anexvotaipay.nexatect.com`.
-- Grep baaki references, fix labels only.
+## Track split (4 turns)
 
-## Phase B (Chatbox Cockpit — Track B — 1 turn, ~3 credits)
-Sirf `UnifiedChat.tsx` refactor. NO new component files.
-- Replace Virtuoso with a native `div` `messagesRef` scroll container (overflow-y-auto, min-h-0, tabIndex={0}) — Virtuoso ka custom scroller arrow keys/Home/End/PageUp/Down properly support nahi karta consistently, aur tumne explicitly `scrollBy`/`scrollTo` mention kiya.
-- Flex parents par `min-h-0` audit (BuilderShell column, UnifiedChat root, message area).
-- Arrow rail: real `scrollBy({top: ±260})`, top/bottom pe disabled opacity, scroll position track via `onScroll`.
-- Keyboard: ArrowUp/Down/PageUp/Down/Home/End on focused list; Ctrl/Cmd+Arrow on composer; Enter send, Shift+Enter newline, Esc blur.
-- Auto-scroll only if user already at bottom (stickToBottom flag).
-- Composer: pinned bottom, attach/mic sirf tab dikhao jab wired (already wired — keep), send→stop toggle (already done), focus return after send (already done).
-- Hide any non-wired buttons. Remove the dead `<Slash/> tools` chip.
-- Acceptance: 30 dummy messages dev-only verify, then remove.
+### A3.1 — Real SSH Terminal (this turn, ~5 credits)
+**Frontend:**
+- `TerminalPanel.tsx` rewrite: connect to `wss://aiaxonetis.hostflowai.net/ssh` via WebSocket; pipe raw bytes both ways (xterm `onData` → ws.send, `ws.onmessage` → term.write).
+- Connect/disconnect status chip; auto-reconnect with backoff; resize → send `{type:"resize",cols,rows}` JSON frame.
+- Empty state: "Connect to root@88.198.208.90" button.
 
-## Phase A1 (Workspace Tabs Foundation — Track A part 1 — 1 turn, ~5 credits)
-- Add deps in parallel: `xterm xterm-addon-fit xterm-addon-web-links xterm-addon-search react-resizable-panels @monaco-editor/react cmdk react-rnd`.
-- New files (each is a NEW concept, no existing duplicate):
-  - `src/components/builder/workspace/TabBar.tsx` — glass tab strip, active glow, close, reorder via drag.
-  - `src/components/builder/workspace/WorkspaceTabs.tsx` — orchestrator with localStorage persist (`axonetis.workspace.tabs.v1`), keyboard Ctrl+1..9/W/T.
-  - `src/components/builder/workspace/tab-registry.ts` — maps tab kind → existing panel component (Preview→LivePreview, Logs→LogsPanel, DB→DatabasePanel, GitHub→new, Terminal→new, Bridge→new).
-- `BuilderShell.tsx`: right pane swap from single LivePreview → `<WorkspaceTabs/>`. Preview tab uses existing LivePreview untouched.
-- Status-bar chips clickable → openTab(kind).
-- No split/detach/popout yet (Phase A3).
+**Server snippet (founder paste on Hetzner):**
+- `.agents/server-snippets/ssh-bridge.ts` — Node + `ws` + `node-pty`. Spawns `ssh root@88.198.208.90` (or directly `bash` since bridge runs ON Hetzner — no SSH hop needed, just spawn `bash` as root since PM2 runs as root). Forwards PTY ↔ WS.
+- `.agents/server-snippets/ssh-bridge.ecosystem.cjs` — PM2 config.
+- `.agents/server-snippets/Caddyfile.snippet` — `handle_path /ssh*` → `reverse_proxy 127.0.0.1:8090` with WebSocket upgrade.
+- Full copy-paste install block (numbered steps, single paste per step).
 
-## Phase A2 (Terminal + GitHub + Command Palette — 1 turn, ~5 credits)
-- `workspace/TerminalTab.tsx` — xterm.js, fit, web-links, search addons; ANSI; Ctrl+C/L/K/F; status chip in tab title; "Not connected" empty state + Connect button (real WS hook to existing bridge endpoint, no fake stream).
-- `workspace/GitHubTab.tsx` — sub-tabs Commits/Branches/PRs/Files/Diff; Monaco diff side-by-side; data via existing `hostflow-api` if wired, else "Connect GitHub" empty state.
-- `workspace/CommandPalette.tsx` — cmdk, Ctrl+K, fuzzy: open tab / switch project / switch branch / run command / jump to file.
+**Decision detail:** Bridge runs ON Hetzner as root via PM2 → no SSH password needed, just `spawn('bash', ['-l'])` with `node-pty`. Tumhe browser mein wahi root shell milega. Yeh actually behtar hai (no password in env, no SSH key dance).
 
-## Phase A3 (Split/Detach/Popout — 1 turn, ~4 credits)
-- react-resizable-panels: right-click tab → Split right/down.
-- react-rnd: drag tab out → floating window, re-dock on drop into strip.
-- Popout: `/workspace/:kind/:sessionId` route mirrors via BroadcastChannel.
+### A3.2 — GitHub multi-account real wiring (next turn, ~5 credits)
+- Server route `src/routes/api/github/accounts.ts` — lists 8 configured accounts (label only, no PAT leak).
+- Server route `src/routes/api/github/$account.repos.ts`, `.branches.ts`, `.commits.ts`, `.prs.ts`, `.diff.ts` — proxies to `api.github.com` with matching PAT secret.
+- `GitHubPanel.tsx` rewrite: account dropdown (top-left) → repo dropdown → branch dropdown → sub-tabs (Commits/Branches/PRs/Diff).
+- Monaco diff fed by real `git diff` from `/api/github/.../diff`.
+- Secrets: I'll prompt for `GITHUB_PAT_1`..`GITHUB_PAT_8` + `GITHUB_ACCOUNTS_JSON` (label+username map) via `add_secret`.
 
-## Phase A4 (Polish — 1 turn, ~2 credits)
-- Status bar latency/tokens/model chip/CPU spark.
-- Scanline overlay on terminal only (3%).
-- 180ms tab switch fade+slide.
-- Empty terminal ASCII AXONETIS logo.
+### A3.3 — Side rail + chat cleanup (next turn, ~3 credits)
+- `SideRail.tsx`: remove duplicate `GIT` entry, keep only `GITHUB`. Add vertical scroll-thumb + ▲/▼ arrows column on right edge of rail.
+- `UnifiedChat.tsx`: remove right-side arrow rail completely; native scroll only.
+- Mobile keyboard: composer `autoFocus` only when `matchMedia('(pointer: coarse)').matches`.
 
-## Credit budget total: ~20 credits across 5 turns, 15 left as buffer
+### A3.4 — Deep feature audit (next turn, ~4 credits)
+- Walk every panel (Logs, Database, Runtime, Files, Command, Versions, Memory, Agents, Analytics, Deploy, Activity, DualBrain, Projects).
+- Each button: wire to real endpoint OR hide. No dummy `console.log`, no fake data arrays.
+- Status bar chips: real PM2 status from `/api/hetzner/status` (already exists in bridge).
+- Report card at end: feature → status (LIVE / HIDDEN / TODO with reason).
 
-## Locked constraints (har phase me)
-- Colors/tokens locked — zero palette change.
-- No duplicate components — registry maps to existing panels.
-- No fake buttons — hide if unwired.
-- min-h-0 on every scroll parent.
-- Only message list / terminal scroll, never cockpit panel.
+## What I'll deliver THIS turn (A3.1 only)
 
-## Pehla action
-Phase R + Phase B saath me karunga (chhote hain, 1 turn me fit). Phir ruko bolo to A1 shuru. Confirm?
+1. `src/components/builder/workspace/TerminalPanel.tsx` — real WS xterm client.
+2. `.agents/server-snippets/ssh-bridge.ts` — full file (node-pty + ws).
+3. `.agents/server-snippets/ssh-bridge.package.json` — deps.
+4. `.agents/server-snippets/ssh-bridge.ecosystem.cjs` — PM2.
+5. `.agents/server-snippets/Caddyfile.ssh.snippet` — reverse-proxy block.
+6. Copy-paste install instructions (numbered, one block per step) marked **⚠️ YEH HOSTFLOW-SERVER (BRIDGE) REPO KI FILE HAI** (new sibling dir `/opt/hostflow-ecosystem/axonetis-ssh-bridge`).
+7. Memory update: `mem://features/axonetis-ssh-bridge-LOCKED.md`.
+
+Confirm karo → "Agla A3.1" bolo, start karta hoon. Ya kuch tweak chahiye to abhi bolo.
