@@ -1,0 +1,7 @@
+# Add INSIDE the existing site block for aiaxonetis.hostflowai.net
+# (and/or founderbuilder.axonetis.com) in /etc/caddy/Caddyfile.
+# Caddy auto-handles WebSocket Upgrade — no extra directives needed.
+
+handle_path /ssh* {
+    reverse_proxy 127.0.0.1:8090
+}
