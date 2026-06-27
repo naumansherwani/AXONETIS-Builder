@@ -9,8 +9,8 @@ import "xterm/css/xterm.css";
 
 const WS_URL =
   (typeof window !== "undefined" && window.location.hostname === "localhost")
-    ? "ws://localhost:8090/ssh"
-    : "wss://aiaxonetis.hostflowai.net/ssh";
+    ? "ws://localhost:8092/ssh"
+    : "wss://founderbuilder.axonetis.com/ssh";
 
 type Status = "idle" | "connecting" | "open" | "closed" | "error";
 
