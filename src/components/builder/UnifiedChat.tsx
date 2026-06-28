@@ -36,11 +36,8 @@ const MAX_ATTACHMENTS = 10_000;
 const SCROLL_STEP = 260;
 const BOTTOM_THRESHOLD = 24;
 
-const SEED: Msg[] = [
-  { id: "1", agent: "founder", text: "Phase 1 shell ready ho gaya. Let's see the unified chat in action." },
-  { id: "2", agent: "jimmy", text: "Roger that. Frontend orchestration online. Sherlock standing by for code review and auto-fix loops." },
-  { id: "3", agent: "sherlock", text: "Diagnostics nominal. No errors in the bridge. Awaiting first build instruction." },
-];
+const SEED: Msg[] = [];
+
 
 const resolveAgent = (prompt: string): UnifiedAgentSlug => {
   const p = prompt.toLowerCase();
@@ -374,12 +371,22 @@ export default function UnifiedChat() {
           className="fb-no-scrollbar h-full overflow-y-auto outline-none focus-visible:ring-0"
         >
           <div className="flex flex-col gap-0 py-2">
-            {messages.map((msg) => (
-              <div key={msg.id} className="px-4 py-2.5">
-                <MessageRow msg={msg} />
+            {messages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+                <div className="mb-2 text-[13px] font-semibold text-foreground/90">No messages yet</div>
+                <div className="max-w-[280px] text-[11px] leading-relaxed text-muted-foreground">
+                  Tell Jimmy what to build. Sherlock will review and auto-fix on every change.
+                </div>
               </div>
-            ))}
+            ) : (
+              messages.map((msg) => (
+                <div key={msg.id} className="px-4 py-2.5">
+                  <MessageRow msg={msg} />
+                </div>
+              ))
+            )}
           </div>
+
         </div>
 
         {/* Slim arrow rail */}
