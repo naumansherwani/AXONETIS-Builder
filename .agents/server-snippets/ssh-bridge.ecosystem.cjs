@@ -10,9 +10,9 @@ module.exports = {
     max_memory_restart: "200M",
     env: {
       NODE_ENV: "production",
-      SSH_BRIDGE_PORT: "8090",
+      SSH_BRIDGE_PORT: "8092",
       SSH_BRIDGE_SHELL: "/bin/bash",
-      SSH_BRIDGE_ORIGINS: "https://aiaxonetis.hostflowai.net,https://founderbuilder.axonetis.com",
+      SSH_BRIDGE_ORIGINS: "https://founderbuilder.axonetis.com",
     },
   }],
 };

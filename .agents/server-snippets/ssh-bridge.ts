@@ -8,16 +8,16 @@
  * No SSH hop needed: bridge already runs ON Hetzner as root.
  *
  * Run: pm2 start ecosystem.config.cjs
- * Port: 8090 (Caddy proxies /ssh → :8090)
+ * Port: 8092 (Caddy proxies /ssh → :8092)
  */
 import * as http from "node:http";
 import { WebSocketServer } from "ws";
 import * as pty from "node-pty";
 
-const PORT = Number(process.env.SSH_BRIDGE_PORT ?? 8090);
+const PORT = Number(process.env.SSH_BRIDGE_PORT ?? 8092);
 const SHELL = process.env.SSH_BRIDGE_SHELL ?? "/bin/bash";
 const ALLOWED_ORIGINS = (process.env.SSH_BRIDGE_ORIGINS ??
-  "https://aiaxonetis.hostflowai.net,https://founderbuilder.axonetis.com")
+  "https://founderbuilder.axonetis.com")
   .split(",").map(s => s.trim()).filter(Boolean);
 
 const server = http.createServer((req, res) => {

@@ -57,9 +57,9 @@ module.exports = {
     max_memory_restart: "200M",
     env: {
       NODE_ENV: "production",
-      SSH_BRIDGE_PORT: "8090",
+      SSH_BRIDGE_PORT: "8092",
       SSH_BRIDGE_SHELL: "/bin/bash",
-      SSH_BRIDGE_ORIGINS: "https://aiaxonetis.hostflowai.net,https://founderbuilder.axonetis.com"
+      SSH_BRIDGE_ORIGINS: "https://founderbuilder.axonetis.com"
     }
   }]
 };
@@ -80,11 +80,11 @@ pm2 start /opt/hostflow-ecosystem/axonetis-ssh-bridge/ecosystem.config.cjs && pm
 
 ## Step 8 — Caddy reverse proxy
 
-Edit `/etc/caddy/Caddyfile`. Inside the existing `aiaxonetis.hostflowai.net` (and `founderbuilder.axonetis.com`) site block, add:
+Edit `/etc/caddy/Caddyfile`. Inside the existing `founderbuilder.axonetis.com` `handle @founder_only` block, add:
 
 ```
 handle_path /ssh* {
-    reverse_proxy 127.0.0.1:8090
+    reverse_proxy 127.0.0.1:8092
 }
 ```
 
@@ -97,7 +97,7 @@ caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy
 ## Step 9 — verify
 
 ```bash
-curl -s http://127.0.0.1:8090/health && echo
+curl -s http://127.0.0.1:8092/health && echo
 pm2 status axonetis-ssh-bridge
 ```
 
@@ -105,5 +105,5 @@ Expected: `ok` and process `online`.
 
 ## Step 10 — browser test
 
-Open https://aiaxonetis.hostflowai.net → Terminal tab → click **Connect**.
+Open https://founderbuilder.axonetis.com → Terminal tab → click **Connect**.
 You should see a live root bash prompt — exactly like `ssh root@88.198.208.90`.
