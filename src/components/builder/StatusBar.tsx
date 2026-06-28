@@ -8,16 +8,13 @@ export default function StatusBar() {
 
   return (
     <div className="flex h-6 shrink-0 items-center justify-between border-t border-white/[0.06] bg-background px-3 text-[10px] uppercase tracking-widest text-muted-foreground">
-      {/* LEFT: build state */}
+      {/* LEFT: real signals only */}
       <div className="flex items-center gap-4">
-        <StatusItem label="Brain" value="Offline" tone="red" pulse />
         <StatusItem
           label="DB"
-          value={SUPABASE3_READY ? "Connected" : "Pending"}
-          tone={SUPABASE3_READY ? "emerald" : "amber"}
-          pulse={!SUPABASE3_READY}
+          value={SUPABASE3_READY ? "Connected" : "Not configured"}
+          tone={SUPABASE3_READY ? "emerald" : "gray"}
         />
-        <StatusItem label="Build" value="Idle" tone="gray" />
         <StatusItem
           label="Bridge"
           value={bridgeStatus}
@@ -26,10 +23,8 @@ export default function StatusBar() {
         />
       </div>
 
-      {/* RIGHT: cost meter + context */}
+      {/* RIGHT: project context (no fake metrics) */}
       <div className="flex items-center gap-4">
-        <span>💰 $0.00 today</span>
-        <span>⚡ 0 tok/s</span>
         <span className="font-mono text-muted-foreground/70">
           {active.shortName} · {branch} · {environment}
         </span>
