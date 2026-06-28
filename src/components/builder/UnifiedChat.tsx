@@ -371,12 +371,22 @@ export default function UnifiedChat() {
           className="fb-no-scrollbar h-full overflow-y-auto outline-none focus-visible:ring-0"
         >
           <div className="flex flex-col gap-0 py-2">
-            {messages.map((msg) => (
-              <div key={msg.id} className="px-4 py-2.5">
-                <MessageRow msg={msg} />
+            {messages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+                <div className="mb-2 text-[13px] font-semibold text-foreground/90">No messages yet</div>
+                <div className="max-w-[280px] text-[11px] leading-relaxed text-muted-foreground">
+                  Tell Jimmy what to build. Sherlock will review and auto-fix on every change.
+                </div>
               </div>
-            ))}
+            ) : (
+              messages.map((msg) => (
+                <div key={msg.id} className="px-4 py-2.5">
+                  <MessageRow msg={msg} />
+                </div>
+              ))
+            )}
           </div>
+
         </div>
 
         {/* Slim arrow rail */}
