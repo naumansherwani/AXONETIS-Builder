@@ -87,7 +87,32 @@ function renderPanel(
     case "memory":    return <MemoryPanel />;
     case "dualbrain": return <DualBrainPanel />;
     case "command":   return <CommandCenterPanel />;
+    case "terminal":  return <TerminalRailPanel />;
     default:
       return <GenericPanel icon={Icon as never} title={label} hint={hint} />;
   }
+}
+
+function TerminalRailPanel() {
+  const open = () => {
+    const fn = (window as unknown as { axonetisOpenTab?: (k: "terminal") => void }).axonetisOpenTab;
+    fn?.("terminal");
+  };
+  return (
+    <div className="flex h-full flex-col items-center justify-center px-6 py-10 text-center">
+      <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl border border-emerald-400/30 bg-emerald-400/[0.06] shadow-[0_0_30px_-10px_rgba(34,197,94,0.6)]">
+        <span className="text-emerald-300 text-lg font-mono">{">_"}</span>
+      </div>
+      <div className="mb-1 text-[14px] font-semibold text-foreground/95">Terminal</div>
+      <div className="mb-4 max-w-[240px] text-[11px] leading-relaxed text-muted-foreground">
+        Real SSH shell into the Hetzner brain (root@88.198.208.90) via the secure bridge.
+      </div>
+      <button
+        onClick={open}
+        className="rounded-md border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-300 hover:bg-emerald-400/15"
+      >
+        Open in Workspace
+      </button>
+    </div>
+  );
 }
