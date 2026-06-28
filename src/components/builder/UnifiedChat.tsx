@@ -36,11 +36,8 @@ const MAX_ATTACHMENTS = 10_000;
 const SCROLL_STEP = 260;
 const BOTTOM_THRESHOLD = 24;
 
-const SEED: Msg[] = [
-  { id: "1", agent: "founder", text: "Phase 1 shell ready ho gaya. Let's see the unified chat in action." },
-  { id: "2", agent: "jimmy", text: "Roger that. Frontend orchestration online. Sherlock standing by for code review and auto-fix loops." },
-  { id: "3", agent: "sherlock", text: "Diagnostics nominal. No errors in the bridge. Awaiting first build instruction." },
-];
+const SEED: Msg[] = [];
+
 
 const resolveAgent = (prompt: string): UnifiedAgentSlug => {
   const p = prompt.toLowerCase();
