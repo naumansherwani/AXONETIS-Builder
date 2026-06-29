@@ -16,6 +16,7 @@
 
 import { Router, type Request, type Response } from "express";
 import { supabase3 as supabase } from "../integrations/supabase3/client.js";
+import { enqueueAgentReply } from "../workers/agents.worker.js";
 import { randomUUID } from "crypto";
 
 // ── Types (must mirror frontend src/lib/hostflow-api.ts) ──────────────
