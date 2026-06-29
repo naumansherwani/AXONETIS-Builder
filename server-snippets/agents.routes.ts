@@ -16,6 +16,7 @@
 
 import { Router, type Request, type Response } from "express";
 import { supabase3 as supabase } from "../integrations/supabase3/client.js";
+import { enqueueAgentReply } from "../workers/agents.worker.js";
 import { randomUUID } from "crypto";
 
 // ── Types (must mirror frontend src/lib/hostflow-api.ts) ──────────────
@@ -93,7 +94,7 @@ agentsRouter.post("/:slug/chat", async (req, res) => {
 
     // Kick off async LLM job (worker reads routing_config from agent_registry,
     // then OpenRouter → Groq → Ollama, then inserts assistant message + activity row).
-    // enqueueAgentReply({ threadId: tid!, messageId: msg.id, agentSlug: slug, projectId, prompt });
+    enqueueAgentReply({ threadId: tid!, messageId: msg.id, agentSlug: slug, projectId, prompt });
 
     res.json({ threadId: tid, messageId: msg.id, status: "queued" });
   } catch (e) { serverError(res, e); }
