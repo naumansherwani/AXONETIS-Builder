@@ -105,6 +105,13 @@ export function cleanAgentText(raw: string): string {
   }
   // Strip <think>…</think> (DOTALL)
   text = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  // Strip leaked plain-text reasoning preambles ("Okay, let's see…", "First, I need to…", "The user…").
+  // If the head looks like meta-reasoning, drop everything up to the first blank line.
+  const reasoningHead = /^(okay[,. ]|alright[,. ]|let me\b|let's see|first[,. ]|the user\b|i need to\b|i should\b|hmm[,. ]|so[,. ]|wait[,. ])/i;
+  if (reasoningHead.test(text)) {
+    const split = text.split(/\n\s*\n/);
+    if (split.length > 1) text = split.slice(1).join("\n\n").trim();
+  }
   // Strip a leading lone ```lang fence
   text = text.replace(/^```[a-z]*\n?/i, "").replace(/```\s*$/i, "").trim();
   return text;
