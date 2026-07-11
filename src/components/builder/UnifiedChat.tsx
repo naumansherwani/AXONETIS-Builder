@@ -26,6 +26,7 @@ import {
   extractText,
   cleanAgentText,
   UNIFIED_CHAT_SLUGS,
+  type AgentMessageRow,
 } from "@/lib/agent-stream";
 
 type Agent = "founder" | "jimmy" | "sherlock";
@@ -172,48 +173,51 @@ export default function UnifiedChat() {
     textareaRef.current?.focus();
   }, [project, status]);
 
+  const ingestAgentRow = useCallback((row: AgentMessageRow) => {
+    if (seenMessageIdsRef.current.has(row.id)) return;
+    seenMessageIdsRef.current.add(row.id);
+    if (row.role !== "agent") return;
+    const slug = (row.agent_slug ?? "jimmy") as AgentSlug;
+    if (!UNIFIED_CHAT_SLUGS.has(slug)) return;
+    const text = extractText(row) || "(empty reply)";
+    const agent: Agent = slug === "sherlock" ? "sherlock" : "jimmy";
+    const meta = {
+      model: row.model ?? null,
+      tokensIn: row.tokens_in ?? 0,
+      tokensOut: row.tokens_out ?? 0,
+      createdAt: row.created_at,
+    };
+    setMessages((prev) => {
+      if (prev.some((m) => m.id === row.id)) return prev;
+      const next = [...prev];
+      const placeholderId = pendingPlaceholderRef.current;
+      const idx = placeholderId ? next.findIndex((m) => m.id === placeholderId) : -1;
+      if (idx >= 0) {
+        next[idx] = { ...next[idx], id: row.id, agent, text, thinking: false, meta };
+        pendingPlaceholderRef.current = null;
+      } else {
+        next.push({ id: row.id, agent, text, meta });
+      }
+      return next;
+    });
+    streamIdRef.current = null;
+    setStatus("ready");
+    setComposerNotice("");
+    textareaRef.current?.focus();
+  }, []);
+
   // Realtime thread subscription
   useEffect(() => {
     if (!threadId) return;
     void fetchThreadMessages(threadId).then((rows) => {
-      rows.forEach((r) => seenMessageIdsRef.current.add(r.id));
+      rows.forEach(ingestAgentRow);
     });
     const unsub = subscribeThread(threadId, {
-      onMessage: (row) => {
-        if (seenMessageIdsRef.current.has(row.id)) return;
-        seenMessageIdsRef.current.add(row.id);
-        if (row.role !== "agent") return;
-        const slug = (row.agent_slug ?? "jimmy") as AgentSlug;
-        if (!UNIFIED_CHAT_SLUGS.has(slug)) return;
-        const text = extractText(row) || "(empty reply)";
-        const agent: Agent = slug === "sherlock" ? "sherlock" : "jimmy";
-        const meta = {
-          model: row.model ?? null,
-          tokensIn: row.tokens_in ?? 0,
-          tokensOut: row.tokens_out ?? 0,
-          createdAt: row.created_at,
-        };
-        setMessages((prev) => {
-          const next = [...prev];
-          const placeholderId = pendingPlaceholderRef.current;
-          const idx = placeholderId ? next.findIndex((m) => m.id === placeholderId) : -1;
-          if (idx >= 0) {
-            next[idx] = { ...next[idx], id: row.id, agent, text, thinking: false, meta };
-            pendingPlaceholderRef.current = null;
-          } else {
-            next.push({ id: row.id, agent, text, meta });
-          }
-          return next;
-        });
-        streamIdRef.current = null;
-        setStatus("ready");
-        setComposerNotice("");
-        textareaRef.current?.focus();
-      },
+      onMessage: ingestAgentRow,
       onError: (err) => console.warn("[UnifiedChat] thread stream error:", err),
     });
     return unsub;
-  }, [threadId]);
+  }, [ingestAgentRow, threadId]);
 
   const charCount = draft.length;
   const overLimit = charCount > MAX_CHARS;
