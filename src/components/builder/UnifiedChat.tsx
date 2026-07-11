@@ -223,10 +223,11 @@ export default function UnifiedChat() {
     setStatus("streaming");
     setComposerNotice("");
     stickToBottomRef.current = true;
+    const now = new Date().toISOString();
     setMessages((prev) => [
       ...prev,
-      { id: `f-${Date.now()}`, agent: "founder", text: prompt },
-      { id: placeholderId, agent: targetAgent, text: `${targetAgent === "sherlock" ? "Auditing" : "Working"}…`, thinking: true },
+      { id: `f-${Date.now()}`, agent: "founder", text: prompt, meta: { createdAt: now } },
+      { id: placeholderId, agent: targetAgent, text: `${targetAgent === "sherlock" ? "Auditing" : "Working"}…`, thinking: true, sourcePrompt: prompt, meta: { createdAt: now } },
     ]);
     setAttachments([]);
 
@@ -243,7 +244,7 @@ export default function UnifiedChat() {
             const currentPlaceholder = pendingPlaceholderRef.current;
             const idx = currentPlaceholder ? next.findIndex((m) => m.id === currentPlaceholder) : -1;
             if (idx >= 0) {
-              next[idx] = { id: ack.assistantMessageId ?? currentPlaceholder ?? `j-${Date.now()}`, agent: targetAgent, text: cleaned };
+              next[idx] = { ...next[idx], id: ack.assistantMessageId ?? currentPlaceholder ?? `j-${Date.now()}`, agent: targetAgent, text: cleaned, thinking: false };
               pendingPlaceholderRef.current = null;
             }
             return next;
