@@ -144,6 +144,7 @@ const exact = [
 function isPg(v) { return typeof v === "string" && /^postgres(ql)?:\/\//i.test(v); }
 function usable(v) {
   if (!isPg(v)) return false;
+  if (/REAL_USER|REAL_PASSWORD|REAL_DB|USER:PASS|YOUR_REAL_PASSWORD|YOUR_PASSWORD/i.test(v)) return false;
   if (v.includes("...")) return false;
   if (/placeholder/i.test(v)) return false;
   // This builder is locked to founder self-hosted DB on Hetzner. Do not auto-pick old cloud pooler URLs.
@@ -153,7 +154,7 @@ function usable(v) {
 
 function buildFromParts(env) {
   const password = env.AXONETIS_DB_PASSWORD || env.POSTGRES_PASSWORD || env.POSTGRESQL_PASSWORD || env.DB_PASSWORD;
-  if (!password || password.includes("...") || /placeholder/i.test(password)) return "";
+  if (!password || password.includes("...") || /placeholder|REAL_PASSWORD|YOUR_REAL_PASSWORD|YOUR_PASSWORD/i.test(password)) return "";
   const user = env.AXONETIS_DB_USER || env.POSTGRES_USER || env.POSTGRESQL_USER || env.DB_USER || "postgres";
   const db = env.AXONETIS_DB_NAME || env.POSTGRES_DB || env.POSTGRESQL_DATABASE || env.DB_NAME || "postgres";
   const host = env.AXONETIS_DB_HOST || env.POSTGRES_HOST || env.POSTGRESQL_HOST || env.DB_HOST || "127.0.0.1";

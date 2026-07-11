@@ -10,16 +10,24 @@ cd /var/www/axonetis && git pull && bash server-snippets/hetzner-wire-phases-393
 
 Yeh 3.9.3 se 3.9.7 tak saari pending server wiring ek saath karega: DB migrations, `/rpc/*`, Visual Edit bridge, Stop abort verify, build/restart, smoke tests.
 
-Script self-hosted DB khud detect karega. Agar purana `SUPABASE3_DB_URL=db.*.supabase.co` env mein ho, script usko ignore karega. Agar local Postgres peer access available ho to password ke bina migration chal jayegi. Agar phir bhi DB na mile, **real URL** do — `postgresql://...` placeholder mat dena:
+Script self-hosted DB khud detect karega. Agar purana `SUPABASE3_DB_URL=db.*.supabase.co` env mein ho, script usko ignore karega. Agar local Postgres peer access available ho to password ke bina migration chal jayegi.
+
+Pehle yeh run karo — koi fake credentials nahi:
 
 ```bash
-AXONETIS_DB_URL='postgresql://USER:PASS@127.0.0.1:5432/DB' bash server-snippets/hetzner-wire-phases-393-397.sh
+cd /var/www/axonetis && git pull && bash server-snippets/hetzner-wire-phases-393-397.sh
+```
+
+Agar phir bhi DB na mile, **apne actual Postgres credentials** lagao; neeche wali line sample hai, jaisi ki taisi paste nahi karni:
+
+```bash
+AXONETIS_DB_URL='postgresql://postgres:APNA_ACTUAL_PASSWORD@127.0.0.1:5432/postgres' bash server-snippets/hetzner-wire-phases-393-397.sh
 ```
 
 Password alag env mein hai to yeh bhi chalega:
 
 ```bash
-AXONETIS_DB_NAME='postgres' AXONETIS_DB_USER='postgres' AXONETIS_DB_PASSWORD='YOUR_REAL_PASSWORD' \
+AXONETIS_DB_NAME='postgres' AXONETIS_DB_USER='postgres' AXONETIS_DB_PASSWORD='APNA_ACTUAL_PASSWORD' \
   bash server-snippets/hetzner-wire-phases-393-397.sh
 ```
 
@@ -29,7 +37,7 @@ AXONETIS_DB_NAME='postgres' AXONETIS_DB_USER='postgres' AXONETIS_DB_PASSWORD='YO
 cd /var/www/axonetis
 nano hetzner-migrations/20260711000001_phase_393_394_publish_power_tools.sql
 # Lovable repo se same file ka full content paste karo
-psql 'postgresql://USER:PASS@127.0.0.1:5432/DB' \
+psql 'postgresql://postgres:APNA_ACTUAL_PASSWORD@127.0.0.1:5432/postgres' \
   -f hetzner-migrations/20260711000001_phase_393_394_publish_power_tools.sql
 ```
 

@@ -17,16 +17,24 @@ Yeh single script migration, RPC wiring, Visual Edit bridge copy, Stop-button ab
 cd /var/www/axonetis && git pull && bash server-snippets/hetzner-wire-phases-393-397.sh
 ```
 
-Script self-hosted DB khud detect karega. Agar purana `SUPABASE3_DB_URL=db.*.supabase.co` env mein ho, script usko ignore karega. Agar local Postgres peer access available ho to password ke bina migration chal jayegi. Agar phir bhi DB na mile, **real URL** do — `postgresql://...` placeholder mat dena:
+Script self-hosted DB khud detect karega. Agar purana `SUPABASE3_DB_URL=db.*.supabase.co` env mein ho, script usko ignore karega. Agar local Postgres peer access available ho to password ke bina migration chal jayegi.
+
+Pehle yeh run karo — koi fake credentials nahi:
 
 ```bash
-AXONETIS_DB_URL='postgresql://USER:PASS@127.0.0.1:5432/DB' bash server-snippets/hetzner-wire-phases-393-397.sh
+cd /var/www/axonetis && git pull && bash server-snippets/hetzner-wire-phases-393-397.sh
+```
+
+Agar phir bhi DB na mile, **apne actual Postgres credentials** lagao; neeche wali line sample hai, jaisi ki taisi paste nahi karni:
+
+```bash
+AXONETIS_DB_URL='postgresql://postgres:APNA_ACTUAL_PASSWORD@127.0.0.1:5432/postgres' bash server-snippets/hetzner-wire-phases-393-397.sh
 ```
 
 Password alag env mein hai to yeh bhi chalega:
 
 ```bash
-AXONETIS_DB_NAME='postgres' AXONETIS_DB_USER='postgres' AXONETIS_DB_PASSWORD='YOUR_REAL_PASSWORD' \
+AXONETIS_DB_NAME='postgres' AXONETIS_DB_USER='postgres' AXONETIS_DB_PASSWORD='APNA_ACTUAL_PASSWORD' \
   bash server-snippets/hetzner-wire-phases-393-397.sh
 ```
 
