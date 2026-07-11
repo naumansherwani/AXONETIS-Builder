@@ -186,6 +186,40 @@ if (imports.length) {
 } else {
   src = importLine + src;
 }
+
+ensure_supabase3_client() {
+  local root="$1" route_dir="$2" target=""
+  if grep -q 'integrations/supabase3/client' "$route_dir/rpc.routes.ts" 2>/dev/null; then
+    local try_paths=(
+      "$root/server/integrations/supabase3/client.ts"
+      "$root/src/integrations/supabase3/client.ts"
+      "$root/integrations/supabase3/client.ts"
+    )
+    for p in "${try_paths[@]}"; do [ -f "$p" ] && return 0; done
+    case "$route_dir" in
+      */server/routes) target="${route_dir%/routes}/integrations/supabase3/client.ts" ;;
+      */src/routes) target="${route_dir%/routes}/integrations/supabase3/client.ts" ;;
+      */routes) target="$root/integrations/supabase3/client.ts" ;;
+      *) target="$root/server/integrations/supabase3/client.ts" ;;
+    esac
+    mkdir -p "$(dirname "$target")"
+    cat > "$target" <<'TS'
+import { createClient } from "@supabase/supabase-js";
+
+const url = process.env.SUPABASE3_URL ?? process.env.AXONETIS_SUPABASE_URL ?? process.env.SUPABASE_URL;
+const key = process.env.SUPABASE3_SERVICE_ROLE_KEY ?? process.env.AXONETIS_SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY;
+
+if (!url || !key) {
+  throw new Error("supabase3 env missing: set SUPABASE3_URL + SUPABASE3_SERVICE_ROLE_KEY or AXONETIS_SUPABASE_URL + AXONETIS_SUPABASE_SERVICE_ROLE_KEY");
+}
+
+export const supabase3 = createClient(url, key, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
+TS
+    ok "Created missing supabase3 client at $target"
+  fi
+}
 const appMatch = src.match(/(?:const|let|var)\s+(\w+)\s*=\s*express\s*\(/);
 const app = appMatch?.[1] || "app";
 const mount = `\n// AXONETIS phases 3.9.3 → 3.9.7 RPC endpoints (auto-wired, no duplicate)\n${app}.use("/rpc", rpcRouter);\n`;
@@ -278,6 +312,7 @@ if (!src.includes('registerRouterAndMarketplaceRoutes(router')) {
 }
 fs.writeFileSync(file, src);
 NODE
+ensure_supabase3_client "$ENGINE_DIR" "$ROUTE_DIR"
 SERVER_ENTRY="$(find_server_entry "$ENGINE_DIR")"
 wire_rpc_mount "$SERVER_ENTRY" "$RPC_FILE"
 
