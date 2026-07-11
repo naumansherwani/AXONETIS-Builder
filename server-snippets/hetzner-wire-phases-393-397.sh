@@ -449,6 +449,8 @@ require_file "$BUILDER_DIR/server-snippets/rpc.routes.ts"
 require_file "$BUILDER_DIR/server-snippets/rpc-phase-396-397.additions.ts"
 require_file "$BUILDER_DIR/server-snippets/preview-visual-edit-bridge.js"
 require_file "$BUILDER_DIR/server-snippets/agents.worker.ts"
+require_file "$BUILDER_DIR/server-snippets/agents.cancel.ts"
+require_file "$BUILDER_DIR/server-snippets/agents.routes.ts"
 
 log "1) Latest builder repo pull"
 cd "$BUILDER_DIR"
@@ -537,6 +539,25 @@ for worker_root in "$BUILDER_DIR" /root/axonetis-builder /opt/axonetis-builder /
     backup "$worker_root/src/workers/agents.worker.ts"
     cp "$BUILDER_DIR/server-snippets/agents.worker.ts" "$worker_root/src/workers/agents.worker.ts"
     ok "Installed Agent Loop worker at $worker_root/src/workers/agents.worker.ts"
+    # Phase 3.9.5 — cancel registry (shared between routes + worker, single Node process).
+    backup "$worker_root/src/workers/agents.cancel.ts"
+    cp "$BUILDER_DIR/server-snippets/agents.cancel.ts" "$worker_root/src/workers/agents.cancel.ts"
+    ok "Installed cancel registry at $worker_root/src/workers/agents.cancel.ts"
+  fi
+  if [ -d "$worker_root/src/routes" ]; then
+    # Phase 3.9.5 — Express agents router carries the /stop endpoint that flips the AbortController.
+    if [ -f "$worker_root/src/routes/agents.routes.ts" ]; then
+      if ! grep -q "messages/:messageId/stop" "$worker_root/src/routes/agents.routes.ts"; then
+        backup "$worker_root/src/routes/agents.routes.ts"
+        cp "$BUILDER_DIR/server-snippets/agents.routes.ts" "$worker_root/src/routes/agents.routes.ts"
+        ok "Replaced agents.routes.ts with Stop-button-enabled version (backup kept)"
+      else
+        ok "agents.routes.ts already has /stop endpoint wired"
+      fi
+    else
+      cp "$BUILDER_DIR/server-snippets/agents.routes.ts" "$worker_root/src/routes/agents.routes.ts"
+      ok "Installed agents.routes.ts (with /stop endpoint)"
+    fi
   fi
 done
 STREAM_FILES="$(grep -Rsl 'streamText' "$ENGINE_DIR/src" "$ENGINE_DIR/server" "$ENGINE_DIR/routes" 2>/dev/null | grep -Ev 'node_modules|dist|build|\.bak-' || true)"

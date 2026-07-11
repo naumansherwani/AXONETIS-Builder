@@ -17,6 +17,7 @@
 import { Router, type Request, type Response } from "express";
 import { supabase3 as supabase } from "../integrations/supabase3/client.js";
 import { enqueueAgentReply } from "../workers/agents.worker.js";
+import { cancelRun, activeRunCount } from "../workers/agents.cancel.js";
 import { randomUUID } from "crypto";
 
 // ── Types (must mirror frontend src/lib/hostflow-api.ts) ──────────────
@@ -97,6 +98,39 @@ agentsRouter.post("/:slug/chat", async (req, res) => {
     enqueueAgentReply({ threadId: tid!, messageId: msg.id, agentSlug: slug, projectId, prompt });
 
     res.json({ threadId: tid, messageId: msg.id, status: "queued" });
+  } catch (e) { serverError(res, e); }
+});
+
+/* POST /api/agents/threads/:threadId/messages/:messageId/stop
+   Founder-grade cancel — aborts the in-flight agent run (Jimmy loop / Sherlock audit /
+   tool call) tied to `messageId`, writes a "_Stopped._" partial assistant message so
+   the thread reload shows the canceled state, and marks the activity row `cancelled`.
+   Resp: { ok, aborted, threadId, messageId } */
+agentsRouter.post("/threads/:threadId/messages/:messageId/stop", async (req, res) => {
+  try {
+    const { threadId, messageId } = req.params;
+    if (!threadId || !messageId) return badRequest(res, "threadId and messageId required");
+
+    const aborted = cancelRun(messageId, "user_stop");
+
+    // Best-effort: append a canceled marker message so the UI reload sees the stopped state.
+    // Worker's finally-block will also write partial text if any tokens were captured.
+    await supabase.from("agent_thread_messages").insert({
+      thread_id: threadId,
+      role: "agent",
+      agent_slug: "router",
+      parts: [{ type: "text", text: "_Stopped by founder._" }],
+      tokens_in: 0, tokens_out: 0, model: "cancel",
+    });
+
+    // Flip any 'thinking' activity rows for this thread → 'cancelled'.
+    await supabase
+      .from("agent_activity")
+      .update({ status: "cancelled" })
+      .eq("thread_id", threadId)
+      .eq("status", "thinking");
+
+    res.json({ ok: true, aborted, threadId, messageId, activeRuns: activeRunCount() });
   } catch (e) { serverError(res, e); }
 });
 

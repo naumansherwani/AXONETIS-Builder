@@ -35,6 +35,7 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createGroq } from "@ai-sdk/groq";
 import { createOllama } from "ollama-ai-provider-v2";
 import { createHash } from "crypto";
+import { registerRun, releaseRun, isCancelled } from "./agents.cancel.js";
 
 // ── Supabase 3 (service role — worker only, NEVER ship to frontend) ──
 const supabase = createClient(
@@ -87,8 +88,11 @@ export function enqueueAgentReply(args: EnqueueArgs): void {
   });
 }
 
-async function runAgentReply({ threadId, agentSlug, projectId, prompt, userId }: EnqueueArgs): Promise<void> {
+async function runAgentReply({ threadId, messageId, agentSlug, projectId, prompt, userId }: EnqueueArgs): Promise<void> {
   const t0 = Date.now();
+  const controller = registerRun(messageId);
+  const abortSignal = controller.signal;
+  try {
 
   // 1. Read this agent's routing config from Supabase 3 (source of truth).
   const { data: reg, error: regErr } = await supabase
@@ -122,12 +126,13 @@ async function runAgentReply({ threadId, agentSlug, projectId, prompt, userId }:
   let lastErr: unknown = null;
 
   for (const attempt of attempts) {
+    if (abortSignal.aborted) break;
     try {
       const out = await generateText({
         model: attempt.model,
         system,
         messages: [...messages, { role: "user", content: prompt }],
-        // Phase A.1: plain text reply. Tool loop = Phase 3.10.
+        abortSignal, // ← Phase 3.9.5 stop wire — user_stop aborts inflight model call
       });
       replyText = out.text;
       usedModel = attempt.label;
@@ -135,15 +140,29 @@ async function runAgentReply({ threadId, agentSlug, projectId, prompt, userId }:
       tokensOut = out.usage?.outputTokens ?? 0;
       break;
     } catch (err) {
+      if (abortSignal.aborted) { lastErr = err; break; } // don't fall through on cancel
       lastErr = err;
       console.warn(`[agents.worker] ${attempt.label} failed, falling through:`, err);
     }
   }
+
+  // If the founder pressed Stop, exit cleanly — cancel endpoint already wrote _Stopped._ marker.
+  if (abortSignal.aborted) {
+    await supabase.from("agent_activity").insert({
+      agent_slug: agentSlug, project_id: projectId, thread_id: threadId,
+      kind: "chat", summary: "Run cancelled by founder",
+      tokens_in: tokensIn, tokens_out: tokensOut, cost_usd: 0,
+      duration_ms: Date.now() - t0, status: "cancelled",
+    });
+    return;
+  }
+
   if (!replyText) throw lastErr ?? new Error("All providers failed");
 
   if (agentSlug === "jimmy") {
-    const looped = await runJimmySherlockLoop({ threadId, projectId, prompt, jimmyReply: replyText, userId, usedModel });
+    const looped = await runJimmySherlockLoop({ threadId, projectId, prompt, jimmyReply: replyText, userId, usedModel, abortSignal });
     replyText = looped.replyText;
+    if (abortSignal.aborted) return; // loop bailed out — activity already logged
   }
 
   // 5. Insert assistant message — Realtime broadcasts to UnifiedChat.
@@ -168,6 +187,9 @@ async function runAgentReply({ threadId, agentSlug, projectId, prompt, userId }:
   });
 
   void inserted;
+  } finally {
+    releaseRun(messageId);
+  }
 }
 
 async function resolveProjectUuid(projectId: string) {
@@ -235,19 +257,23 @@ async function applyPatch(projectUuid: string, ops: PatchOperation[], iteration:
   return applied;
 }
 
-async function generateAgentText(agentSlug: AgentSlug, system: string, prompt: string) {
+async function generateAgentText(agentSlug: AgentSlug, system: string, prompt: string, abortSignal?: AbortSignal) {
   const { data: reg } = await supabase.from("agent_registry").select("routing_config, model_primary, model_fallback").eq("slug", agentSlug).single();
   const attempts = buildAttempts((reg?.routing_config ?? {}) as RoutingConfig, reg?.model_primary, reg?.model_fallback);
   for (const attempt of attempts) {
+    if (abortSignal?.aborted) return null;
     try {
-      const out = await generateText({ model: attempt.model, system, messages: [{ role: "user", content: prompt }] });
+      const out = await generateText({ model: attempt.model, system, messages: [{ role: "user", content: prompt }], abortSignal });
       return { text: out.text, model: attempt.label, tokensIn: out.usage?.inputTokens ?? 0, tokensOut: out.usage?.outputTokens ?? 0 };
-    } catch (err) { console.warn(`[agent-loop] ${attempt.label} failed:`, err); }
+    } catch (err) {
+      if (abortSignal?.aborted) return null;
+      console.warn(`[agent-loop] ${attempt.label} failed:`, err);
+    }
   }
   return null;
 }
 
-async function runJimmySherlockLoop(args: { threadId: string; projectId: string; prompt: string; jimmyReply: string; userId?: string; usedModel: string }) {
+async function runJimmySherlockLoop(args: { threadId: string; projectId: string; prompt: string; jimmyReply: string; userId?: string; usedModel: string; abortSignal: AbortSignal }) {
   const projectUuid = await resolveProjectUuid(args.projectId);
   let files = await loadProjectFiles(projectUuid);
   let jimmyReply = args.jimmyReply;
@@ -255,6 +281,7 @@ async function runJimmySherlockLoop(args: { threadId: string; projectId: string;
   const appliedAll: string[] = [];
 
   for (let i = 1; i <= MAX_SHERLOCK_LOOPS; i += 1) {
+    if (args.abortSignal.aborted) break;
     const ops = parsePatch(jimmyReply);
     if (ops.length === 0 || i > 1) {
       const prompt = [
@@ -263,9 +290,10 @@ async function runJimmySherlockLoop(args: { threadId: string; projectId: string;
         `Founder request:\n${args.prompt}`,
         compactFiles(files),
       ].filter(Boolean).join("\n\n");
-      const next = await generateAgentText("jimmy", "You write production code patches only.", prompt);
+      const next = await generateAgentText("jimmy", "You write production code patches only.", prompt, args.abortSignal);
       if (next?.text) jimmyReply = next.text;
     }
+    if (args.abortSignal.aborted) break;
 
     const applied = await applyPatch(projectUuid, parsePatch(jimmyReply), i, args.userId);
     appliedAll.push(...applied.map((x) => `loop ${i}: ${x}`));
@@ -277,7 +305,8 @@ async function runJimmySherlockLoop(args: { threadId: string; projectId: string;
       `Jimmy reply:\n${jimmyReply}`,
       compactFiles(files),
     ].join("\n\n");
-    const verdict = await generateAgentText("sherlock", "You are SherlockReview. Be strict and concise.", auditPrompt);
+    const verdict = await generateAgentText("sherlock", "You are SherlockReview. Be strict and concise.", auditPrompt, args.abortSignal);
+    if (args.abortSignal.aborted) break;
     audit = verdict?.text ?? "CHANGES_REQUIRED — audit unavailable";
     await supabase.from("agent_thread_messages").insert({ thread_id: args.threadId, role: "agent", agent_slug: "sherlock", parts: [{ type: "text", text: `Loop ${i}/3 — ${audit}` }], model: verdict?.model ?? "unknown" });
     if (/^\s*APPROVED\b/i.test(audit)) break;
@@ -288,6 +317,7 @@ async function runJimmySherlockLoop(args: { threadId: string; projectId: string;
       stripPatch(jimmyReply) || "Jimmy ne project_files update kar diye.",
       appliedAll.length ? `\nApplied files:\n${appliedAll.map((x) => `- ${x}`).join("\n")}` : "\nNo patch applied.",
       audit ? `\nSherlock final:\n${audit}` : "",
+      args.abortSignal.aborted ? "\n_Stopped._" : "",
     ].join("\n").trim(),
   };
 }
