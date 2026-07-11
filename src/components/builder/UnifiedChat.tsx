@@ -232,16 +232,22 @@ export default function UnifiedChat() {
     setMessages((prev) => [
       ...prev,
       { id: `f-${Date.now()}`, agent: "founder", text: prompt, meta: { createdAt: now } },
-      { id: placeholderId, agent: targetAgent, text: `${targetAgent === "sherlock" ? "Auditing" : "Working"}…`, thinking: true, sourcePrompt: prompt, meta: { createdAt: now } },
+      { id: placeholderId, agent: targetAgent, text: "Thinking…", thinking: true, sourcePrompt: prompt, meta: { createdAt: now } },
     ]);
     setAttachments([]);
 
     const ctrl = new AbortController();
     abortRef.current = ctrl;
 
+    let waitingForRealtime = false;
     void chatWithAgent(targetAgent, { projectId: project, threadId, prompt: `${prompt}${attachmentNote}`, streamId }, { signal: ctrl.signal })
       .then((ack) => {
         if (!threadId && ack.threadId) setThreadId(ack.threadId);
+        if (ack.status === "queued" && !ack.assistantText) {
+          waitingForRealtime = true;
+          setComposerNotice("Thinking — response realtime se aa raha hai.");
+          return;
+        }
         if (ack.assistantText) {
           const cleaned = cleanAgentText(ack.assistantText);
           setMessages((prev) => {
@@ -271,9 +277,11 @@ export default function UnifiedChat() {
       })
       .finally(() => {
         abortRef.current = null;
-        streamIdRef.current = null;
-        setStatus("ready");
-        textareaRef.current?.focus();
+        if (!waitingForRealtime) {
+          streamIdRef.current = null;
+          setStatus("ready");
+          textareaRef.current?.focus();
+        }
       });
   }, [attachments, branch, environment, project, threadId]);
 
@@ -682,7 +690,7 @@ export default function UnifiedChat() {
           </div>
         )}
         <div className="mt-2 flex items-center justify-between px-1 text-[10px] uppercase tracking-widest text-muted-foreground/45">
-          <span className="font-mono">Phase 3.9 · {busy ? "working" : "ready"}</span>
+          <span className="font-mono">Phase 3.9 · {busy ? "thinking" : "ready"}</span>
           <span className={`font-mono ${overLimit ? "text-red-400" : charCount > MAX_CHARS * 0.9 ? "text-amber-400" : "text-muted-foreground/50"}`}>
             {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()}
           </span>
