@@ -393,7 +393,7 @@ function streamBrainToClient(job: BrainJob) {
               ? await r.json().catch(() => null)
               : await r.text().catch(() => "");
             assistantText = extractText(payload);
-            if (assistantText) send("token", { delta: assistantText });
+            if (assistantText && !hasProviderKeyFailure(assistantText)) send("token", { delta: assistantText });
           }
         } catch (err) {
           rustError = err instanceof Error && err.name === "AbortError"
