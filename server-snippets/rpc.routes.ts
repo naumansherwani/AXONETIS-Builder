@@ -28,13 +28,15 @@ const router = Router();
 
 const PROJECT_REPOS: Record<string, string> = {
   hostflowai: "/var/www/hostflowai",
-  rapidpay: "/var/www/rapidpay",
+  rapidpay: "/var/www/anexvot-ai-pay",
+  anexvotaipay: "/var/www/anexvot-ai-pay",
   founderbuilder: "/var/www/axonetis",
 };
 
 const PROJECT_URLS: Record<string, string> = {
   hostflowai: "https://hostflowai.net",
   rapidpay: "https://anexvotaipay.com",
+  anexvotaipay: "https://anexvotaipay.com",
   founderbuilder: "https://founderbuilder.axonetis.com",
 };
 

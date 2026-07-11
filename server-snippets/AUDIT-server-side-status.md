@@ -11,7 +11,7 @@ Founder rule: **frontend + backend saath complete honge**, phir next phase.
 **Server-side deliverables (already pushed to `server-snippets/`):**
 | Endpoint | File | Status |
 |---|---|---|
-| `POST /rpc/publish.state` | `rpc.routes.ts` | ✅ delivered |
+| `GET /rpc/publish.state` | `rpc.routes.ts` | ✅ delivered |
 | `POST /rpc/publish.setVisibility` | `rpc.routes.ts` | ✅ delivered |
 | `POST /rpc/publish.share` (7-day expiry) | `rpc.routes.ts` | ✅ delivered |
 | `POST /rpc/publish.unpublish` | `rpc.routes.ts` | ✅ delivered |
@@ -49,7 +49,7 @@ Founder rule: **frontend + backend saath complete honge**, phir next phase.
 **Server-side deliverables:**
 | Item | File | Status |
 |---|---|---|
-| Preview iframe bridge (`visual:edit:toggle` listener + `visual:edit:pick` emit) | `server-snippets/preview-visual-edit-bridge.js` | ✅ delivered |
+| Preview iframe bridge (`visual:edit:toggle` listener + `visual:edit:pick` emit: `hostflow-preview` / `anexvotaipay-preview` / `axonetis-preview`) | `server-snippets/preview-visual-edit-bridge.js` | ✅ delivered |
 | Abort support on `/rpc/agents.chat` (client sends `AbortController.signal` → server must respect `req.signal`) | `agents.routes.ts` (already streams; verify AbortSignal wired on Hetzner) | ⚠️ **verify** |
 | Diff review = 100% client-side (Monaco) | — | ✅ no server work |
 
@@ -77,7 +77,7 @@ pm2 logs axonetis-builder --lines 30 --nostream
 
 Verify each endpoint:
 ```bash
-curl -sX POST https://aiaxonetis.hostflowai.net/rpc/publish.state -H 'content-type: application/json' -d '{"projectId":"test"}'
+curl -s "https://aiaxonetis.hostflowai.net/rpc/publish.state?projectId=founderbuilder"
 curl -sX POST https://aiaxonetis.hostflowai.net/rpc/sql.validate -H 'content-type: application/json' -d '{"sql":"select 1"}'
 curl -sN https://aiaxonetis.hostflowai.net/rpc/deploys.status?projectId=test
 ```

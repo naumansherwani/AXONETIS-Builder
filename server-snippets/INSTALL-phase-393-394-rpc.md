@@ -43,7 +43,7 @@ Har preview app mein once paste/import:
 # HostFlow preview repo
 nano public/axonetis-preview-bridge.js
 
-# RapidPay preview repo
+# ANEXVOT AI Pay preview repo
 nano public/axonetis-preview-bridge.js
 
 # AXONETIS preview repo
@@ -58,7 +58,7 @@ Lovable repo: `server-snippets/preview-visual-edit-bridge.js` ka full content pa
 
 It listens to `visual:edit:toggle` and emits `visual:edit:pick` with one of:
 - `hostflow-preview`
-- `rapidpay-preview`
+- `anexvotaipay-preview`
 - `axonetis-preview`
 
 ## 4) Build + restart
