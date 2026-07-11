@@ -378,6 +378,11 @@ function streamBrainToClient(job: BrainJob) {
                 try { payload = JSON.parse(data); } catch { /* plain token */ }
                 const delta = extractDelta(payload);
                 if (delta) {
+                  if (hasProviderKeyFailure(delta)) {
+                    assistantText = delta;
+                    rustError = delta;
+                    continue;
+                  }
                   assistantText += delta;
                   send("token", { delta });
                 }
