@@ -497,6 +497,21 @@ export default function UnifiedChat() {
               </TooltipContent>
             </Tooltip>
           )}
+          {sessionTokens.usd > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/[0.06] px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-emerald-300/90">
+                  <DollarSign className="h-2.5 w-2.5" />
+                  {sessionTokens.usd < 0.01 ? sessionTokens.usd.toFixed(4) : sessionTokens.usd.toFixed(3)}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="text-[10px] font-mono">
+                  Session cost estimate · blended OpenRouter/Groq rates
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )}
           <span className="shrink-0 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/50">{bridgeStatus}</span>
         </div>
       </div>
