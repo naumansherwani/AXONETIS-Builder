@@ -10,7 +10,7 @@ create extension if not exists "pgcrypto";
 -- Plain Postgres compatibility mode.
 -- Important: on a real Auth DB, the `auth` schema is owned by the auth system;
 -- non-owner DB users can read `auth.users` but cannot CREATE in that schema.
--- Therefore never run `create table if not exists auth.users` directly: even
+-- Therefore never run direct IF-NOT-EXISTS DDL for auth.users: even
 -- when the table already exists, Postgres may still check schema CREATE rights.
 do $bootstrap_auth$
 begin
