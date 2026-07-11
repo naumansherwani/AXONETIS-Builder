@@ -440,6 +440,7 @@ log "Using ENGINE_DIR=$ENGINE_DIR"
 log "Using ROUTE_DIR=$ROUTE_DIR"
 
 require_file "$BUILDER_DIR/hetzner-migrations/20260711000001_phase_393_394_publish_power_tools.sql"
+require_file "$BUILDER_DIR/hetzner-migrations/20260711000000_phase_3_agent_base.sql"
 require_file "$BUILDER_DIR/hetzner-migrations/20260711000002_phase_396_397_marketplace_router.sql"
 require_file "$BUILDER_DIR/server-snippets/rpc.routes.ts"
 require_file "$BUILDER_DIR/server-snippets/rpc-phase-396-397.additions.ts"
@@ -455,6 +456,7 @@ DB_URL="$(select_db_url || true)"
 [ -n "$DB_URL" ] || die "DB URL auto-detect failed. Export AXONETIS_DB_URL with the real self-hosted Postgres URL, then rerun. Script will not print secrets."
 validate_db_url "$DB_URL"
 ok "DB URL detected (hidden)"
+run_psql "$BUILDER_DIR/hetzner-migrations/20260711000000_phase_3_agent_base.sql" file
 run_psql "$BUILDER_DIR/hetzner-migrations/20260711000001_phase_393_394_publish_power_tools.sql" file
 run_psql "$BUILDER_DIR/hetzner-migrations/20260711000002_phase_396_397_marketplace_router.sql" file
 
