@@ -346,6 +346,27 @@ run_psql() {
   local code=$?
   set -e
   if [ "$code" -ne 0 ]; then
+    if [[ "$DB_URL" != local-peer:* ]] && printf '%s' "$PSQL_OUT" | grep -qi "password authentication failed"; then
+      local peer_url=""
+      peer_url="$(detect_local_peer_db || true)"
+      if [ -n "$peer_url" ]; then
+        warn "TCP password failed; switching to local postgres peer access on this Hetzner box. No DB password needed."
+        DB_URL="$peer_url"
+        set +e
+        local peer_db="${DB_URL#local-peer:}"
+        if [ "$mode" = "file" ]; then
+          PSQL_OUT="$(sudo -n -u postgres psql -d "$peer_db" -v ON_ERROR_STOP=1 -f "$sql_arg" 2>&1)"
+        else
+          PSQL_OUT="$(sudo -n -u postgres psql -d "$peer_db" -v ON_ERROR_STOP=1 -c "$sql_arg" 2>&1)"
+        fi
+        code=$?
+        set -e
+        if [ "$code" -eq 0 ]; then
+          printf '%s\n' "$PSQL_OUT"
+          return 0
+        fi
+      fi
+    fi
     printf '%s\n' "$PSQL_OUT" >&2
     if printf '%s' "$PSQL_OUT" | grep -qi "could not translate host name\|Name or service not known"; then
       die "DB host resolve nahi ho raha. Yeh script server edit nahi karegi jab tak real Hetzner DB URL na ho. Run: AXONETIS_DB_URL='postgresql://USER:PASS@127.0.0.1:5432/DB' bash server-snippets/hetzner-wire-phases-393-397.sh"
