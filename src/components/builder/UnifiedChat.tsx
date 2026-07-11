@@ -62,6 +62,27 @@ const MENTIONS: Array<{ tag: string; agent: UnifiedAgentSlug; hint: string }> = 
   { tag: "@sherlock", agent: "sherlock", hint: "Review agent" },
 ];
 
+/**
+ * 3.9.6 — Voice-deploy intent detection.
+ * If the founder speaks "deploy karo" / "rollback karo" / "scan karo" etc.,
+ * we auto-fire the matching slash-command instead of just inserting text.
+ * Supports Roman-Urdu + English keywords.
+ */
+function detectVoiceIntent(text: string): { slash: string; prompt: string } | null {
+  const t = text.toLowerCase();
+  if (/\b(deploy|publish|ship|live\s*karo|deploy\s*karo|publish\s*karo)\b/.test(t))
+    return { slash: "/publish", prompt: `/publish (voice) — ${text}` };
+  if (/\b(rollback|revert|undo|wapas|rollback\s*karo)\b/.test(t))
+    return { slash: "/rollback", prompt: `/rollback (voice) — ${text}` };
+  if (/\b(scan|audit|sherlock\s*scan|scan\s*karo|audit\s*karo)\b/.test(t))
+    return { slash: "/scan", prompt: `/scan (voice) — ${text}` };
+  if (/\b(fix|fix\s*karo|repair)\b/.test(t))
+    return { slash: "/fix", prompt: `/fix (voice) — ${text}` };
+  if (/\b(review|review\s*karo|check\s*diff)\b/.test(t))
+    return { slash: "/review", prompt: `/review (voice) — ${text}` };
+  return null;
+}
+
 const resolveAgent = (prompt: string): UnifiedAgentSlug => {
   const p = prompt.toLowerCase();
   if (p.includes("@sherlock")) return "sherlock";
