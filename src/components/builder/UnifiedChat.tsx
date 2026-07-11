@@ -180,7 +180,7 @@ export default function UnifiedChat() {
     seenMessageIdsRef.current.add(row.id);
     if (row.role !== "agent") return;
     if (row.parent_message_id && ignoredParentMessageIdsRef.current.has(row.parent_message_id)) return;
-    if (pendingUserMessageIdRef.current && row.parent_message_id !== pendingUserMessageIdRef.current) return;
+    if (pendingUserMessageIdRef.current && row.parent_message_id && row.parent_message_id !== pendingUserMessageIdRef.current) return;
     const slug = (row.agent_slug ?? "jimmy") as AgentSlug;
     if (!UNIFIED_CHAT_SLUGS.has(slug)) return;
     const text = extractText(row) || "(empty reply)";
