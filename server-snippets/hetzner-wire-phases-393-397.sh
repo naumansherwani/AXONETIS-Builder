@@ -10,7 +10,7 @@ STAMP="$(date +%Y%m%d%H%M%S)"
 
 log() { printf '\n\033[1;36m%s\033[0m\n' "$*"; }
 ok() { printf '\033[1;32mOK: %s\033[0m\n' "$*"; }
-warn() { printf '\n\033[1;33mWARN: %s\033[0m\n' "$*"; }
+warn() { printf '\n\033[1;33mWARN: %s\033[0m\n' "$*" >&2; }
 die() { printf '\n\033[1;31mERROR: %s\033[0m\n' "$*" >&2; exit 1; }
 backup() { [ -f "$1" ] && cp "$1" "$1.bak-$STAMP"; }
 require_file() { [ -f "$1" ] || die "Missing file: $1"; }
