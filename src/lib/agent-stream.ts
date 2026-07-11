@@ -79,7 +79,7 @@ export async function fetchThreadMessages(threadId: string): Promise<AgentMessag
       .eq("thread_id", threadId)
       .order("created_at", { ascending: true })
       .limit(500);
-    data = retry.data;
+    data = retry.data as typeof data;
     error = retry.error;
   }
   if (error) {
