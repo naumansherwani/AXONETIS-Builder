@@ -399,14 +399,6 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
         // 3. Kick Rust ensemble in background. Do NOT hold the UI hostage.
         const brainURL = (process.env.RUST_BRAIN_URL ?? "http://127.0.0.1:8088").replace(/\/$/, "");
         const wantsSse = body.stream === true || request.headers.get("accept")?.includes("text/event-stream");
-        const job = runBrainAndInsert({
-          supabase,
-          slug,
-          prompt,
-          threadId,
-          userMessageId: userMsg.id as string,
-          brainURL,
-        });
         if (wantsSse) {
           return streamBrainToClient({
             supabase,
@@ -417,6 +409,14 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
             brainURL,
           });
         }
+        const job = runBrainAndInsert({
+          supabase,
+          slug,
+          prompt,
+          threadId,
+          userMessageId: userMsg.id as string,
+          brainURL,
+        });
         job.catch((err) => console.warn("[agents.chat] Brain job failed:", err));
 
         return Response.json(
