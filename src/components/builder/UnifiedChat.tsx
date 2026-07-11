@@ -190,6 +190,7 @@ export default function UnifiedChat() {
     const slug = (row.agent_slug ?? "jimmy") as AgentSlug;
     if (!UNIFIED_CHAT_SLUGS.has(slug)) return;
     const text = extractText(row) || "(empty reply)";
+    const { toolCalls, diffs } = extractStructured(row);
     const agent: Agent = slug === "sherlock" ? "sherlock" : "jimmy";
     const meta = {
       model: row.model ?? null,
@@ -203,11 +204,11 @@ export default function UnifiedChat() {
       const placeholderId = pendingPlaceholderRef.current;
       const idx = placeholderId ? next.findIndex((m) => m.id === placeholderId) : -1;
       if (idx >= 0) {
-        next[idx] = { ...next[idx], id: row.id, agent, text, thinking: false, meta };
+        next[idx] = { ...next[idx], id: row.id, agent, text, thinking: false, meta, toolCalls, diffs };
         pendingPlaceholderRef.current = null;
         pendingUserMessageIdRef.current = null;
       } else {
-        next.push({ id: row.id, agent, text, meta });
+        next.push({ id: row.id, agent, text, meta, toolCalls, diffs });
       }
       return next;
     });
