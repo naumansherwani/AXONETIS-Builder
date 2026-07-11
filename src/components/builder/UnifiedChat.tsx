@@ -182,15 +182,21 @@ export default function UnifiedChat() {
         if (!UNIFIED_CHAT_SLUGS.has(slug)) return;
         const text = extractText(row) || "(empty reply)";
         const agent: Agent = slug === "sherlock" ? "sherlock" : "jimmy";
+        const meta = {
+          model: row.model ?? null,
+          tokensIn: row.tokens_in ?? 0,
+          tokensOut: row.tokens_out ?? 0,
+          createdAt: row.created_at,
+        };
         setMessages((prev) => {
           const next = [...prev];
           const placeholderId = pendingPlaceholderRef.current;
           const idx = placeholderId ? next.findIndex((m) => m.id === placeholderId) : -1;
           if (idx >= 0) {
-            next[idx] = { id: row.id, agent, text };
+            next[idx] = { ...next[idx], id: row.id, agent, text, thinking: false, meta };
             pendingPlaceholderRef.current = null;
           } else {
-            next.push({ id: row.id, agent, text });
+            next.push({ id: row.id, agent, text, meta });
           }
           return next;
         });
