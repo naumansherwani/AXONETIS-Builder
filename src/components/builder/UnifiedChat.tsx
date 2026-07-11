@@ -13,6 +13,7 @@ import {
   cancelAgentStream,
   chatWithAgent,
   sendBuilderCommand,
+  streamChatWithAgent,
   transcribeVoice,
   uploadAttachment,
   type AgentSlug,
@@ -328,61 +329,45 @@ export default function UnifiedChat() {
     setMessages((prev) => [
       ...prev,
       { id: `f-${Date.now()}`, agent: "founder", text: prompt, meta: { createdAt: now } },
-      { id: placeholderId, agent: targetAgent, text: targetAgent === "sherlock" ? "Auditing…" : "Thinking…", thinking: true, sourcePrompt: prompt, meta: { createdAt: now } },
+      { id: placeholderId, agent: targetAgent, text: targetAgent === "sherlock" ? "Audit stream connect…" : "Live stream connect…", thinking: true, sourcePrompt: prompt, meta: { createdAt: now } },
     ]);
     setAttachments([]);
 
     const ctrl = new AbortController();
     abortRef.current = ctrl;
 
-    let waitingForRealtime = false;
-    void chatWithAgent(targetAgent, { projectId: project, threadId, prompt: `${prompt}${attachmentNote}`, streamId }, { signal: ctrl.signal })
-      .then((ack) => {
+    void streamChatWithAgent(targetAgent, { projectId: project, threadId, prompt: `${prompt}${attachmentNote}`, streamId }, {
+      onAck: (ack) => {
         if (!threadId && ack.threadId) setThreadId(ack.threadId);
         if (ack.userMessageId) pendingUserMessageIdRef.current = ack.userMessageId;
-        if (ack.status === "queued" && !ack.assistantText) {
-          waitingForRealtime = true;
-          setComposerNotice(targetAgent === "sherlock" ? "Sherlock audit chal raha hai — realtime response aa raha hai." : "Jimmy soch raha hai — realtime response aa raha hai.");
-          const ackThreadId = ack.threadId;
-          void (async () => {
-            // Fast poll (250ms) as fallback; Realtime subscription usually delivers first.
-            // 220 iterations × 250ms = ~55s ceiling, same total budget but 4× faster perceived latency.
-            for (let i = 0; i < 220; i += 1) {
-              if (ctrl.signal.aborted || pendingPlaceholderRef.current !== placeholderId) return;
-              const rows = await fetchThreadMessages(ackThreadId);
-              rows.forEach(ingestAgentRow);
-              if (pendingPlaceholderRef.current !== placeholderId) return;
-              await new Promise((resolve) => setTimeout(resolve, 250));
-            }
-            if (!ctrl.signal.aborted && pendingPlaceholderRef.current === placeholderId) {
-              pendingPlaceholderRef.current = null;
-              setMessages((prev) => prev.map((m) => (
-                m.id === placeholderId
-                  ? { ...m, agent: "sherlock", text: "Endpoint audit: Brain response timeout. Server logs check karo.", thinking: false }
-                  : m
-              )));
-              setStatus("ready");
-              setComposerNotice("Brain timeout — server logs check karo.");
-              textareaRef.current?.focus();
-            }
-          })();
-          return;
-        }
-        if (ack.assistantText) {
-          const cleaned = cleanAgentText(ack.assistantText);
-          setMessages((prev) => {
-            const next = [...prev];
-            const currentPlaceholder = pendingPlaceholderRef.current;
-            const idx = currentPlaceholder ? next.findIndex((m) => m.id === currentPlaceholder) : -1;
-            if (idx >= 0) {
-              next[idx] = { ...next[idx], id: ack.assistantMessageId ?? currentPlaceholder ?? `j-${Date.now()}`, agent: targetAgent, text: cleaned, thinking: false };
-              pendingPlaceholderRef.current = null;
-              pendingUserMessageIdRef.current = null;
-            }
-            return next;
-          });
-        }
-      })
+        setComposerNotice(targetAgent === "sherlock" ? "Sherlock live audit stream." : "Jimmy live token stream.");
+      },
+      onToken: (delta) => {
+        setMessages((prev) => prev.map((m) => {
+          if (m.id !== placeholderId) return m;
+          const current = m.text === "Live stream connect…" || m.text === "Audit stream connect…" ? "" : m.text;
+          return { ...m, text: current + delta, thinking: true };
+        }));
+      },
+      onDone: (done) => {
+        if (done.assistantMessageId) seenMessageIdsRef.current.add(done.assistantMessageId);
+        const cleaned = cleanAgentText(done.assistantText ?? "");
+        setMessages((prev) => prev.map((m) => (
+          m.id === placeholderId
+            ? { ...m, id: done.assistantMessageId ?? placeholderId, agent: targetAgent, text: cleaned || cleanAgentText(m.text), thinking: false }
+            : m
+        )));
+        pendingPlaceholderRef.current = null;
+        pendingUserMessageIdRef.current = null;
+        streamIdRef.current = null;
+        setStatus("ready");
+        setComposerNotice("");
+        textareaRef.current?.focus();
+      },
+      onError: (error) => {
+        setComposerNotice(error.includes("timeout") ? "Brain timeout — Rust SSE/server logs check karo." : `Stream warning: ${error}`);
+      },
+    }, { signal: ctrl.signal })
       .catch((err) => {
         if (ctrl.signal.aborted) {
           setMessages((prev) => prev.map((m) => (m.id === placeholderId ? { ...m, text: "Stopped by founder.", thinking: false } : m)));
@@ -393,14 +378,14 @@ export default function UnifiedChat() {
         console.warn("[UnifiedChat] chatWithAgent failed:", err);
         setMessages((prev) => prev.map((m) => (
           m.id === placeholderId
-            ? { ...m, agent: "sherlock", text: `Endpoint audit: ${err instanceof Error ? err.message : String(err)}`, thinking: false }
+            ? { ...m, agent: targetAgent, text: `${targetAgent === "sherlock" ? "Sherlock audit" : "Jimmy brain"}: ${err instanceof Error ? err.message : String(err)}`, thinking: false }
             : m
         )));
         void sendBuilderCommand({ projectId: project, branch, environment, prompt }).catch(() => undefined);
       })
       .finally(() => {
         abortRef.current = null;
-        if (!waitingForRealtime) {
+        if (pendingPlaceholderRef.current !== placeholderId) {
           streamIdRef.current = null;
           setStatus("ready");
           textareaRef.current?.focus();
