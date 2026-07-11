@@ -27,6 +27,20 @@ const ALLOWED_SLUGS = new Set(["jimmy", "sherlock"]);
 const RUST_TIMEOUT_MS = 45_000;
 const DIRECT_FALLBACK_TIMEOUT_MS = 30_000;
 const DISABLED_PROVIDER_IDS = ["J-bk-deepseek-v31-fr", "S-bk-llama-70b-fr"];
+const DEFAULT_MODEL = "anthropic/claude-3.5-sonnet";
+const MODEL_PRICING: Record<string, { in: number; out: number }> = {
+  "qwen/qwen-2.5-coder-32b": { in: 0.18, out: 0.18 },
+  "qwen/qwen-2.5-coder-32b-instruct": { in: 0.18, out: 0.18 },
+  "qwen/qwen3-32b": { in: 0.18, out: 0.18 },
+  "meta-llama/llama-3.3-70b-instruct": { in: 0.23, out: 0.40 },
+  "deepseek/deepseek-r1": { in: 0.55, out: 2.19 },
+  "deepseek/deepseek-r1:free": { in: 0, out: 0 },
+  "deepseek/deepseek-chat-v3.1:free": { in: 0, out: 0 },
+  "anthropic/claude-3.5-sonnet": { in: 3, out: 15 },
+  "openai/gpt-4o-mini": { in: 0.15, out: 0.60 },
+  "openai/gpt-oss-120b": { in: 0.15, out: 0.60 },
+  "llama-3.3-70b-versatile": { in: 0.23, out: 0.40 },
+};
 const SSE_HEADERS = {
   "Content-Type": "text/event-stream; charset=utf-8",
   "Cache-Control": "no-cache, no-transform",
@@ -48,6 +62,13 @@ type BrainJob = {
   threadId: string;
   userMessageId: string;
   brainURL: string;
+  signal?: AbortSignal;
+};
+
+type CompletionMeta = {
+  model?: string | null;
+  tokensIn?: number;
+  tokensOut?: number;
 };
 
 const sseEncoder = new TextEncoder();
@@ -73,6 +94,37 @@ function providerEnv(...names: string[]) {
   return "";
 }
 
+function estimateTokenCount(text: string) {
+  return Math.max(1, Math.ceil(text.length / 4));
+}
+
+function normalizeModelLabel(model: string | null | undefined) {
+  if (!model) return "unknown";
+  return model.replace(/^(openrouter|groq|ollama):/i, "").trim();
+}
+
+function priceFor(model: string | null | undefined) {
+  const normalized = normalizeModelLabel(model);
+  return MODEL_PRICING[normalized] ?? MODEL_PRICING[normalized.replace(/:free$/i, "")] ?? { in: 0.6, out: 2.4 };
+}
+
+function completionMeta(prompt: string, assistantText: string, meta?: CompletionMeta) {
+  const model = normalizeModelLabel(meta?.model);
+  const tokensIn = meta?.tokensIn && meta.tokensIn > 0 ? meta.tokensIn : estimateTokenCount(prompt);
+  const tokensOut = meta?.tokensOut && meta.tokensOut > 0 ? meta.tokensOut : estimateTokenCount(assistantText);
+  const chosen = priceFor(model);
+  const baseline = priceFor(DEFAULT_MODEL);
+  const costUsd = (tokensIn * chosen.in + tokensOut * chosen.out) / 1_000_000;
+  const defaultCostUsd = (tokensIn * baseline.in + tokensOut * baseline.out) / 1_000_000;
+  return {
+    model,
+    tokensIn,
+    tokensOut,
+    costUsd: Number(costUsd.toFixed(6)),
+    savedVsDefaultUsd: Number(Math.max(0, defaultCostUsd - costUsd).toFixed(6)),
+  };
+}
+
 function modelsFromEnv(envName: string, fallback: string[]) {
   const configured = process.env[envName]
     ?.split(",")
@@ -88,17 +140,21 @@ function directSystemPrompt(slug: string) {
   return "You are JimmyBuild Agent for AXONETIS AI Builder. Reply in concise Roman Urdu/Hindi when the founder writes that way. Help build real production features, explain exact next actions, and never pretend a backend action happened if it did not.";
 }
 
-async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number) {
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number, parentSignal?: AbortSignal) {
   const ctrl = new AbortController();
+  const abort = () => ctrl.abort(parentSignal?.reason);
+  if (parentSignal?.aborted) ctrl.abort(parentSignal.reason);
+  else parentSignal?.addEventListener("abort", abort, { once: true });
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     return await fetch(url, { ...init, signal: ctrl.signal });
   } finally {
     clearTimeout(timer);
+    parentSignal?.removeEventListener("abort", abort);
   }
 }
 
-async function callGroqFallback(slug: string, prompt: string) {
+async function callGroqFallback(slug: string, prompt: string, signal?: AbortSignal) {
   const key = providerEnv("GROQ_API_KEY", "GROQ_KEY", "NEXATECT_GROQ_API_KEY", "HOSTFLOW_GROQ_API_KEY");
   if (!key) return null;
 
@@ -126,14 +182,19 @@ async function callGroqFallback(slug: string, prompt: string) {
           ],
           temperature: slug === "sherlock" ? 0.2 : 0.45,
         }),
-      }, DIRECT_FALLBACK_TIMEOUT_MS);
+      }, DIRECT_FALLBACK_TIMEOUT_MS, signal);
       if (!r.ok) {
         lastError = `${model}: ${r.status} ${await r.text().catch(() => "")}`.slice(0, 280);
         continue;
       }
-      const payload = await r.json().catch(() => null) as { choices?: Array<{ message?: { content?: string } }> } | null;
+      const payload = await r.json().catch(() => null) as { choices?: Array<{ message?: { content?: string } }>; usage?: { prompt_tokens?: number; completion_tokens?: number; input_tokens?: number; output_tokens?: number } } | null;
       const text = payload?.choices?.[0]?.message?.content?.trim();
-      if (text) return { text, model: `groq:${model}` };
+      if (text) return {
+        text,
+        model: `groq:${model}`,
+        tokensIn: payload?.usage?.prompt_tokens ?? payload?.usage?.input_tokens,
+        tokensOut: payload?.usage?.completion_tokens ?? payload?.usage?.output_tokens,
+      };
     } catch (err) {
       lastError = `${model}: ${err instanceof Error ? err.message : String(err)}`.slice(0, 280);
     }
@@ -141,7 +202,7 @@ async function callGroqFallback(slug: string, prompt: string) {
   return lastError ? { error: lastError } : null;
 }
 
-async function callOpenRouterFallback(slug: string, prompt: string) {
+async function callOpenRouterFallback(slug: string, prompt: string, signal?: AbortSignal) {
   const key = providerEnv("OPENROUTER_API_KEY", "OPENROUTER_KEY", "NEXATECT_OPENROUTER_API_KEY", "HOSTFLOW_OPENROUTER_API_KEY");
   if (!key) return null;
 
@@ -171,14 +232,19 @@ async function callOpenRouterFallback(slug: string, prompt: string) {
           ],
           temperature: slug === "sherlock" ? 0.2 : 0.45,
         }),
-      }, DIRECT_FALLBACK_TIMEOUT_MS);
+      }, DIRECT_FALLBACK_TIMEOUT_MS, signal);
       if (!r.ok) {
         lastError = `${model}: ${r.status} ${await r.text().catch(() => "")}`.slice(0, 280);
         continue;
       }
-      const payload = await r.json().catch(() => null) as { choices?: Array<{ message?: { content?: string } }> } | null;
+      const payload = await r.json().catch(() => null) as { choices?: Array<{ message?: { content?: string } }>; usage?: { prompt_tokens?: number; completion_tokens?: number; input_tokens?: number; output_tokens?: number } } | null;
       const text = payload?.choices?.[0]?.message?.content?.trim();
-      if (text) return { text, model: `openrouter:${model}` };
+      if (text) return {
+        text,
+        model: `openrouter:${model}`,
+        tokensIn: payload?.usage?.prompt_tokens ?? payload?.usage?.input_tokens,
+        tokensOut: payload?.usage?.completion_tokens ?? payload?.usage?.output_tokens,
+      };
     } catch (err) {
       lastError = `${model}: ${err instanceof Error ? err.message : String(err)}`.slice(0, 280);
     }
@@ -186,13 +252,13 @@ async function callOpenRouterFallback(slug: string, prompt: string) {
   return lastError ? { error: lastError } : null;
 }
 
-async function runDirectFallback(slug: string, prompt: string) {
+async function runDirectFallback(slug: string, prompt: string, signal?: AbortSignal) {
   const primary = slug === "sherlock"
     ? [callGroqFallback, callOpenRouterFallback]
     : [callGroqFallback, callOpenRouterFallback];
   const errors: string[] = [];
   for (const call of primary) {
-    const result = await call(slug, prompt);
+    const result = await call(slug, prompt, signal);
     if (!result) continue;
     if ("text" in result && result.text) return result;
     if ("error" in result && result.error) errors.push(result.error);
@@ -225,6 +291,32 @@ function extractText(payload: unknown): string {
   return JSON.stringify(payload, null, 2);
 }
 
+function extractModel(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  const p = payload as Record<string, unknown>;
+  const best = p.best as Record<string, unknown> | undefined;
+  const candidates = [p.model, p.model_id, p.provider_model, best?.model, best?.model_id];
+  for (const c of candidates) if (typeof c === "string" && c.trim()) return c.trim();
+  return null;
+}
+
+function extractUsage(payload: unknown): { tokensIn?: number; tokensOut?: number } {
+  if (!payload || typeof payload !== "object") return {};
+  const p = payload as Record<string, unknown>;
+  const usage = (p.usage ?? (p.best as Record<string, unknown> | undefined)?.usage) as Record<string, unknown> | undefined;
+  const numberValue = (...keys: string[]) => {
+    for (const key of keys) {
+      const v = usage?.[key] ?? p[key];
+      if (typeof v === "number" && Number.isFinite(v)) return v;
+    }
+    return undefined;
+  };
+  return {
+    tokensIn: numberValue("prompt_tokens", "input_tokens", "tokens_in"),
+    tokensOut: numberValue("completion_tokens", "output_tokens", "tokens_out"),
+  };
+}
+
 function extractDelta(payload: unknown): string {
   if (typeof payload === "string") return payload === "[DONE]" ? "" : payload;
   if (!payload || typeof payload !== "object") return "";
@@ -244,7 +336,9 @@ function extractDelta(payload: unknown): string {
   return "";
 }
 
-async function insertAssistantMessage({ supabase, slug, threadId, userMessageId }: BrainJob, assistantText: string) {
+async function insertAssistantMessage(job: BrainJob, assistantText: string, meta?: CompletionMeta) {
+  const { supabase, slug, threadId, userMessageId, prompt } = job;
+  const stamped = completionMeta(prompt, assistantText, meta);
   const baseRow = {
     thread_id: threadId,
     role: "agent" as const,
@@ -253,12 +347,21 @@ async function insertAssistantMessage({ supabase, slug, threadId, userMessageId 
   };
   let { data, error } = await supabase
     .from("agent_thread_messages")
-    .insert({ ...baseRow, parent_message_id: userMessageId })
+    .insert({
+      ...baseRow,
+      parent_message_id: userMessageId,
+      tokens_in: stamped.tokensIn,
+      tokens_out: stamped.tokensOut,
+      model: stamped.model,
+      cost_usd: stamped.costUsd,
+      saved_vs_default_usd: stamped.savedVsDefaultUsd,
+      default_model: DEFAULT_MODEL,
+    })
     .select("id")
     .single();
 
-  if (error && /parent_message_id/.test(error.message)) {
-    // Server DB hasn't been migrated with parent_message_id yet — retry without it.
+  if (error && /parent_message_id|cost_usd|saved_vs_default_usd|default_model|tokens_in|tokens_out|model/.test(error.message)) {
+    // Server DB hasn't been fully migrated yet — retry with legacy-safe columns.
     const retry = await supabase
       .from("agent_thread_messages")
       .insert(baseRow)
@@ -275,12 +378,17 @@ async function insertAssistantMessage({ supabase, slug, threadId, userMessageId 
   return (data?.id as string | undefined) ?? null;
 }
 
-async function runBrainAndInsert({ supabase, slug, prompt, threadId, userMessageId, brainURL }: BrainJob) {
+async function runBrainAndInsert(job: BrainJob) {
+  const { supabase, slug, prompt, threadId, userMessageId, brainURL, signal } = job;
   let assistantText = "";
   let rustPayload: unknown = null;
   let rustError: string | null = null;
+  let meta: CompletionMeta | undefined;
 
   const ctrl = new AbortController();
+  const abort = () => ctrl.abort(signal?.reason);
+  if (signal?.aborted) ctrl.abort(signal.reason);
+  else signal?.addEventListener("abort", abort, { once: true });
   const timer = setTimeout(() => ctrl.abort(), RUST_TIMEOUT_MS);
   try {
     const r = await fetch(`${brainURL}/api/agents/${slug}/chat`, {
@@ -299,6 +407,7 @@ async function runBrainAndInsert({ supabase, slug, prompt, threadId, userMessage
     } else {
       rustPayload = await r.json().catch(() => null);
       assistantText = extractText(rustPayload);
+      meta = { model: extractModel(rustPayload), ...extractUsage(rustPayload) };
     }
   } catch (err) {
     rustError = err instanceof Error && err.name === "AbortError"
@@ -306,13 +415,17 @@ async function runBrainAndInsert({ supabase, slug, prompt, threadId, userMessage
       : err instanceof Error ? err.message : String(err);
   } finally {
     clearTimeout(timer);
+    signal?.removeEventListener("abort", abort);
   }
 
+  if (signal?.aborted) return;
+
   if (hasProviderKeyFailure(rustError ?? assistantText)) {
-    const direct = await runDirectFallback(slug, prompt);
+    const direct = await runDirectFallback(slug, prompt, signal);
     if (direct && "text" in direct && direct.text) {
       assistantText = direct.text;
       rustError = null;
+      meta = { model: direct.model, tokensIn: direct.tokensIn, tokensOut: direct.tokensOut };
     } else if (direct && "error" in direct && direct.error) {
       rustError = `Direct fallback failed: ${direct.error}`;
       assistantText = "";
@@ -327,7 +440,7 @@ async function runBrainAndInsert({ supabase, slug, prompt, threadId, userMessage
     assistantText = `⚠️ Brain unreachable: ${rustError}`;
   }
 
-  await insertAssistantMessage({ supabase, slug, prompt, threadId, userMessageId, brainURL }, assistantText);
+  await insertAssistantMessage(job, assistantText, meta);
 }
 
 function streamBrainToClient(job: BrainJob) {
@@ -340,7 +453,15 @@ function streamBrainToClient(job: BrainJob) {
         let assistantText = "";
         let rustError: string | null = null;
         const ctrl = new AbortController();
+        let abortedByFounder = false;
+        const abort = () => {
+          abortedByFounder = true;
+          ctrl.abort(job.signal?.reason);
+        };
+        if (job.signal?.aborted) abort();
+        else job.signal?.addEventListener("abort", abort, { once: true });
         const timer = setTimeout(() => ctrl.abort(), RUST_TIMEOUT_MS);
+        let meta: CompletionMeta | undefined;
 
         try {
           const r = await fetch(`${job.brainURL}/api/agents/${job.slug}/chat`, {
@@ -398,6 +519,7 @@ function streamBrainToClient(job: BrainJob) {
               ? await r.json().catch(() => null)
               : await r.text().catch(() => "");
             assistantText = extractText(payload);
+            meta = { model: extractModel(payload), ...extractUsage(payload) };
             if (assistantText && !hasProviderKeyFailure(assistantText)) send("token", { delta: assistantText });
           }
         } catch (err) {
@@ -406,13 +528,20 @@ function streamBrainToClient(job: BrainJob) {
             : err instanceof Error ? err.message : String(err);
         } finally {
           clearTimeout(timer);
+          job.signal?.removeEventListener("abort", abort);
+        }
+
+        if (abortedByFounder || job.signal?.aborted) {
+          try { controller.close(); } catch { /* client already gone */ }
+          return;
         }
 
         if (hasProviderKeyFailure(rustError ?? assistantText)) {
-          const direct = await runDirectFallback(job.slug, job.prompt);
+          const direct = await runDirectFallback(job.slug, job.prompt, job.signal);
           if (direct && "text" in direct && direct.text) {
             assistantText = direct.text;
             rustError = null;
+            meta = { model: direct.model, tokensIn: direct.tokensIn, tokensOut: direct.tokensOut };
             send("token", { delta: direct.text });
           } else if (direct && "error" in direct && direct.error) {
             rustError = `Direct fallback failed: ${direct.error}`;
@@ -431,7 +560,7 @@ function streamBrainToClient(job: BrainJob) {
           send("error", { error: rustError });
         }
 
-        const assistantMessageId = assistantText ? await insertAssistantMessage(job, assistantText) : null;
+        const assistantMessageId = assistantText ? await insertAssistantMessage(job, assistantText, meta) : null;
         send("done", {
           threadId: job.threadId,
           userMessageId: job.userMessageId,
@@ -588,6 +717,7 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
             threadId,
             userMessageId: userMsg.id as string,
             brainURL,
+            signal: request.signal,
           });
         }
         const job = runBrainAndInsert({
@@ -597,6 +727,7 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
           threadId,
           userMessageId: userMsg.id as string,
           brainURL,
+          signal: request.signal,
         });
         job.catch((err) => console.warn("[agents.chat] Brain job failed:", err));
 
