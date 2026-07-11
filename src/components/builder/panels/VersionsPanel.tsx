@@ -5,12 +5,16 @@
  */
 import { useEffect, useState } from "react";
 import { PanelSection, Row } from "./PanelChrome";
-import { RotateCcw, Rocket } from "lucide-react";
+import { RotateCcw, Rocket, Globe, Plus, ShieldCheck, ShieldAlert, Loader2, GitCommitHorizontal, Play, Trash2 } from "lucide-react";
 import { useBuilder } from "@/lib/builder-state";
 import {
   fetchDeployments, fetchRollbackHistory, fetchSnapshots, rollback,
   type Deployment, type RollbackEntry, type Snapshot,
 } from "@/lib/versions-api";
+import {
+  attachCaddyDomain, listCaddyDomains, revokeCaddyDomain, checkoutIntoPreview,
+  type CaddyDomain,
+} from "@/lib/power-tools-api";
 
 const SEED_SNAP: Snapshot[] = [
   { id: "v17", path: "db/migrations/2026_06_14_phase6_versions.sql", change: "create", author: "jimmy",    message: "phase 6 sql",        created_at: new Date(Date.now() - 2 * 3600_000).toISOString(),  env: "sandbox", branch: "main" },
