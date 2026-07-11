@@ -8,13 +8,13 @@ type: feature
 
 **Rule:** Sirf ek item at a time. Founder "agla" bolay tab next. Mixing = reject.
 
-## In progress ⚠️
-0. **Rust server: Smart Hybrid + Sherlock manual-mode** — apply karna hai
-   - OR1-first → 80% daily quota trip → OR2 warm backup
-   - Public users OR1 se BLOCKED (server-side)
-   - Sherlock auto-audit BAND (only fires on `/scan` or user command)
-   - Background/cron jobs BAND
-   - Deliverable: single copy-paste `src/main.rs` overwrite block + rebuild + PM2 restart + 2 smoke tests
+## Done ✅
+0. ~~**Rust server: Smart Hybrid + Sherlock manual-mode**~~ ✅ Jul 6 2026 LIVE
+   - OR1-first + 80% daily quota (limit 250) → OR2 warm backup ✅
+   - Public users OR1 BLOCKED (server-side, verified via smoke test) ✅
+   - Sherlock auto-audit BAND — `skipped_manual_mode` confirmed ✅
+   - `/quota` live counter endpoint ✅
+   - PM2 `axonetis-rust-human` online on :8088
 
 ## Pending ❌ (locked order)
 1. **Panels real `/rpc/*` wiring** — currently stubs, replace with real endpoints
