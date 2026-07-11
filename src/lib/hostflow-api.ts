@@ -103,6 +103,10 @@ export interface AgentMessage {
   tokens_in: number;
   tokens_out: number;
   model: string | null;
+  /** 3.9.7 — Global Router cost meter (stamped by axonetis-builder worker). */
+  cost_usd?: number | null;
+  saved_vs_default_usd?: number | null;
+  default_model?: string | null;
   created_at: string;
 }
 
