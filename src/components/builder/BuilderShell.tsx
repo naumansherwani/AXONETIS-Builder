@@ -59,6 +59,10 @@ export default function BuilderShell() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // rrweb session replay — records builder UI, ships to Hetzner every 5s.
+  useRrwebRecorder(project, true);
+
+
   const value = useMemo(
     () => ({
       project, branch, environment, bottomTab, previewMode, paletteOpen, agentState, bridgeStatus, lastBridgeEvent,
