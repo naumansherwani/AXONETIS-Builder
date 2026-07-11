@@ -363,7 +363,9 @@ async function resolveProjectUuid(supabase: SupabaseClient, projectId: string) {
     .eq("slug", projectId)
     .maybeSingle();
   if (error) throw error;
-  return (data?.id as string | undefined) ?? projectId;
+  const id = data?.id as string | undefined;
+  if (!id) throw new Error(`Project not found for agent loop: ${projectId}`);
+  return id;
 }
 
 async function loadProjectSnapshot(supabase: SupabaseClient, projectUuid: string): Promise<ProjectFileSnapshot[]> {
@@ -544,6 +546,30 @@ async function runCoreBuilderLoop(job: BrainJob, firstReply: string, firstMeta?:
   return { text: summary, meta, applied: appliedAll, audit };
 }
 
+async function safeRunCoreBuilderLoop(job: BrainJob, firstReply: string, firstMeta?: CompletionMeta) {
+  try {
+    return await runCoreBuilderLoop(job, firstReply, firstMeta);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn("[agent-loop] skipped:", message);
+    await insertAgentRun(job, {
+      status: "error",
+      sherlock_loop: 0,
+      model: firstMeta?.model,
+      input: { prompt: job.prompt },
+      output: { fallback: "assistant_reply_only" },
+      error: message,
+      finished_at: new Date().toISOString(),
+    });
+    return {
+      text: `${firstReply}\n\n⚠️ Agent loop skipped: ${message}`,
+      meta: firstMeta,
+      applied: [] as string[],
+      audit: "",
+    };
+  }
+}
+
 async function insertAssistantMessage(job: BrainJob, assistantText: string, meta?: CompletionMeta) {
   const { supabase, slug, threadId, userMessageId, prompt } = job;
   const stamped = completionMeta(prompt, assistantText, meta);
@@ -648,7 +674,7 @@ async function runBrainAndInsert(job: BrainJob) {
     assistantText = `⚠️ Brain unreachable: ${rustError}`;
   }
 
-  const looped = await runCoreBuilderLoop(job, assistantText, meta);
+  const looped = await safeRunCoreBuilderLoop(job, assistantText, meta);
   await insertAssistantMessage(job, looped.text, looped.meta);
 }
 
@@ -781,7 +807,7 @@ function streamBrainToClient(job: BrainJob) {
         let finalText = assistantText;
         let finalMeta = meta;
         if (assistantText) {
-          const looped = await runCoreBuilderLoop(job, assistantText, meta);
+          const looped = await safeRunCoreBuilderLoop(job, assistantText, meta);
           finalText = looped.text;
           finalMeta = looped.meta;
           if (finalText !== assistantText) send("token", { delta: `\n\n${finalText.replace(assistantText, "").trim()}` });
