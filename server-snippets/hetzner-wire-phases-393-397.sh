@@ -258,14 +258,7 @@ select_db_url() {
       printf '%s' "$value"
       return 0
     fi
-    case "$key" in
-      AXONETIS_DB_URL|BUILDER_DB_URL|AXONETIS_POSTGRES_URL|AXONETIS_DATABASE_URL)
-        die "$key invalid hai: $reason. Isko actual self-hosted Postgres URL banao, e.g. postgresql://postgres:REAL_PASSWORD@127.0.0.1:5432/postgres"
-        ;;
-      *)
-        warn "Ignoring $key: $reason"
-        ;;
-    esac
+    warn "Ignoring $key: $reason"
   done
 
   # Legacy names are accepted only if they are not the old cloud URL/placeholder.
