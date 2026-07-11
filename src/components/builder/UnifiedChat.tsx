@@ -315,14 +315,26 @@ export default function UnifiedChat() {
     executePrompt(sourcePrompt);
   }, [busy, executePrompt]);
 
-  // 3.9.1 — session token meter (sum of assistant tokens_out on this thread).
+  // 3.9.1 — session token meter (sum of assistant tokens on this thread).
+  // Blended per-model USD estimate; conservative for OpenRouter/Groq mix used by Jimmy/Sherlock.
   const sessionTokens = useMemo(() => {
-    let inTok = 0, outTok = 0;
+    let inTok = 0, outTok = 0, usd = 0;
     for (const m of messages) {
-      if (m.meta?.tokensIn) inTok += m.meta.tokensIn;
-      if (m.meta?.tokensOut) outTok += m.meta.tokensOut;
+      const ti = m.meta?.tokensIn ?? 0;
+      const to = m.meta?.tokensOut ?? 0;
+      inTok += ti; outTok += to;
+      const model = (m.meta?.model ?? "").toLowerCase();
+      // rough per-1M-token pricing (USD)
+      let pIn = 0.6, pOut = 2.4;
+      if (model.includes("hermes") && model.includes("405")) { pIn = 3.0; pOut = 3.0; }
+      else if (model.includes("qwen3-coder") || model.includes("qwen-3-coder")) { pIn = 0.9; pOut = 0.9; }
+      else if (model.includes("deepseek-r1") || model.includes("deepseek/r1")) { pIn = 0.55; pOut = 2.19; }
+      else if (model.includes("gpt-oss-120b")) { pIn = 0.15; pOut = 0.6; }
+      else if (model.includes("llama-3.3-70b") || model.includes("llama3.3-70b")) { pIn = 0.12; pOut = 0.3; }
+      else if (model.includes("groq")) { pIn = 0.1; pOut = 0.4; }
+      usd += (ti / 1_000_000) * pIn + (to / 1_000_000) * pOut;
     }
-    return { inTok, outTok, total: inTok + outTok };
+    return { inTok, outTok, total: inTok + outTok, usd };
   }, [messages]);
 
   // 3.9.1 — slash + mention popover state derived from draft.
