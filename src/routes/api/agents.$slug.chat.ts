@@ -22,10 +22,12 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createHash } from "crypto";
 
 const ALLOWED_SLUGS = new Set(["jimmy", "sherlock"]);
 const RUST_TIMEOUT_MS = 45_000;
 const DIRECT_FALLBACK_TIMEOUT_MS = 30_000;
+const MAX_SHERLOCK_LOOPS = 3;
 const DISABLED_PROVIDER_IDS = ["J-bk-deepseek-v31-fr", "S-bk-llama-70b-fr"];
 const DEFAULT_MODEL = "anthropic/claude-3.5-sonnet";
 const MODEL_PRICING: Record<string, { in: number; out: number }> = {
@@ -59,8 +61,10 @@ type BrainJob = {
   supabase: SupabaseClient;
   slug: string;
   prompt: string;
+  projectId: string;
   threadId: string;
   userMessageId: string;
+  userId: string;
   brainURL: string;
   signal?: AbortSignal;
 };
@@ -69,6 +73,17 @@ type CompletionMeta = {
   model?: string | null;
   tokensIn?: number;
   tokensOut?: number;
+};
+
+type ProjectFileSnapshot = {
+  path: string;
+  content: string | null;
+};
+
+type PatchOperation = {
+  path: string;
+  content?: string;
+  action?: "upsert" | "delete";
 };
 
 const sseEncoder = new TextEncoder();
@@ -336,6 +351,232 @@ function extractDelta(payload: unknown): string {
   return "";
 }
 
+function sha256(text: string) {
+  return createHash("sha256").update(text).digest("hex");
+}
+
+async function resolveProjectUuid(supabase: SupabaseClient, projectId: string) {
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(projectId)) return projectId;
+  const { data, error } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("slug", projectId)
+    .maybeSingle();
+  if (error) throw error;
+  const id = data?.id as string | undefined;
+  if (!id) throw new Error(`Project not found for agent loop: ${projectId}`);
+  return id;
+}
+
+async function loadProjectSnapshot(supabase: SupabaseClient, projectUuid: string): Promise<ProjectFileSnapshot[]> {
+  const { data, error } = await supabase
+    .from("project_files")
+    .select("path, content")
+    .eq("project_id", projectUuid)
+    .eq("is_deleted", false)
+    .order("updated_at", { ascending: false })
+    .limit(80);
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    path: String((row as { path?: unknown }).path ?? ""),
+    content: ((row as { content?: unknown }).content as string | null) ?? null,
+  })).filter((row) => row.path);
+}
+
+function compactSnapshot(files: ProjectFileSnapshot[]) {
+  return files
+    .slice(0, 40)
+    .map((file) => {
+      const content = (file.content ?? "").slice(0, 6000);
+      return `--- FILE: ${file.path}\n${content}`;
+    })
+    .join("\n\n");
+}
+
+function buildJimmyPatchPrompt(founderPrompt: string, files: ProjectFileSnapshot[], previousAudit?: string) {
+  return [
+    "You are JimmyBuild inside AXONETIS AI Builder. You must make real project file changes.",
+    "Return a concise founder-facing summary first, then a machine-readable patch block.",
+    "Patch block format is mandatory when code changes are needed:",
+    "```axonetis-patch",
+    "[{\"path\":\"src/example.tsx\",\"action\":\"upsert\",\"content\":\"full file content\"}]",
+    "```",
+    "Rules: only JSON array in the patch block; content must be full file content; no duplicate files; update existing paths where possible.",
+    previousAudit ? `Sherlock previous audit to fix:\n${previousAudit}` : "",
+    `Founder request:\n${founderPrompt}`,
+    "Current project files snapshot:",
+    compactSnapshot(files) || "No files loaded yet. Create only the minimum required app files.",
+  ].filter(Boolean).join("\n\n");
+}
+
+function buildSherlockAuditPrompt(founderPrompt: string, files: ProjectFileSnapshot[], jimmyReply: string) {
+  return [
+    "You are SherlockReview for AXONETIS. Audit Jimmy's proposed/applied builder changes.",
+    "Return exactly one verdict line starting with APPROVED or CHANGES_REQUIRED, then concise findings.",
+    "Check: real code was changed, no dummy feature, no duplicate paths, request satisfied, syntax likely valid, security sane.",
+    `Founder request:\n${founderPrompt}`,
+    `Jimmy reply:\n${jimmyReply}`,
+    "Current file snapshot after Jimmy pass:",
+    compactSnapshot(files),
+  ].join("\n\n");
+}
+
+function parsePatchOperations(text: string): PatchOperation[] {
+  const match = text.match(/```axonetis-patch\s*([\s\S]*?)```/i);
+  if (!match) return [];
+  try {
+    const parsed = JSON.parse(match[1].trim()) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((item) => item && typeof item === "object" ? item as Record<string, unknown> : null)
+      .filter(Boolean)
+      .map((item) => ({
+        path: String(item!.path ?? "").trim().replace(/^\/+/, ""),
+        action: (item!.action === "delete" ? "delete" : "upsert") as PatchOperation["action"],
+        content: typeof item!.content === "string" ? item!.content : undefined,
+      }))
+      .filter((op) => op.path && !op.path.includes("..") && !op.path.startsWith("."));
+  } catch {
+    return [];
+  }
+}
+
+function stripPatchBlock(text: string) {
+  return text.replace(/```axonetis-patch\s*[\s\S]*?```/gi, "").trim();
+}
+
+async function applyPatchOperations(job: BrainJob, projectUuid: string, ops: PatchOperation[], iteration: number) {
+  const applied: string[] = [];
+  for (const op of ops.slice(0, 12)) {
+    if (op.action === "delete") {
+      const { error } = await job.supabase
+        .from("project_files")
+        .update({ is_deleted: true, updated_by: job.userId })
+        .eq("project_id", projectUuid)
+        .eq("path", op.path);
+      if (error) throw error;
+      applied.push(`deleted ${op.path}`);
+      continue;
+    }
+    const content = op.content ?? "";
+    const { error } = await job.supabase
+      .from("project_files")
+      .upsert({
+        project_id: projectUuid,
+        path: op.path,
+        content,
+        size_bytes: new TextEncoder().encode(content).length,
+        checksum: sha256(content),
+        is_deleted: false,
+        updated_by: job.userId,
+        version: iteration,
+      }, { onConflict: "project_id,path" });
+    if (error) throw error;
+    applied.push(`wrote ${op.path}`);
+  }
+  return applied;
+}
+
+async function insertAgentRun(job: BrainJob, fields: Record<string, unknown>) {
+  let projectUuid: string;
+  try {
+    projectUuid = await resolveProjectUuid(job.supabase, job.projectId);
+  } catch (err) {
+    console.warn("[agent-loop] agent_runs skipped:", err instanceof Error ? err.message : String(err));
+    return;
+  }
+  await job.supabase.from("agent_runs").insert({
+    project_id: projectUuid,
+    user_id: job.userId,
+    agent: job.slug,
+    model: String(fields.model ?? "router"),
+    provider: String(fields.provider ?? "axonetis-loop"),
+    status: String(fields.status ?? "running"),
+    sherlock_loop: Number(fields.sherlock_loop ?? 0),
+    input: fields.input ?? { prompt: job.prompt },
+    output: fields.output ?? {},
+    error: fields.error ? String(fields.error) : null,
+    finished_at: fields.finished_at ?? null,
+  }).then(() => null, (err) => console.warn("[agent-loop] agent_runs insert skipped:", err.message));
+}
+
+async function runCoreBuilderLoop(job: BrainJob, firstReply: string, firstMeta?: CompletionMeta) {
+  if (job.slug !== "jimmy") return { text: firstReply, meta: firstMeta, applied: [] as string[], audit: "" };
+
+  const projectUuid = await resolveProjectUuid(job.supabase, job.projectId);
+  let files = await loadProjectSnapshot(job.supabase, projectUuid);
+  let jimmyReply = firstReply;
+  let meta = firstMeta;
+  let audit = "";
+  const appliedAll: string[] = [];
+
+  await insertAgentRun(job, { status: "running", sherlock_loop: 0, model: meta?.model, input: { prompt: job.prompt } });
+
+  for (let iteration = 1; iteration <= MAX_SHERLOCK_LOOPS; iteration += 1) {
+    if (job.signal?.aborted) break;
+
+    if (iteration > 1 || parsePatchOperations(jimmyReply).length === 0) {
+      const rebuildPrompt = buildJimmyPatchPrompt(job.prompt, files, audit);
+      const rebuilt = await runDirectFallback("jimmy", rebuildPrompt, job.signal);
+      if (rebuilt && "text" in rebuilt && rebuilt.text) {
+        jimmyReply = rebuilt.text;
+        meta = { model: rebuilt.model, tokensIn: rebuilt.tokensIn, tokensOut: rebuilt.tokensOut };
+      }
+    }
+
+    const ops = parsePatchOperations(jimmyReply);
+    if (ops.length) {
+      const applied = await applyPatchOperations(job, projectUuid, ops, iteration);
+      appliedAll.push(...applied.map((entry) => `loop ${iteration}: ${entry}`));
+      files = await loadProjectSnapshot(job.supabase, projectUuid);
+    }
+
+    const auditPrompt = buildSherlockAuditPrompt(job.prompt, files, jimmyReply);
+    const verdict = await runDirectFallback("sherlock", auditPrompt, job.signal);
+    audit = verdict && "text" in verdict && verdict.text ? verdict.text : "CHANGES_REQUIRED — Sherlock audit unavailable; retry once with safer patch.";
+
+    await insertAssistantMessage({ ...job, slug: "sherlock" }, `Loop ${iteration}/3 — ${audit}`, verdict && "text" in verdict ? { model: verdict.model, tokensIn: verdict.tokensIn, tokensOut: verdict.tokensOut } : undefined);
+
+    if (/^\s*APPROVED\b/i.test(audit)) {
+      await insertAgentRun(job, { status: "success", sherlock_loop: iteration, model: meta?.model, output: { applied: appliedAll, audit }, finished_at: new Date().toISOString() });
+      break;
+    }
+  }
+
+  const cleanReply = stripPatchBlock(jimmyReply);
+  const summary = [
+    cleanReply || "Jimmy ne project files update kar diye.",
+    appliedAll.length ? `\nApplied files:\n${appliedAll.map((x) => `- ${x}`).join("\n")}` : "\nNo patch block applied — Sherlock ne changes require kiye.",
+    audit ? `\nSherlock final:\n${audit}` : "",
+  ].join("\n").trim();
+
+  return { text: summary, meta, applied: appliedAll, audit };
+}
+
+async function safeRunCoreBuilderLoop(job: BrainJob, firstReply: string, firstMeta?: CompletionMeta) {
+  try {
+    return await runCoreBuilderLoop(job, firstReply, firstMeta);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn("[agent-loop] skipped:", message);
+    await insertAgentRun(job, {
+      status: "error",
+      sherlock_loop: 0,
+      model: firstMeta?.model,
+      input: { prompt: job.prompt },
+      output: { fallback: "assistant_reply_only" },
+      error: message,
+      finished_at: new Date().toISOString(),
+    });
+    return {
+      text: `${firstReply}\n\n⚠️ Agent loop skipped: ${message}`,
+      meta: firstMeta,
+      applied: [] as string[],
+      audit: "",
+    };
+  }
+}
+
 async function insertAssistantMessage(job: BrainJob, assistantText: string, meta?: CompletionMeta) {
   const { supabase, slug, threadId, userMessageId, prompt } = job;
   const stamped = completionMeta(prompt, assistantText, meta);
@@ -440,7 +681,8 @@ async function runBrainAndInsert(job: BrainJob) {
     assistantText = `⚠️ Brain unreachable: ${rustError}`;
   }
 
-  await insertAssistantMessage(job, assistantText, meta);
+  const looped = await safeRunCoreBuilderLoop(job, assistantText, meta);
+  await insertAssistantMessage(job, looped.text, looped.meta);
 }
 
 function streamBrainToClient(job: BrainJob) {
@@ -569,12 +811,20 @@ function streamBrainToClient(job: BrainJob) {
           send("error", { error: rustError });
         }
 
-        const assistantMessageId = assistantText ? await insertAssistantMessage(job, assistantText, meta) : null;
+        let finalText = assistantText;
+        let finalMeta = meta;
+        if (assistantText) {
+          const looped = await safeRunCoreBuilderLoop(job, assistantText, meta);
+          finalText = looped.text;
+          finalMeta = looped.meta;
+          if (finalText !== assistantText) send("token", { delta: `\n\n${finalText.replace(assistantText, "").trim()}` });
+        }
+        const assistantMessageId = finalText ? await insertAssistantMessage(job, finalText, finalMeta) : null;
         send("done", {
           threadId: job.threadId,
           userMessageId: job.userMessageId,
           assistantMessageId,
-          assistantText,
+          assistantText: finalText,
           status: "done",
         });
         controller.close();
@@ -723,8 +973,10 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
             supabase,
             slug,
             prompt,
+            projectId,
             threadId,
             userMessageId: userMsg.id as string,
+            userId,
             brainURL,
             signal: request.signal,
           });
@@ -733,8 +985,10 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
           supabase,
           slug,
           prompt,
+          projectId,
           threadId,
           userMessageId: userMsg.id as string,
+          userId,
           brainURL,
         });
         job.catch((err) => console.warn("[agents.chat] Brain job failed:", err));

@@ -136,22 +136,61 @@ try {
 } catch {}
 
 const exact = [
-  "SUPABASE3_DB_URL", "AXONETIS_DB_URL", "AXONETIS_SUPABASE_DB_URL", "BUILDER_DB_URL",
-  "SUPABASE_DB_URL", "POSTGRES_URL", "POSTGRESQL_URL", "DATABASE_URL", "DIRECT_URL"
+  "AXONETIS_DB_URL", "BUILDER_DB_URL", "AXONETIS_POSTGRES_URL", "AXONETIS_DATABASE_URL",
+  "HOSTFLOW_DB_URL", "HOSTFLOW_POSTGRES_URL", "LOCAL_DB_URL", "POSTGRES_URL", "POSTGRESQL_URL", "DATABASE_URL", "DIRECT_URL",
+  "SUPABASE3_DB_URL", "SUPABASE_DB_URL"
 ];
 
 function isPg(v) { return typeof v === "string" && /^postgres(ql)?:\/\//i.test(v); }
-
-for (const env of envs) {
-  for (const key of exact) if (isPg(env[key])) { process.stdout.write(env[key]); process.exit(0); }
+function usable(v) {
+  if (!isPg(v)) return false;
+  if (v.includes("...")) return false;
+  if (/placeholder/i.test(v)) return false;
+  // This builder is locked to founder self-hosted DB on Hetzner. Do not auto-pick old cloud pooler URLs.
+  if (/\.supabase\.co/i.test(v)) return false;
+  return true;
 }
 
 for (const env of envs) {
-  const entries = Object.entries(env).filter(([k, v]) => isPg(v) && /(?:SUPABASE|AXONETIS|BUILDER|POSTGRES|DATABASE|DB).*URL/i.test(k));
-  const preferred = entries.find(([k]) => /3|AXONETIS|BUILDER/i.test(k)) || entries[0];
+  for (const key of exact) if (usable(env[key])) { process.stdout.write(env[key]); process.exit(0); }
+}
+
+for (const env of envs) {
+  const entries = Object.entries(env).filter(([k, v]) => usable(v) && /(?:AXONETIS|BUILDER|HOSTFLOW|LOCAL|POSTGRES|DATABASE|DB).*URL/i.test(k));
+  const preferred = entries.find(([k]) => /AXONETIS|BUILDER|HOSTFLOW|LOCAL/i.test(k)) || entries[0];
   if (preferred) { process.stdout.write(preferred[1]); process.exit(0); }
 }
 NODE
+}
+
+validate_db_url() {
+  local value="$1"
+  [ -n "$value" ] || return 1
+  case "$value" in
+    *...*|*placeholder*) die "AXONETIS_DB_URL placeholder hai. Actual self-hosted Postgres URL paste karo, 'postgresql://...' nahi." ;;
+    *supabase.co*) die "Old cloud DB URL detect hua (*.supabase.co). AXONETIS self-hosted Hetzner Postgres URL do: AXONETIS_DB_URL='postgresql://USER:PASS@HOST:5432/DB'" ;;
+  esac
+  return 0
+}
+
+run_psql() {
+  local sql_arg="$1" mode="$2"
+  set +e
+  if [ "$mode" = "file" ]; then
+    PSQL_OUT="$(psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$sql_arg" 2>&1)"
+  else
+    PSQL_OUT="$(psql "$DB_URL" -v ON_ERROR_STOP=1 -c "$sql_arg" 2>&1)"
+  fi
+  local code=$?
+  set -e
+  if [ "$code" -ne 0 ]; then
+    printf '%s\n' "$PSQL_OUT" >&2
+    if printf '%s' "$PSQL_OUT" | grep -qi "could not translate host name\|Name or service not known"; then
+      die "DB host resolve nahi ho raha. Yeh script server edit nahi karegi jab tak real Hetzner DB URL na ho. Run: AXONETIS_DB_URL='postgresql://USER:PASS@127.0.0.1:5432/DB' bash server-snippets/hetzner-wire-phases-393-397.sh"
+    fi
+    die "psql failed during DB migration/verify. Output above."
+  fi
+  printf '%s\n' "$PSQL_OUT"
 }
 
 find_server_entry() {
@@ -262,22 +301,24 @@ require_file "$BUILDER_DIR/hetzner-migrations/20260711000002_phase_396_397_marke
 require_file "$BUILDER_DIR/server-snippets/rpc.routes.ts"
 require_file "$BUILDER_DIR/server-snippets/rpc-phase-396-397.additions.ts"
 require_file "$BUILDER_DIR/server-snippets/preview-visual-edit-bridge.js"
+require_file "$BUILDER_DIR/server-snippets/agents.worker.ts"
 
 log "1) Latest builder repo pull"
 cd "$BUILDER_DIR"
 git pull --ff-only || warn "git pull failed/dirty tree — continuing with current files"
 
-log "2) DB migrations apply on Supabase 3 / AXONETIS DB"
+log "2) DB migrations apply on AXONETIS self-hosted DB"
 DB_URL="${SUPABASE3_DB_URL:-${AXONETIS_DB_URL:-}}"
 if [ -z "$DB_URL" ]; then DB_URL="$(detect_db_url || true)"; fi
-[ -n "$DB_URL" ] || die "DB URL auto-detect failed. Export AXONETIS_DB_URL or SUPABASE3_DB_URL once, then rerun same command. Script will not print secrets."
+[ -n "$DB_URL" ] || die "DB URL auto-detect failed. Export AXONETIS_DB_URL with the real self-hosted Postgres URL, then rerun. Script will not print secrets."
+validate_db_url "$DB_URL"
 ok "DB URL detected (hidden)"
-psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$BUILDER_DIR/hetzner-migrations/20260711000001_phase_393_394_publish_power_tools.sql"
-psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$BUILDER_DIR/hetzner-migrations/20260711000002_phase_396_397_marketplace_router.sql"
+run_psql "$BUILDER_DIR/hetzner-migrations/20260711000001_phase_393_394_publish_power_tools.sql" file
+run_psql "$BUILDER_DIR/hetzner-migrations/20260711000002_phase_396_397_marketplace_router.sql" file
 
 log "3) DB verify"
-psql "$DB_URL" -v ON_ERROR_STOP=1 -c "select count(*) as marketplace_agents from public.marketplace_agents;"
-psql "$DB_URL" -v ON_ERROR_STOP=1 -c "select column_name from information_schema.columns where table_schema='public' and table_name='agent_thread_messages' and column_name in ('cost_usd','saved_vs_default_usd','default_model') order by column_name;"
+run_psql "select count(*) as marketplace_agents from public.marketplace_agents;" command
+run_psql "select column_name from information_schema.columns where table_schema='public' and table_name='agent_thread_messages' and column_name in ('cost_usd','saved_vs_default_usd','default_model','parent_message_id','loop_iteration','audit_status') order by column_name;" command
 
 log "4) Wire /rpc routes in engine — NO duplicate router"
 if [ ! -f "$RPC_FILE" ]; then
@@ -342,6 +383,14 @@ if [ -f "$AGENTS_ROUTE" ]; then
   grep -q "signal: request.signal" "$AGENTS_ROUTE" || die "Builder agents chat route missing request.signal wiring. Pull latest axonetis repo and rerun."
   ok "Builder TanStack chat route has request.signal wired"
 fi
+for worker_root in "$BUILDER_DIR" /root/axonetis-builder /opt/axonetis-builder /opt/AXONETIS-Builder; do
+  [ -d "$worker_root" ] || continue
+  if [ -d "$worker_root/src/workers" ]; then
+    backup "$worker_root/src/workers/agents.worker.ts"
+    cp "$BUILDER_DIR/server-snippets/agents.worker.ts" "$worker_root/src/workers/agents.worker.ts"
+    ok "Installed Agent Loop worker at $worker_root/src/workers/agents.worker.ts"
+  fi
+done
 STREAM_FILES="$(grep -Rsl 'streamText' "$ENGINE_DIR/src" "$ENGINE_DIR/server" "$ENGINE_DIR/routes" 2>/dev/null | grep -Ev 'node_modules|dist|build|\.bak-' || true)"
 if [ -n "$STREAM_FILES" ]; then
   if printf '%s\n' "$STREAM_FILES" | xargs grep -qE 'abortSignal|request\.signal|req\.signal|AbortController'; then
