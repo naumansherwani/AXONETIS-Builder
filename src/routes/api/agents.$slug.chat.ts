@@ -360,7 +360,7 @@ async function resolveProjectUuid(supabase: SupabaseClient, projectId: string) {
   const { data, error } = await supabase
     .from("projects")
     .select("id")
-    .or(`slug.eq.${projectId},id.eq.${projectId}`)
+    .eq("slug", projectId)
     .maybeSingle();
   if (error) throw error;
   return (data?.id as string | undefined) ?? projectId;

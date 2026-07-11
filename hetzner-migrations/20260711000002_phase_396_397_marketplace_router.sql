@@ -107,7 +107,12 @@ create policy "router_decisions insertable by service"
 alter table public.agent_thread_messages
   add column if not exists cost_usd            numeric(12,6),
   add column if not exists saved_vs_default_usd numeric(12,6),
-  add column if not exists default_model       text;
+  add column if not exists default_model       text,
+  add column if not exists parent_message_id   uuid,
+  add column if not exists loop_iteration      integer,
+  add column if not exists audit_status        text;
+
+create index if not exists idx_agent_thread_messages_parent on public.agent_thread_messages(parent_message_id);
 
 -- ─────────────────────────────────────────────────────────────
 -- 5. Seed a few first-party agents so the grid isn't empty on Day 1.
