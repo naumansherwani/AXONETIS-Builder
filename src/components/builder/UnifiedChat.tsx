@@ -963,11 +963,29 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
                 {modelShort}
               </span>
             )}
+            {msg.meta?.tokensIn ? (
+              <span className="rounded-md border border-white/[0.06] bg-white/[0.02] px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/50">
+                {msg.meta.tokensIn.toLocaleString()} in
+              </span>
+            ) : null}
             {msg.meta?.tokensOut ? (
               <span className="rounded-md border border-white/[0.06] bg-white/[0.02] px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/60">
                 {msg.meta.tokensOut.toLocaleString()} out
               </span>
             ) : null}
+            {typeof msg.meta?.costUsd === "number" && msg.meta.costUsd > 0 && (
+              <span className="rounded-md border border-[#E50914]/30 bg-[#E50914]/[0.06] px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wider text-[#ff7480]">
+                {msg.meta.costUsd < 0.001 ? `$${msg.meta.costUsd.toFixed(5)}` : msg.meta.costUsd < 1 ? `$${msg.meta.costUsd.toFixed(4)}` : `$${msg.meta.costUsd.toFixed(2)}`}
+              </span>
+            )}
+            {typeof msg.meta?.savedVsDefaultUsd === "number" && msg.meta.savedVsDefaultUsd > 0 && (
+              <span
+                className="rounded-md border border-emerald-400/30 bg-emerald-400/[0.06] px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wider text-emerald-300"
+                title={`Saved vs default${msg.meta.defaultModel ? ` (${msg.meta.defaultModel.split("/").slice(-1)[0]})` : ""}`}
+              >
+                saved {msg.meta.savedVsDefaultUsd < 0.001 ? `$${msg.meta.savedVsDefaultUsd.toFixed(5)}` : `$${msg.meta.savedVsDefaultUsd.toFixed(4)}`}
+              </span>
+            )}
             <div className="ml-auto flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
               <Tooltip>
                 <TooltipTrigger asChild>
