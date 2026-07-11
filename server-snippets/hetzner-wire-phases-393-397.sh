@@ -47,7 +47,7 @@ score_engine_dir() {
   [ -n "$rd" ] && score=$((score + 15))
   [ -f "$rd/rpc.routes.ts" ] && score=$((score + 60))
   [ -f "$rd/preview.routes.ts" ] && score=$((score + 12))
-  grep -Rqs 'app\.use *(.*["'"']/rpc' "$root/src" "$root/server" "$root/routes" 2>/dev/null && score=$((score + 40))
+  grep -Rqs "app\\.use *(.*[\"']/rpc" "$root/src" "$root/server" "$root/routes" 2>/dev/null && score=$((score + 40))
   grep -Rqs 'express *(' "$root/src" "$root/server" "$root/routes" "$root" 2>/dev/null && score=$((score + 10))
   case "$root" in
     */hostflow-server|*/hostflowai-brain/backend|*/hostflowai-brain|*/hostflow-engine) score=$((score + 8));;
@@ -164,7 +164,7 @@ find_server_entry() {
 wire_rpc_mount() {
   local entry="$1" rpc_file="$2"
   [ -f "$entry" ] || { warn "Express entry not found — RPC file copied, mount verify skipped"; return 0; }
-  if grep -q 'app\.use *(.*["'"']/rpc' "$entry" || grep -q 'rpc\.routes' "$entry"; then
+  if grep -q "app\\.use *(.*[\"']/rpc" "$entry" || grep -q 'rpc\.routes' "$entry"; then
     ok "RPC mount already present in $entry"
     return 0
   fi
