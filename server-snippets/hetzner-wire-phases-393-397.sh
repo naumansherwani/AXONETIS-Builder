@@ -184,6 +184,7 @@ validate_db_url() {
   case "$value" in
     *...*|*placeholder*) die "AXONETIS_DB_URL placeholder hai. Actual self-hosted Postgres URL paste karo, 'postgresql://...' nahi." ;;
     *supabase.co*) die "Old cloud DB URL detect hua (*.supabase.co). AXONETIS self-hosted Hetzner Postgres URL do: AXONETIS_DB_URL='postgresql://USER:PASS@HOST:5432/DB'" ;;
+    local-peer:*) return 0 ;;
     postgres://*|postgresql://*) return 0 ;;
     *) die "DB URL invalid hai. It must start with postgresql://USER:PASS@HOST:5432/DB" ;;
   esac
@@ -195,9 +196,30 @@ db_url_problem() {
   case "$value" in
     *...*|*placeholder*) printf "placeholder value ('postgresql://...' real URL nahi hota)" ;;
     *supabase.co*) printf "old cloud URL (*.supabase.co), self-hosted Hetzner DB URL chahiye" ;;
+    local-peer:*) ;;
     postgres://*|postgresql://*) ;;
     *) printf "not a postgresql:// URL" ;;
   esac
+}
+
+detect_local_peer_db() {
+  command -v sudo >/dev/null 2>&1 || return 0
+  command -v psql >/dev/null 2>&1 || return 0
+
+  local candidates="${AXONETIS_DB_NAME:-} ${POSTGRES_DB:-} ${DB_NAME:-} axonetis_builder axonetis postgres"
+  local db
+  for db in $candidates; do
+    [ -n "$db" ] || continue
+    if sudo -n -u postgres psql -d "$db" -v ON_ERROR_STOP=1 -tAc 'select 1' >/dev/null 2>&1; then
+      printf 'local-peer:%s' "$db"
+      return 0
+    fi
+  done
+
+  db="$(sudo -n -u postgres psql -d postgres -tAc "select datname from pg_database where datistemplate=false and datallowconn=true order by case when datname='postgres' then 0 when datname ilike '%axonetis%' then 1 else 2 end, datname limit 1" 2>/dev/null | tr -d '[:space:]' || true)"
+  if [ -n "$db" ] && sudo -n -u postgres psql -d "$db" -v ON_ERROR_STOP=1 -tAc 'select 1' >/dev/null 2>&1; then
+    printf 'local-peer:%s' "$db"
+  fi
 }
 
 select_db_url() {
@@ -224,7 +246,18 @@ select_db_url() {
     warn "Ignoring $key: $reason"
   done
 
-  detect_db_url || true
+  value="$(detect_db_url || true)"
+  if [ -n "$value" ]; then
+    validate_db_url "$value"
+    printf '%s' "$value"
+    return 0
+  fi
+
+  value="$(detect_local_peer_db || true)"
+  if [ -n "$value" ]; then
+    warn "No usable DB URL found; using local postgres peer access on this Hetzner box."
+    printf '%s' "$value"
+  fi
 }
 
 ensure_supabase3_client() {
@@ -264,7 +297,14 @@ TS
 run_psql() {
   local sql_arg="$1" mode="$2"
   set +e
-  if [ "$mode" = "file" ]; then
+  if [[ "$DB_URL" == local-peer:* ]]; then
+    local peer_db="${DB_URL#local-peer:}"
+    if [ "$mode" = "file" ]; then
+      PSQL_OUT="$(sudo -n -u postgres psql -d "$peer_db" -v ON_ERROR_STOP=1 -f "$sql_arg" 2>&1)"
+    else
+      PSQL_OUT="$(sudo -n -u postgres psql -d "$peer_db" -v ON_ERROR_STOP=1 -c "$sql_arg" 2>&1)"
+    fi
+  elif [ "$mode" = "file" ]; then
     PSQL_OUT="$(psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$sql_arg" 2>&1)"
   else
     PSQL_OUT="$(psql "$DB_URL" -v ON_ERROR_STOP=1 -c "$sql_arg" 2>&1)"
