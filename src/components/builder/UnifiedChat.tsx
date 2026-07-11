@@ -32,6 +32,7 @@ import {
   UNIFIED_CHAT_SLUGS,
   type AgentMessageRow,
 } from "@/lib/agent-stream";
+import { previewRoute, shortModelTag, formatUsd, type RouterPreview } from "@/lib/router-api";
 
 type Agent = "founder" | "jimmy" | "sherlock";
 type Msg = ChatMsg;
@@ -197,6 +198,9 @@ export default function UnifiedChat() {
       tokensIn: row.tokens_in ?? 0,
       tokensOut: row.tokens_out ?? 0,
       createdAt: row.created_at,
+      costUsd: typeof row.cost_usd === "number" ? row.cost_usd : undefined,
+      savedVsDefaultUsd: typeof row.saved_vs_default_usd === "number" ? row.saved_vs_default_usd : undefined,
+      defaultModel: row.default_model ?? null,
     };
     setMessages((prev) => {
       if (prev.some((m) => m.id === row.id)) return prev;
