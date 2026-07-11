@@ -1,60 +1,71 @@
 /**
- * Database panel — Supabase 3 schema browser.
- * Phase 2 visual: mirrors the Phase 1 SQL tables actually deployed on Hetzner.
+ * Database panel — LIVE row counts from Supabase 3 (head-count via anon key + RLS).
+ * Tables without a SELECT policy for the current role show as "rls" (locked).
  */
+import { useEffect, useState } from "react";
 import { PanelSection, Row } from "./PanelChrome";
-import { Database as DbIcon, Table2 } from "lucide-react";
-
-const CORE = [
-  { name: "projects", rows: 3 },
-  { name: "project_files", rows: 0 },
-  { name: "ai_agent_identities", rows: 11 },
-  { name: "ai_model_registry", rows: 0 },
-  { name: "user_roles", rows: 1 },
-  { name: "ai_threads", rows: 0 },
-  { name: "ai_messages", rows: 0 },
-  { name: "deployments", rows: 0 },
-];
-
-const MIRROR = [
-  { name: "mirror_hostflow_tenants" },
-  { name: "mirror_hostflow_jobs" },
-  { name: "mirror_rapidpay_accounts" },
-  { name: "mirror_rapidpay_ledger" },
-  { name: "mirror_rapidpay_keys" },
-  { name: "mirror_resolution_cases" },
-  { name: "mirror_aanris_events" },
-];
+import { Database as DbIcon, Table2, Loader2 } from "lucide-react";
+import { fetchTableCounts, type TableCount } from "@/lib/database-api";
 
 export default function DatabasePanel() {
+  const [core, setCore] = useState<TableCount[]>([]);
+  const [mirror, setMirror] = useState<TableCount[]>([]);
+  const [live, setLive] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    fetchTableCounts()
+      .then(({ core, mirror, live }) => {
+        if (!alive) return;
+        setCore(core); setMirror(mirror); setLive(live);
+      })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, []);
+
+  const rightFor = (t: TableCount) =>
+    t.rows == null ? "rls" : `${t.rows} rows`;
+
   return (
     <div>
       <PanelSection title="Connection">
         <Row
-          left={<><DbIcon className="h-3.5 w-3.5 text-[#ff7480]" /><span>Hetzner · Supabase 3</span></>}
-          right="standby"
+          left={
+            <>
+              <DbIcon className="h-3.5 w-3.5 text-[#ff7480]" />
+              <span>Hetzner · Supabase 3</span>
+            </>
+          }
+          right={
+            <span className="flex items-center gap-1.5">
+              {loading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground/70" />}
+              {live ? "live" : "offline"}
+            </span>
+          }
         />
       </PanelSection>
 
-      <PanelSection title="Core Tables" action={<span className="text-[10px] text-muted-foreground/60">{CORE.length}</span>}>
+      <PanelSection title="Core Tables" action={<span className="text-[10px] text-muted-foreground/60">{core.length}</span>}>
         <div className="flex flex-col">
-          {CORE.map((t) => (
+          {core.map((t) => (
             <Row
               key={t.name}
               left={<><Table2 className="h-3.5 w-3.5 text-muted-foreground" /><span className="font-mono">{t.name}</span></>}
-              right={`${t.rows} rows`}
+              right={rightFor(t)}
             />
           ))}
         </div>
       </PanelSection>
 
-      <PanelSection title="Cross-Product Mirrors" action={<span className="text-[10px] text-muted-foreground/60">{MIRROR.length}</span>}>
+      <PanelSection title="Cross-Product Mirrors" action={<span className="text-[10px] text-muted-foreground/60">{mirror.length}</span>}>
         <div className="flex flex-col">
-          {MIRROR.map((t) => (
+          {mirror.map((t) => (
             <Row
               key={t.name}
               left={<><Table2 className="h-3.5 w-3.5 text-[#a855f7]" /><span className="font-mono">{t.name}</span></>}
-              right="read-only"
+              right={rightFor(t)}
             />
           ))}
         </div>
