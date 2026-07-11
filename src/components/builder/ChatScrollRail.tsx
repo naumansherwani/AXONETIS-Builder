@@ -1,19 +1,18 @@
 /**
- * ChatScrollRail — custom vertical scrollbar for the chat messages list.
- * Sits on the LEFT edge of the scroll container. Red glowing thumb with
- * chevron up/down buttons. Drag to scroll, click track to jump.
+ * ChatScrollRail — compact vertical scrollbar for the chat messages list.
+ * Sits on the LEFT edge. Subtle dark thumb + tiny chevron up/down carets.
+ * Matches the reference: dark rounded thumb with a small triangle below.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface Props {
   /** The scrollable element this rail controls. */
   targetRef: React.RefObject<HTMLDivElement | null>;
-  /** Recompute trigger — pass something that changes when content grows (e.g. messages.length). */
+  /** Recompute trigger — pass something that changes when content grows. */
   contentKey?: unknown;
 }
 
-const MIN_THUMB = 36;
+const MIN_THUMB = 28;
 const STEP = 240;
 
 export default function ChatScrollRail({ targetRef, contentKey }: Props) {
@@ -22,6 +21,8 @@ export default function ChatScrollRail({ targetRef, contentKey }: Props) {
   const [thumbHeight, setThumbHeight] = useState(MIN_THUMB);
   const [visible, setVisible] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [atTop, setAtTop] = useState(true);
+  const [atBottom, setAtBottom] = useState(false);
 
   const recompute = useCallback(() => {
     const el = targetRef.current;
@@ -36,6 +37,8 @@ export default function ChatScrollRail({ targetRef, contentKey }: Props) {
     setThumbHeight(th);
     setThumbTop(top);
     setVisible(el.scrollHeight > el.clientHeight + 4);
+    setAtTop(el.scrollTop <= 1);
+    setAtBottom(el.scrollTop + el.clientHeight >= el.scrollHeight - 1);
   }, [targetRef]);
 
   useEffect(() => {
@@ -101,31 +104,28 @@ export default function ChatScrollRail({ targetRef, contentKey }: Props) {
   return (
     <div
       aria-hidden={false}
-      className="pointer-events-none absolute inset-y-2 left-1.5 z-30 flex w-4 flex-col items-center gap-1"
+      className="pointer-events-none absolute inset-y-2 left-1 z-30 flex w-3 flex-col items-center gap-1"
     >
-      {/* Up chevron */}
+      {/* Up caret — tiny triangle */}
       <button
         type="button"
         title="Scroll up"
         onClick={() => step(-1)}
-        className="pointer-events-auto grid h-5 w-5 shrink-0 place-items-center rounded-full border border-[#E50914]/30 bg-black/50 text-[#ff6b73] shadow-[0_0_10px_-2px_rgba(229,9,20,0.6)] backdrop-blur-md transition-all hover:border-[#E50914]/60 hover:bg-[#E50914]/15 hover:text-white hover:shadow-[0_0_14px_-1px_rgba(229,9,20,0.9)] active:scale-95"
+        disabled={atTop}
+        className="pointer-events-auto grid h-3 w-3 shrink-0 place-items-center text-white/40 transition hover:text-white disabled:opacity-25"
       >
-        <ChevronUp className="h-3 w-3" />
+        <svg viewBox="0 0 8 6" className="h-[6px] w-[8px] fill-current">
+          <path d="M4 0 L8 6 L0 6 Z" />
+        </svg>
       </button>
 
       {/* Track */}
       <div
         ref={trackRef}
         onClick={onTrackClick}
-        className="pointer-events-auto relative min-h-0 w-[3px] flex-1 cursor-pointer overflow-visible rounded-full bg-gradient-to-b from-white/[0.04] via-[#E50914]/[0.08] to-white/[0.04]"
+        className="pointer-events-auto relative min-h-0 w-[2px] flex-1 cursor-pointer rounded-full bg-white/[0.05]"
       >
-        {/* Glowing spine line */}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-gradient-to-b from-[#E50914]/0 via-[#E50914]/40 to-[#E50914]/0"
-        />
-
-        {/* Thumb */}
+        {/* Thumb — compact dark pill with subtle red edge */}
         <div
           data-role="thumb"
           onPointerDown={(e) => {
@@ -136,34 +136,25 @@ export default function ChatScrollRail({ targetRef, contentKey }: Props) {
             top: `${thumbTop}px`,
             height: `${thumbHeight}px`,
           }}
-          className={`absolute left-1/2 w-[10px] -translate-x-1/2 rounded-full bg-gradient-to-b from-[#ff3b47] via-[#E50914] to-[#a80710] shadow-[0_0_14px_rgba(229,9,20,0.65),inset_0_1px_0_rgba(255,255,255,0.35)] ring-1 ring-[#E50914]/40 transition-[width,box-shadow] ${
+          className={`absolute left-1/2 -translate-x-1/2 rounded-[3px] border border-white/10 bg-[#0d0d10] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_0_0_1px_rgba(0,0,0,0.6)] transition-[width,box-shadow,border-color] ${
             dragging
-              ? "w-[14px] shadow-[0_0_22px_rgba(229,9,20,0.95),inset_0_1px_0_rgba(255,255,255,0.5)]"
-              : "hover:w-[12px] hover:shadow-[0_0_18px_rgba(229,9,20,0.85),inset_0_1px_0_rgba(255,255,255,0.45)]"
+              ? "w-[8px] border-[#E50914]/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_8px_rgba(229,9,20,0.35)]"
+              : "w-[6px] hover:w-[7px] hover:border-[#E50914]/30"
           }`}
-        >
-          {/* Inner highlight pill */}
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-x-[2px] top-1 h-1/3 rounded-full bg-white/25 blur-[1px]"
-          />
-          {/* Grip dots */}
-          <span aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 space-y-[2px]">
-            <span className="block h-[2px] w-[2px] rounded-full bg-white/80" />
-            <span className="block h-[2px] w-[2px] rounded-full bg-white/80" />
-            <span className="block h-[2px] w-[2px] rounded-full bg-white/80" />
-          </span>
-        </div>
+        />
       </div>
 
-      {/* Down chevron */}
+      {/* Down caret — tiny triangle */}
       <button
         type="button"
         title="Scroll down"
         onClick={() => step(1)}
-        className="pointer-events-auto grid h-5 w-5 shrink-0 place-items-center rounded-full border border-[#E50914]/30 bg-black/50 text-[#ff6b73] shadow-[0_0_10px_-2px_rgba(229,9,20,0.6)] backdrop-blur-md transition-all hover:border-[#E50914]/60 hover:bg-[#E50914]/15 hover:text-white hover:shadow-[0_0_14px_-1px_rgba(229,9,20,0.9)] active:scale-95"
+        disabled={atBottom}
+        className="pointer-events-auto grid h-3 w-3 shrink-0 place-items-center text-white/40 transition hover:text-white disabled:opacity-25"
       >
-        <ChevronDown className="h-3 w-3" />
+        <svg viewBox="0 0 8 6" className="h-[6px] w-[8px] fill-current">
+          <path d="M0 0 L8 0 L4 6 Z" />
+        </svg>
       </button>
     </div>
   );
