@@ -20,6 +20,7 @@ import { Router, type Request, type Response } from "express";
 import { createHash, randomUUID } from "crypto";
 import { execFile } from "child_process";
 import { promisify } from "util";
+import { mkdir, rm, writeFile } from "fs/promises";
 import { supabase3 as supabase } from "../integrations/supabase3/client.js";
 
 const execFileAsync = promisify(execFile);
@@ -135,9 +136,11 @@ router.get("/publish.state", async (req, res) => {
       countVisitors24h(project.id),
     ]);
 
+    const fallbackUrl = deployment?.url ?? (meta?.custom_domain ? `https://${meta.custom_domain}` : project.preview_url ?? PROJECT_URLS[projectId] ?? null);
+
     return res.json({
       projectId,
-      url: meta?.unpublished_at ? null : (deployment?.url ?? meta?.custom_domain ? `https://${meta?.custom_domain}` : project.preview_url ?? PROJECT_URLS[projectId] ?? null),
+      url: meta?.unpublished_at ? null : fallbackUrl,
       customDomain: meta?.custom_domain ?? null,
       visibility: meta?.visibility ?? "private",
       status: meta?.unpublished_at ? "changes_pending" : normalizeDeployStatus(deployment?.status),
@@ -341,7 +344,8 @@ router.post("/caddy.attach", async (req, res) => {
     // No shell interpolation: safe args only. If permissions are not configured,
     // DB row still records pending/failed and UI shows it.
     try {
-      await execFileAsync("tee", [`${CADDY_SITES_DIR}/${domain}.caddy`], { input: caddyfile });
+      await mkdir(CADDY_SITES_DIR, { recursive: true });
+      await writeFile(`${CADDY_SITES_DIR}/${domain}.caddy`, caddyfile, "utf8");
       await execFileAsync(CADDY_BIN, ["reload", "--config", "/etc/caddy/Caddyfile"]);
     } catch (e) {
       console.warn("[rpc.caddy.attach] Caddy reload failed", e);
@@ -388,7 +392,7 @@ router.post("/caddy.revoke", async (req, res) => {
     if (!row) return bad(res, "domain not found", 404);
 
     try {
-      await execFileAsync("rm", ["-f", `${CADDY_SITES_DIR}/${row.domain}.caddy`]);
+      await rm(`${CADDY_SITES_DIR}/${row.domain}.caddy`, { force: true });
       await execFileAsync(CADDY_BIN, ["reload", "--config", "/etc/caddy/Caddyfile"]);
     } catch (e) {
       console.warn("[rpc.caddy.revoke] Caddy reload failed", e);
