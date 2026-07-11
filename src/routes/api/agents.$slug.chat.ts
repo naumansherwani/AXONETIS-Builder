@@ -738,8 +738,10 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
             supabase,
             slug,
             prompt,
+            projectId,
             threadId,
             userMessageId: userMsg.id as string,
+            userId,
             brainURL,
             signal: request.signal,
           });
@@ -748,8 +750,10 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
           supabase,
           slug,
           prompt,
+          projectId,
           threadId,
           userMessageId: userMsg.id as string,
+          userId,
           brainURL,
         });
         job.catch((err) => console.warn("[agents.chat] Brain job failed:", err));
