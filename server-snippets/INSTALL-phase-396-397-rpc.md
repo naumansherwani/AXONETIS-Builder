@@ -17,10 +17,10 @@ Yeh single script migration, RPC wiring, Visual Edit bridge copy, Stop-button ab
 cd /var/www/axonetis && git pull && bash server-snippets/hetzner-wire-phases-393-397.sh
 ```
 
-Script DB URL khud PM2/env files se detect karega. Agar phir bhi na mile:
+Script self-hosted DB URL khud PM2/env files se detect karega. Old cloud `*.supabase.co` URL intentionally reject hota hai. Agar phir bhi na mile:
 
 ```bash
-AXONETIS_DB_URL='postgresql://...' bash server-snippets/hetzner-wire-phases-393-397.sh
+AXONETIS_DB_URL='postgresql://USER:PASS@127.0.0.1:5432/DB' bash server-snippets/hetzner-wire-phases-393-397.sh
 ```
 
 Verifies:
