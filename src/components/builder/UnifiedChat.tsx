@@ -392,20 +392,44 @@ export default function UnifiedChat() {
       mediaRecorderRef.current = recorder;
       recorder.ondataavailable = (event) => { if (event.data.size) voiceChunksRef.current.push(event.data); };
       recorder.onstop = () => { stream.getTracks().forEach((track) => track.stop()); };
+
+      // Wire Web Audio analyser for cinematic waveform.
+      try {
+        const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const ac = new AC();
+        audioContextRef.current = ac;
+        const src = ac.createMediaStreamSource(stream);
+        const node = ac.createAnalyser();
+        node.fftSize = 128;
+        node.smoothingTimeConstant = 0.75;
+        src.connect(node);
+        setAnalyser(node);
+      } catch { /* analyser optional */ }
+
       recorder.start();
+      setRecording(true);
       setComposerNotice("Recording… release mic to transcribe.");
     } catch (err) {
       setComposerNotice(err instanceof Error ? err.message : "Mic permission failed.");
     }
   }, []);
 
+  const teardownAudio = useCallback(() => {
+    setRecording(false);
+    setAnalyser(null);
+    const ac = audioContextRef.current;
+    if (ac && ac.state !== "closed") void ac.close().catch(() => undefined);
+    audioContextRef.current = null;
+  }, []);
+
   const stopVoice = useCallback(() => {
     const recorder = mediaRecorderRef.current;
-    if (!recorder || recorder.state === "inactive") return;
+    if (!recorder || recorder.state === "inactive") { teardownAudio(); return; }
     recorder.onstop = async () => {
       const audio = new Blob(voiceChunksRef.current, { type: "audio/webm" });
       recorder.stream.getTracks().forEach((track) => track.stop());
       mediaRecorderRef.current = null;
+      teardownAudio();
       setComposerNotice("Transcribing voice…");
       try {
         const text = await transcribeVoice(project, audio);
@@ -418,7 +442,7 @@ export default function UnifiedChat() {
       }
     };
     recorder.stop();
-  }, [project]);
+  }, [project, teardownAudio]);
 
   // Keyboard navigation on message list (and Ctrl/Cmd+Arrow from anywhere inside chat)
   const onListKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
