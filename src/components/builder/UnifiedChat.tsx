@@ -115,6 +115,7 @@ export default function UnifiedChat() {
   const ignoredParentMessageIdsRef = useRef<Set<string>>(new Set());
   const seenMessageIdsRef = useRef<Set<string>>(new Set());
   const auditedMessageIdsRef = useRef<Set<string>>(new Set());
+  const autoFixHandledIdsRef = useRef<Set<string>>(new Set());
   const audioContextRef = useRef<AudioContext | null>(null);
 
   // --- Scroll helpers ---
@@ -222,6 +223,7 @@ export default function UnifiedChat() {
         // Historical Jimmy replies: mark as already audited so we don't
         // re-fire Sherlock on every mount / thread switch.
         if (row.agent_slug === "jimmy") auditedMessageIdsRef.current.add(row.id);
+        if (row.agent_slug === "sherlock") autoFixHandledIdsRef.current.add(row.id);
       });
     });
     const unsub = subscribeThread(threadId, {
@@ -257,6 +259,51 @@ export default function UnifiedChat() {
       ].join("\n");
       void chatWithAgent("sherlock", { projectId: project, threadId, prompt: auditPrompt, streamId: `audit-${m.id}` })
         .catch((err) => console.warn("[UnifiedChat] auto-audit failed:", err));
+    }
+  }, [messages, project, threadId]);
+
+  // Sherlock Auto-Fix Loop (max 3) — founder-only killer feature.
+  // Sherlock ke verdict FAIL par foran Jimmy ko fix-prompt bhejta hai,
+  // PASS/WARN par counter reset karta hai. Max 3 iterations, phir stop.
+  useEffect(() => {
+    if (!threadId) return;
+    for (const m of messages) {
+      if (m.agent !== "sherlock") continue;
+      if (m.thinking) continue;
+      if (!m.text) continue;
+      if (autoFixHandledIdsRef.current.has(m.id)) continue;
+      autoFixHandledIdsRef.current.add(m.id);
+
+      const verdict = /\bFAIL\b/i.test(m.text)
+        ? "FAIL"
+        : /\bWARN\b/i.test(m.text)
+        ? "WARN"
+        : /\bPASS\b/i.test(m.text)
+        ? "PASS"
+        : null;
+      if (!verdict) continue;
+
+      if (verdict === "PASS" || verdict === "WARN") {
+        setFixIteration(0);
+        continue;
+      }
+
+      // FAIL — trigger auto-fix if we still have budget.
+      setFixIteration((prev) => {
+        if (prev >= 3) return prev; // cap reached, stop looping
+        const nextIter = prev + 1;
+        const sherlockAudit = m.text.slice(0, 3_000);
+        const fixPrompt = [
+          `SHERLOCK AUTO-FIX LOOP · iteration ${nextIter}/3 (founder-only)`,
+          "Sherlock ne FAIL diya. Neeche audit hai — issues fix karo, working code do, no explanation preamble.",
+          "",
+          "Sherlock audit:",
+          sherlockAudit,
+        ].join("\n");
+        void chatWithAgent("jimmy", { projectId: project, threadId, prompt: fixPrompt, streamId: `autofix-${m.id}` })
+          .catch((err) => console.warn("[UnifiedChat] auto-fix failed:", err));
+        return nextIter;
+      });
     }
   }, [messages, project, threadId]);
 
