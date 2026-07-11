@@ -14,7 +14,7 @@ export interface PreviewBridgeEvent {
 }
 
 const BUILDER_SOURCE = "axonetis-builder";
-const PREVIEW_SOURCES = new Set(["hostflow-preview", "rapidpay-preview", "axonetis-preview", "hostflow-bridge"]);
+const PREVIEW_SOURCES = new Set(["hostflow-preview", "anexvotaipay-preview", "axonetis-preview", "hostflow-bridge"]);
 const ALLOWED_ORIGINS = new Set(PROJECTS.map((project) => new URL(project.previewUrl).origin));
 
 export function getProjectOrigin(projectId: ProjectId) {
