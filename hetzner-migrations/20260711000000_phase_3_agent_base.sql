@@ -8,36 +8,75 @@
 create extension if not exists "pgcrypto";
 
 -- Plain Postgres compatibility mode.
--- Hetzner box currently has only the default `postgres` database, not the
--- managed Auth schema. Create the tiny auth/role surface these founder-only
--- tables need so migrations run out-of-box without external DB keys.
-create schema if not exists auth;
+-- Important: on a real Auth DB, the `auth` schema is owned by the auth system;
+-- non-owner DB users can read `auth.users` but cannot CREATE in that schema.
+-- Therefore never run direct IF-NOT-EXISTS DDL for auth.users: even
+-- when the table already exists, Postgres may still check schema CREATE rights.
+do $bootstrap_auth$
+begin
+  if not exists (select 1 from pg_namespace where nspname = 'auth') then
+    begin
+      execute 'create schema auth';
+    exception when insufficient_privilege then
+      raise exception 'auth schema missing aur current DB user ke paas CREATE SCHEMA privilege nahi. Superuser/direct self-hosted DB user use karo.';
+    end;
+  end if;
 
-do $$ begin
-  create role authenticated;
-exception when duplicate_object then null; end $$;
+  begin
+    if not exists (select 1 from pg_roles where rolname = 'authenticated') then
+      execute 'create role authenticated';
+    end if;
+  exception when insufficient_privilege then
+    raise notice 'Role authenticated create karne ki permission nahi; assuming real Auth DB already manages roles.';
+  end;
 
-do $$ begin
-  create role service_role;
-exception when duplicate_object then null; end $$;
+  begin
+    if not exists (select 1 from pg_roles where rolname = 'service_role') then
+      execute 'create role service_role';
+    end if;
+  exception when insufficient_privilege then
+    raise notice 'Role service_role create karne ki permission nahi; assuming real Auth DB already manages roles.';
+  end;
 
-do $$ begin
-  create role anon;
-exception when duplicate_object then null; end $$;
+  begin
+    if not exists (select 1 from pg_roles where rolname = 'anon') then
+      execute 'create role anon';
+    end if;
+  exception when insufficient_privilege then
+    raise notice 'Role anon create karne ki permission nahi; assuming real Auth DB already manages roles.';
+  end;
 
-create table if not exists auth.users (
-  id uuid primary key default gen_random_uuid(),
-  email text unique,
-  created_at timestamptz not null default now()
-);
+  if to_regclass('auth.users') is null then
+    begin
+      execute $sql$
+        create table auth.users (
+          id uuid primary key default gen_random_uuid(),
+          email text unique,
+          created_at timestamptz not null default now()
+        )
+      $sql$;
+    exception when insufficient_privilege then
+      raise exception 'auth.users missing hai aur current DB user auth schema mein table create nahi kar sakta. Correct direct DB superuser URL do, ya local peer postgres fallback use karo.';
+    end;
+  end if;
 
-create or replace function auth.uid()
-returns uuid
-language sql
-stable
-as $$
-  select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
-$$;
+  if to_regprocedure('auth.uid()') is null then
+    begin
+      execute $sql$
+        create function auth.uid()
+        returns uuid
+        language sql
+        stable
+        as $fn$
+          select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
+        $fn$
+      $sql$;
+    exception when insufficient_privilege then
+      raise exception 'auth.uid() missing hai aur current DB user auth schema mein function create nahi kar sakta. Correct direct DB superuser URL do, ya local peer postgres fallback use karo.';
+    end;
+  end if;
+end
+$bootstrap_auth$;
 
 do $$ begin
   create type public.app_role as enum ('admin', 'founder', 'service');

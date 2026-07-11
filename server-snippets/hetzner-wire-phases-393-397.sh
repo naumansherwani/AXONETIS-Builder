@@ -208,12 +208,12 @@ db_url_problem() {
 build_db_url_from_env_parts() {
   node_available || return 0
   node <<'NODE'
-const password = process.env.AXONETIS_DB_PASSWORD || process.env.POSTGRES_PASSWORD || process.env.POSTGRESQL_PASSWORD || process.env.DB_PASSWORD;
+const password = process.env.AXONETIS_DB_PASSWORD || process.env.BUILDER_DB_PASSWORD || process.env.HOSTFLOW_DB_PASSWORD;
 if (!password || password.includes("...") || /placeholder|REAL_PASSWORD|YOUR_REAL_PASSWORD|YOUR_PASSWORD|APNA_ACTUAL_PASSWORD/i.test(password)) process.exit(0);
-const user = process.env.AXONETIS_DB_USER || process.env.POSTGRES_USER || process.env.POSTGRESQL_USER || process.env.DB_USER || "postgres";
-const db = process.env.AXONETIS_DB_NAME || process.env.POSTGRES_DB || process.env.POSTGRESQL_DATABASE || process.env.DB_NAME || "postgres";
-const host = process.env.AXONETIS_DB_HOST || process.env.POSTGRES_HOST || process.env.POSTGRESQL_HOST || process.env.DB_HOST || "127.0.0.1";
-const port = process.env.AXONETIS_DB_PORT || process.env.POSTGRES_PORT || process.env.POSTGRESQL_PORT || process.env.DB_PORT || "5432";
+const user = process.env.AXONETIS_DB_USER || process.env.BUILDER_DB_USER || process.env.HOSTFLOW_DB_USER || "postgres";
+const db = process.env.AXONETIS_DB_NAME || process.env.BUILDER_DB_NAME || process.env.HOSTFLOW_DB_NAME || "postgres";
+const host = process.env.AXONETIS_DB_HOST || process.env.BUILDER_DB_HOST || process.env.HOSTFLOW_DB_HOST || "127.0.0.1";
+const port = process.env.AXONETIS_DB_PORT || process.env.BUILDER_DB_PORT || process.env.HOSTFLOW_DB_PORT || "5432";
 process.stdout.write(`postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${encodeURIComponent(db)}`);
 NODE
 }
@@ -252,8 +252,10 @@ select_db_url() {
     return 0
   fi
 
-  # Founder-provided AXONETIS_* override always wins. Invalid legacy envs are ignored instead of blocking local peer fallback.
-  for key in AXONETIS_DB_URL BUILDER_DB_URL AXONETIS_POSTGRES_URL AXONETIS_DATABASE_URL HOSTFLOW_DB_URL HOSTFLOW_POSTGRES_URL LOCAL_DB_URL POSTGRES_URL POSTGRESQL_URL DATABASE_URL DIRECT_URL; do
+  # Founder-provided AXONETIS/BUILDER/HOSTFLOW override always wins.
+  # Generic DATABASE_URL/SUPABASE URLs are often stale app/runtime URLs, so they
+  # must not beat the local peer fallback on the Hetzner box.
+  for key in AXONETIS_DB_URL BUILDER_DB_URL AXONETIS_POSTGRES_URL AXONETIS_DATABASE_URL HOSTFLOW_DB_URL HOSTFLOW_POSTGRES_URL LOCAL_DB_URL; do
     value="${!key:-}"
     [ -n "$value" ] || continue
     reason="$(db_url_problem "$value")"
@@ -264,8 +266,15 @@ select_db_url() {
     warn "Ignoring $key: $reason"
   done
 
-  # Legacy names are accepted only if they are not the old cloud URL/placeholder.
-  for key in SUPABASE3_DB_URL SUPABASE_DB_URL; do
+  value="$(detect_local_peer_db || true)"
+  if [ -n "$value" ]; then
+    warn "Using local Postgres peer DB (${value#local-peer:}) and installing AXONETIS auth compatibility shim. Set AXONETIS_DB_URL explicitly if you want a remote/direct DB instead."
+    printf '%s' "$value"
+    return 0
+  fi
+
+  # Generic/legacy names are accepted only when local peer access is unavailable.
+  for key in POSTGRES_URL POSTGRESQL_URL DATABASE_URL DIRECT_URL SUPABASE3_DB_URL SUPABASE_DB_URL; do
     value="${!key:-}"
     [ -n "$value" ] || continue
     reason="$(db_url_problem "$value")"
@@ -279,13 +288,6 @@ select_db_url() {
   value="$(detect_db_url || true)"
   if [ -n "$value" ]; then
     validate_db_url "$value"
-    printf '%s' "$value"
-    return 0
-  fi
-
-  value="$(detect_local_peer_db || true)"
-  if [ -n "$value" ]; then
-    warn "No usable DB URL found; using local Postgres peer DB (${value#local-peer:}) and installing AXONETIS auth compatibility shim."
     printf '%s' "$value"
     return 0
   fi
