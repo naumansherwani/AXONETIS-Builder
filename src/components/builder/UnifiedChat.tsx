@@ -619,24 +619,80 @@ export default function UnifiedChat() {
   );
 }
 
-function MessageRow({ msg }: { msg: Msg }) {
+function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string) => void }) {
   const m = AGENT_META[msg.agent];
+  const [copied, setCopied] = useState(false);
+  const isAssistant = msg.agent !== "founder";
+  const canRetry = isAssistant && !!msg.sourcePrompt && !msg.thinking;
+  const modelShort = msg.meta?.model
+    ? msg.meta.model.split("/").slice(-1)[0].replace(/-instruct$|:free$/gi, "")
+    : null;
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(msg.text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1400);
+    } catch { /* ignore */ }
+  };
+
   return (
     <motion.div
       layout
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 80, damping: 15 }}
-      className="grid grid-cols-[2px_30px_minmax(0,1fr)] gap-3"
+      className="group relative grid grid-cols-[2px_30px_minmax(0,1fr)] gap-3"
     >
       <div className={`mt-1 w-[2px] shrink-0 rounded-full ${m.rail}`} />
       <div className={`grid h-[30px] w-[30px] shrink-0 place-items-center rounded-lg border text-[11px] font-bold ${m.chip} ring-1 ${m.ring}`}>{m.initial}</div>
       <div className="min-w-0 flex-1">
-        <div className="mb-1 flex min-w-0 items-baseline gap-2">
+        <div className="mb-1 flex min-w-0 items-center gap-2">
           <span className="text-[13px] font-semibold">{m.name}</span>
           <span className="truncate text-[10px] uppercase tracking-widest text-muted-foreground/55">{m.subtitle}</span>
+          {msg.meta?.createdAt && (
+            <span className="ml-auto shrink-0 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100">
+              {relTime(msg.meta.createdAt)}
+            </span>
+          )}
         </div>
         {msg.thinking ? <Shimmer className="text-[14px]" duration={2}>{msg.text}</Shimmer> : <MessageResponse>{msg.text}</MessageResponse>}
+
+        {/* meta chips + hover actions */}
+        {isAssistant && !msg.thinking && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            {modelShort && (
+              <span className="rounded-md border border-white/[0.06] bg-white/[0.02] px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/70">
+                {modelShort}
+              </span>
+            )}
+            {msg.meta?.tokensOut ? (
+              <span className="rounded-md border border-white/[0.06] bg-white/[0.02] px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/60">
+                {msg.meta.tokensOut.toLocaleString()} out
+              </span>
+            ) : null}
+            <div className="ml-auto flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" onClick={copy} className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground/70 hover:bg-accent hover:text-foreground">
+                    <Copy className="h-3 w-3" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>{copied ? "Copied!" : "Copy"}</TooltipContent>
+              </Tooltip>
+              {canRetry && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" onClick={() => onRetry(msg.sourcePrompt!)} className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground/70 hover:bg-accent hover:text-foreground">
+                      <RefreshCw className="h-3 w-3" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Retry</TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </motion.div>
   );
