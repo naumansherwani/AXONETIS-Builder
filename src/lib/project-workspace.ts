@@ -14,6 +14,13 @@ import type { PreviewEnv } from "./preview-engine";
 
 export type ChatAgent = "founder" | "jimmy" | "sherlock";
 
+export interface ChatMsgMeta {
+  model?: string | null;
+  tokensIn?: number;
+  tokensOut?: number;
+  createdAt?: string;
+}
+
 export interface ChatMsg {
   id: string;
   agent: ChatAgent;
@@ -21,6 +28,10 @@ export interface ChatMsg {
   thinking?: boolean;
   /** Sherlock fix-loop iteration if this message is part of an auto-fix pass (1..3). */
   fixIteration?: number;
+  /** 3.9.1 — routing/telemetry chips shown on assistant bubbles. */
+  meta?: ChatMsgMeta;
+  /** 3.9.1 — original user prompt for /retry on assistant messages. */
+  sourcePrompt?: string;
 }
 
 export interface ProjectWorkspace {
