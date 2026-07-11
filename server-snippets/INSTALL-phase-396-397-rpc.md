@@ -27,7 +27,8 @@ Verifies:
 ```sql
 select count(*) from public.marketplace_agents;   -- expect 5 seeded
 select column_name from information_schema.columns
-  where table_name='agent_thread_messages' and column_name in ('cost_usd','saved_vs_default_usd','default_model');
+  where table_name='agent_thread_messages'
+    and column_name in ('cost_usd','saved_vs_default_usd','default_model','parent_message_id','loop_iteration','audit_status');
 ```
 
 ## 2. Wire new RPC routes into existing router
@@ -88,6 +89,7 @@ curl -sX POST https://aiaxonetis.hostflowai.net/rpc/marketplace.install \
 - `src/lib/router-api.ts` → previewRoute (chat composer footer chip)
 - `src/components/builder/panels/MarketplacePanel.tsx` → new right-rail panel
 - `src/components/builder/UnifiedChat.tsx` → per-message cost/savings badges + voice deploy intent
+- `src/routes/api/agents.$slug.chat.ts` → Jimmy writes `project_files`, Sherlock audits max 3 loops, Realtime updates preview/files
 
 If any endpoint is unreachable, the frontend degrades gracefully to
 `null` / `[]` per the constitutional principle — no crashes, no dummy data.

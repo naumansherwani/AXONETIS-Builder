@@ -317,7 +317,7 @@ run_psql "$BUILDER_DIR/hetzner-migrations/20260711000002_phase_396_397_marketpla
 
 log "3) DB verify"
 run_psql "select count(*) as marketplace_agents from public.marketplace_agents;" command
-run_psql "select column_name from information_schema.columns where table_schema='public' and table_name='agent_thread_messages' and column_name in ('cost_usd','saved_vs_default_usd','default_model') order by column_name;" command
+run_psql "select column_name from information_schema.columns where table_schema='public' and table_name='agent_thread_messages' and column_name in ('cost_usd','saved_vs_default_usd','default_model','parent_message_id','loop_iteration','audit_status') order by column_name;" command
 
 log "4) Wire /rpc routes in engine — NO duplicate router"
 if [ ! -f "$RPC_FILE" ]; then

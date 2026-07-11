@@ -92,5 +92,11 @@ Founder ka final warning:
 3. Agar server endpoint zaroori hai to frontend "pending fallback" placeholder acceptable, lekin `server-snippets/` mein complete code hona **mandatory** hai.
 4. No duplicate. No half-work. No "server side pending" surprise.
 
-**Recent phases audit: 3.9.3 ✅, 3.9.4 ✅, 3.9.5 ✅ (Stop abort signal verify only).**
-Ready for **3.9.6 Marketplace + Voice Deploy** — frontend + server saath deliver hoga.
+**Recent phases audit: 3.9.3 ✅, 3.9.4 ✅, 3.9.5 ✅, 3.9.6/3.9.7 ✅.**
+
+## ✅ Core Agent Loop
+
+- Jimmy now writes real `project_files` patches via `axonetis-patch` JSON blocks.
+- Sherlock audits the result and retries Jimmy up to **3 loops**.
+- `agent_runs` stores loop status; `agent_thread_messages` stores parent/cost/audit metadata.
+- No dummy/display-only loop: files table is the truth and Realtime updates the builder.
