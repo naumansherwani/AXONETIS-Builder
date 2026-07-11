@@ -648,7 +648,8 @@ async function runBrainAndInsert(job: BrainJob) {
     assistantText = `⚠️ Brain unreachable: ${rustError}`;
   }
 
-  await insertAssistantMessage(job, assistantText, meta);
+  const looped = await runCoreBuilderLoop(job, assistantText, meta);
+  await insertAssistantMessage(job, looped.text, looped.meta);
 }
 
 function streamBrainToClient(job: BrainJob) {
@@ -777,12 +778,20 @@ function streamBrainToClient(job: BrainJob) {
           send("error", { error: rustError });
         }
 
-        const assistantMessageId = assistantText ? await insertAssistantMessage(job, assistantText, meta) : null;
+        let finalText = assistantText;
+        let finalMeta = meta;
+        if (assistantText) {
+          const looped = await runCoreBuilderLoop(job, assistantText, meta);
+          finalText = looped.text;
+          finalMeta = looped.meta;
+          if (finalText !== assistantText) send("token", { delta: `\n\n${finalText.replace(assistantText, "").trim()}` });
+        }
+        const assistantMessageId = finalText ? await insertAssistantMessage(job, finalText, finalMeta) : null;
         send("done", {
           threadId: job.threadId,
           userMessageId: job.userMessageId,
           assistantMessageId,
-          assistantText,
+          assistantText: finalText,
           status: "done",
         });
         controller.close();
@@ -948,6 +957,7 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
           userMessageId: userMsg.id as string,
           userId,
           brainURL,
+          signal: request.signal,
         });
         job.catch((err) => console.warn("[agents.chat] Brain job failed:", err));
 
