@@ -345,12 +345,14 @@ export default function UnifiedChat() {
           setComposerNotice(targetAgent === "sherlock" ? "Sherlock audit chal raha hai — realtime response aa raha hai." : "Jimmy soch raha hai — realtime response aa raha hai.");
           const ackThreadId = ack.threadId;
           void (async () => {
-            for (let i = 0; i < 55; i += 1) {
+            // Fast poll (250ms) as fallback; Realtime subscription usually delivers first.
+            // 220 iterations × 250ms = ~55s ceiling, same total budget but 4× faster perceived latency.
+            for (let i = 0; i < 220; i += 1) {
               if (ctrl.signal.aborted || pendingPlaceholderRef.current !== placeholderId) return;
               const rows = await fetchThreadMessages(ackThreadId);
               rows.forEach(ingestAgentRow);
               if (pendingPlaceholderRef.current !== placeholderId) return;
-              await new Promise((resolve) => setTimeout(resolve, 1_000));
+              await new Promise((resolve) => setTimeout(resolve, 250));
             }
             if (!ctrl.signal.aborted && pendingPlaceholderRef.current === placeholderId) {
               pendingPlaceholderRef.current = null;
