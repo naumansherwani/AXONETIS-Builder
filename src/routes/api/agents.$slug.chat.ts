@@ -22,10 +22,12 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createHash } from "crypto";
 
 const ALLOWED_SLUGS = new Set(["jimmy", "sherlock"]);
 const RUST_TIMEOUT_MS = 45_000;
 const DIRECT_FALLBACK_TIMEOUT_MS = 30_000;
+const MAX_SHERLOCK_LOOPS = 3;
 const DISABLED_PROVIDER_IDS = ["J-bk-deepseek-v31-fr", "S-bk-llama-70b-fr"];
 const DEFAULT_MODEL = "anthropic/claude-3.5-sonnet";
 const MODEL_PRICING: Record<string, { in: number; out: number }> = {
@@ -59,8 +61,10 @@ type BrainJob = {
   supabase: SupabaseClient;
   slug: string;
   prompt: string;
+  projectId: string;
   threadId: string;
   userMessageId: string;
+  userId: string;
   brainURL: string;
   signal?: AbortSignal;
 };
@@ -69,6 +73,17 @@ type CompletionMeta = {
   model?: string | null;
   tokensIn?: number;
   tokensOut?: number;
+};
+
+type ProjectFileSnapshot = {
+  path: string;
+  content: string | null;
+};
+
+type PatchOperation = {
+  path: string;
+  content?: string;
+  action?: "upsert" | "delete";
 };
 
 const sseEncoder = new TextEncoder();
