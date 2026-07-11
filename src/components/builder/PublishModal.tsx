@@ -24,7 +24,7 @@ type Stage = "idle" | "auditing" | "promoting" | "done" | "error";
 const SHARE_TTL_DAYS = 7; // blueprint-locked
 
 export default function PublishModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { project, branch, setActivePanel } = useBuilder();
+  const { project, branch, setBottomTab } = useBuilder();
   const active = PROJECTS.find((p) => p.id === project)!;
   const [stage, setStage] = useState<Stage>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -115,7 +115,7 @@ export default function PublishModal({ open, onClose }: { open: boolean; onClose
   }
 
   function openDomains() {
-    setActivePanel?.("versions");
+    setBottomTab("versions");
     onClose();
   }
 
