@@ -418,7 +418,9 @@ export default function UnifiedChat() {
   }, [scrollByDelta, scrollToBottom, scrollToTop]);
 
   return (
+    <TooltipProvider delayDuration={150}>
     <div className="flex h-full min-h-0 flex-col bg-background">
+
       {/* Header */}
       <div className="relative grid h-12 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background/70 px-4 backdrop-blur-xl">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#E50914]/40 to-transparent" />
