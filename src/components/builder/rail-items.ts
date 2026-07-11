@@ -4,8 +4,8 @@
  */
 import {
   Activity, BookOpen, Boxes, Brain, Code2, Coins, Compass, Database, FileCode2, FileText, Files,
-  Folder, GitBranch, History, Layers, LineChart, Rocket, ScrollText, Shield,
-  ShieldCheck, Terminal, Users,
+  Folder, GitBranch, History, Key, Layers, LineChart, Rocket, ScrollText, Shield,
+  ShieldCheck, Terminal, Users, Wrench,
 } from "lucide-react";
 
 import type { BottomTabId } from "@/lib/builder-state";
@@ -43,6 +43,8 @@ export const RIGHT_RAIL_ITEMS: RailItem[] = [
   { id: "storage",    label: "Storage",    icon: Folder,     hint: "Asset CDN, signed URLs, bucket policies." },
   { id: "costs",      label: "Costs",      icon: Coins,      hint: "Real-time token burn + $ cost per model." },
   { id: "security",   label: "Security",   icon: Shield,     hint: "Sherlock scan: GDPR, RLS, secret leaks, findings." },
+  { id: "secrets",    label: "Secrets",    icon: Key,        hint: "Encrypted vault — masked keys, rotate in place." },
+  { id: "tools",      label: "Tools",      icon: Wrench,     hint: "Tool Registry — what Jimmy & Sherlock can call." },
 ];
 
 export const ALL_RAIL_ITEMS: RailItemFull[] = [

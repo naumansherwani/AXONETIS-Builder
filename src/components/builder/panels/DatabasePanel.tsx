@@ -1,17 +1,24 @@
 /**
- * Database panel — LIVE row counts from Supabase 3 (head-count via anon key + RLS).
- * Tables without a SELECT policy for the current role show as "rls" (locked).
+ * Database panel — LIVE row counts + SQL runner (dry-run by default).
+ * Tables via anon Supabase 3 head-count; SQL runner via Hetzner brain.
  */
 import { useEffect, useState } from "react";
 import { PanelSection, Row } from "./PanelChrome";
-import { Database as DbIcon, Table2, Loader2 } from "lucide-react";
-import { fetchTableCounts, type TableCount } from "@/lib/database-api";
+import { Database as DbIcon, Table2, Loader2, Play, ShieldAlert } from "lucide-react";
+import { fetchTableCounts, runSql, type TableCount, type SqlResult } from "@/lib/database-api";
+
+const SAMPLE = "SELECT id, name, created_at\nFROM projects\nORDER BY created_at DESC\nLIMIT 10;";
 
 export default function DatabasePanel() {
   const [core, setCore] = useState<TableCount[]>([]);
   const [mirror, setMirror] = useState<TableCount[]>([]);
   const [live, setLive] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const [sql, setSql] = useState(SAMPLE);
+  const [dryRun, setDryRun] = useState(true);
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<SqlResult | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -25,19 +32,21 @@ export default function DatabasePanel() {
     return () => { alive = false; };
   }, []);
 
-  const rightFor = (t: TableCount) =>
-    t.rows == null ? "rls" : `${t.rows} rows`;
+  const rightFor = (t: TableCount) => (t.rows == null ? "rls" : `${t.rows} rows`);
+
+  const doRun = async () => {
+    if (!sql.trim() || running) return;
+    setRunning(true);
+    const r = await runSql(sql, dryRun);
+    setResult(r);
+    setRunning(false);
+  };
 
   return (
     <div>
       <PanelSection title="Connection">
         <Row
-          left={
-            <>
-              <DbIcon className="h-3.5 w-3.5 text-[#ff7480]" />
-              <span>Hetzner · Supabase 3</span>
-            </>
-          }
+          left={<><DbIcon className="h-3.5 w-3.5 text-[#ff7480]" /><span>Hetzner · Supabase 3</span></>}
           right={
             <span className="flex items-center gap-1.5">
               {loading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground/70" />}
@@ -54,6 +63,7 @@ export default function DatabasePanel() {
               key={t.name}
               left={<><Table2 className="h-3.5 w-3.5 text-muted-foreground" /><span className="font-mono">{t.name}</span></>}
               right={rightFor(t)}
+              onClick={() => setSql(`SELECT * FROM ${t.name} LIMIT 25;`)}
             />
           ))}
         </div>
@@ -66,9 +76,85 @@ export default function DatabasePanel() {
               key={t.name}
               left={<><Table2 className="h-3.5 w-3.5 text-[#a855f7]" /><span className="font-mono">{t.name}</span></>}
               right={rightFor(t)}
+              onClick={() => setSql(`SELECT * FROM ${t.name} LIMIT 25;`)}
             />
           ))}
         </div>
+      </PanelSection>
+
+      <PanelSection
+        title="SQL Runner"
+        action={
+          <label className="flex cursor-pointer items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground/70">
+            <input
+              type="checkbox"
+              checked={dryRun}
+              onChange={(e) => setDryRun(e.target.checked)}
+              className="h-3 w-3 accent-[#E50914]"
+            />
+            dry-run
+          </label>
+        }
+      >
+        <textarea
+          value={sql}
+          onChange={(e) => setSql(e.target.value)}
+          spellCheck={false}
+          rows={5}
+          className="w-full resize-y rounded-md border border-white/10 bg-black/40 p-2 font-mono text-[11px] leading-relaxed text-emerald-200/90 outline-none focus:border-[#E50914]/40"
+          placeholder="SELECT 1;"
+        />
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60">
+            <ShieldAlert className="h-3 w-3 text-amber-400/80" />
+            {dryRun ? "EXPLAIN only — no writes" : "LIVE — writes will commit"}
+          </span>
+          <button
+            onClick={doRun}
+            disabled={running || !sql.trim()}
+            className="flex items-center gap-1.5 rounded-md border border-[#E50914]/30 bg-[#E50914]/10 px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider text-[#ff7480] transition hover:bg-[#E50914]/20 disabled:opacity-40"
+          >
+            {running ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
+            Run
+          </button>
+        </div>
+
+        {result && (
+          <div className="mt-2 rounded-md border border-white/[0.06] bg-black/30 p-2">
+            <div className="mb-1.5 flex items-center justify-between text-[10px] font-mono uppercase tracking-wider">
+              <span className={result.ok ? "text-emerald-400" : "text-[#ff7480]"}>
+                {result.ok ? `${result.rowCount} rows` : "error"}
+              </span>
+              <span className="text-muted-foreground/60">
+                {result.durationMs.toFixed(0)}ms · {result.dryRun ? "dry" : "live"}
+              </span>
+            </div>
+            {result.error ? (
+              <pre className="whitespace-pre-wrap text-[11px] text-[#ff7480]/90">{result.error}</pre>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left font-mono text-[10.5px]">
+                  <thead>
+                    <tr className="text-muted-foreground/60">
+                      {result.columns.map((c) => <th key={c} className="px-1.5 py-1">{c}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {result.rows.slice(0, 25).map((r, i) => (
+                      <tr key={i} className="border-t border-white/[0.04]">
+                        {result.columns.map((c) => (
+                          <td key={c} className="max-w-[160px] truncate px-1.5 py-1 text-foreground/80">
+                            {String((r as Record<string, unknown>)[c] ?? "")}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </PanelSection>
     </div>
   );

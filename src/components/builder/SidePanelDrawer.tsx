@@ -23,6 +23,9 @@ import DualBrainPanel from "./panels/DualBrainPanel";
 import CommandCenterPanel from "./panels/CommandCenterPanel";
 import CostsPanel from "./panels/CostsPanel";
 import SecurityPanel from "./panels/SecurityPanel";
+import StoragePanel from "./panels/StoragePanel";
+import SecretsPanel from "./panels/SecretsPanel";
+import ToolsPanel from "./panels/ToolsPanel";
 import GenericPanel from "./panels/GenericPanel";
 
 export default function SidePanelDrawer({ side }: { side: "left" | "right" }) {
@@ -91,6 +94,9 @@ function renderPanel(
     case "command":   return <CommandCenterPanel />;
     case "costs":     return <CostsPanel />;
     case "security":  return <SecurityPanel />;
+    case "storage":   return <StoragePanel />;
+    case "secrets":   return <SecretsPanel />;
+    case "tools":     return <ToolsPanel />;
     case "terminal":  return <TerminalRailPanel />;
     default:
       return <GenericPanel icon={Icon as never} title={label} hint={hint} />;
