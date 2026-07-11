@@ -301,6 +301,7 @@ require_file "$BUILDER_DIR/hetzner-migrations/20260711000002_phase_396_397_marke
 require_file "$BUILDER_DIR/server-snippets/rpc.routes.ts"
 require_file "$BUILDER_DIR/server-snippets/rpc-phase-396-397.additions.ts"
 require_file "$BUILDER_DIR/server-snippets/preview-visual-edit-bridge.js"
+require_file "$BUILDER_DIR/server-snippets/agents.worker.ts"
 
 log "1) Latest builder repo pull"
 cd "$BUILDER_DIR"
@@ -382,6 +383,14 @@ if [ -f "$AGENTS_ROUTE" ]; then
   grep -q "signal: request.signal" "$AGENTS_ROUTE" || die "Builder agents chat route missing request.signal wiring. Pull latest axonetis repo and rerun."
   ok "Builder TanStack chat route has request.signal wired"
 fi
+for worker_root in "$BUILDER_DIR" /root/axonetis-builder /opt/axonetis-builder /opt/AXONETIS-Builder; do
+  [ -d "$worker_root" ] || continue
+  if [ -d "$worker_root/src/workers" ]; then
+    backup "$worker_root/src/workers/agents.worker.ts"
+    cp "$BUILDER_DIR/server-snippets/agents.worker.ts" "$worker_root/src/workers/agents.worker.ts"
+    ok "Installed Agent Loop worker at $worker_root/src/workers/agents.worker.ts"
+  fi
+done
 STREAM_FILES="$(grep -Rsl 'streamText' "$ENGINE_DIR/src" "$ENGINE_DIR/server" "$ENGINE_DIR/routes" 2>/dev/null | grep -Ev 'node_modules|dist|build|\.bak-' || true)"
 if [ -n "$STREAM_FILES" ]; then
   if printf '%s\n' "$STREAM_FILES" | xargs grep -qE 'abortSignal|request\.signal|req\.signal|AbortController'; then
