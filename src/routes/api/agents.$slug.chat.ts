@@ -430,7 +430,7 @@ function parsePatchOperations(text: string): PatchOperation[] {
       .filter(Boolean)
       .map((item) => ({
         path: String(item!.path ?? "").trim().replace(/^\/+/, ""),
-        action: item!.action === "delete" ? "delete" : "upsert",
+        action: (item!.action === "delete" ? "delete" : "upsert") as PatchOperation["action"],
         content: typeof item!.content === "string" ? item!.content : undefined,
       }))
       .filter((op) => op.path && !op.path.includes("..") && !op.path.startsWith("."));
