@@ -63,12 +63,25 @@ export function subscribeThread(threadId: string, handlers: ThreadStreamHandlers
 /** Pull historic messages for a thread (used on mount / project switch). */
 export async function fetchThreadMessages(threadId: string): Promise<AgentMessageRow[]> {
   if (!SUPABASE3_READY) return [];
-  const { data, error } = await supabase3
+  // Try with parent_message_id first; fall back if server DB hasn't migrated yet.
+  const fullCols = "id, thread_id, parent_message_id, role, agent_slug, parts, tokens_in, tokens_out, model, created_at";
+  const baseCols = "id, thread_id, role, agent_slug, parts, tokens_in, tokens_out, model, created_at";
+  let { data, error } = await supabase3
     .from("agent_thread_messages")
-    .select("id, thread_id, parent_message_id, role, agent_slug, parts, tokens_in, tokens_out, model, created_at")
+    .select(fullCols)
     .eq("thread_id", threadId)
     .order("created_at", { ascending: true })
     .limit(500);
+  if (error && /parent_message_id/.test(error.message)) {
+    const retry = await supabase3
+      .from("agent_thread_messages")
+      .select(baseCols)
+      .eq("thread_id", threadId)
+      .order("created_at", { ascending: true })
+      .limit(500);
+    data = retry.data as typeof data;
+    error = retry.error;
+  }
   if (error) {
     console.warn("[agent-stream] fetchThreadMessages failed:", error.message);
     return [];

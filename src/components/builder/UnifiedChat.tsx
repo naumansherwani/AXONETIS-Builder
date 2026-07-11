@@ -180,7 +180,7 @@ export default function UnifiedChat() {
     seenMessageIdsRef.current.add(row.id);
     if (row.role !== "agent") return;
     if (row.parent_message_id && ignoredParentMessageIdsRef.current.has(row.parent_message_id)) return;
-    if (pendingUserMessageIdRef.current && row.parent_message_id !== pendingUserMessageIdRef.current) return;
+    if (pendingUserMessageIdRef.current && row.parent_message_id && row.parent_message_id !== pendingUserMessageIdRef.current) return;
     const slug = (row.agent_slug ?? "jimmy") as AgentSlug;
     if (!UNIFIED_CHAT_SLUGS.has(slug)) return;
     const text = extractText(row) || "(empty reply)";
@@ -248,7 +248,7 @@ export default function UnifiedChat() {
     setMessages((prev) => [
       ...prev,
       { id: `f-${Date.now()}`, agent: "founder", text: prompt, meta: { createdAt: now } },
-      { id: placeholderId, agent: targetAgent, text: "Thinking…", thinking: true, sourcePrompt: prompt, meta: { createdAt: now } },
+      { id: placeholderId, agent: targetAgent, text: targetAgent === "sherlock" ? "Auditing…" : "Thinking…", thinking: true, sourcePrompt: prompt, meta: { createdAt: now } },
     ]);
     setAttachments([]);
 
@@ -262,7 +262,7 @@ export default function UnifiedChat() {
         if (ack.userMessageId) pendingUserMessageIdRef.current = ack.userMessageId;
         if (ack.status === "queued" && !ack.assistantText) {
           waitingForRealtime = true;
-          setComposerNotice("Thinking — response realtime se aa raha hai.");
+          setComposerNotice(targetAgent === "sherlock" ? "Sherlock audit chal raha hai — realtime response aa raha hai." : "Jimmy soch raha hai — realtime response aa raha hai.");
           const ackThreadId = ack.threadId;
           void (async () => {
             for (let i = 0; i < 55; i += 1) {
@@ -733,7 +733,7 @@ export default function UnifiedChat() {
           </div>
         )}
         <div className="mt-2 flex items-center justify-between px-1 text-[10px] uppercase tracking-widest text-muted-foreground/45">
-          <span className="font-mono">Phase 3.9 · {busy ? "thinking" : "ready"}</span>
+          <span className="font-mono">Phase 3.9 · {busy ? (messages.slice().reverse().find((m) => m.thinking)?.agent === "sherlock" ? "auditing" : "thinking") : "ready"}</span>
           <span className={`font-mono ${overLimit ? "text-red-400" : charCount > MAX_CHARS * 0.9 ? "text-amber-400" : "text-muted-foreground/50"}`}>
             {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()}
           </span>
