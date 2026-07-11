@@ -551,6 +551,8 @@ export default function UnifiedChat() {
 
       {/* Composer — pinned bottom */}
       <div className="relative shrink-0 border-t border-border bg-background/75 p-3 backdrop-blur-xl">
+        {/* 3.9.1 — voice waveform overlay */}
+        <VoiceWaveform analyser={analyser} active={recording} />
         {/* 3.9.1 — slash + @mention popovers */}
         <AnimatePresence>
           {(slashSuggestions.length > 0 || mentionSuggestions.length > 0) && (
