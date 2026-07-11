@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronUp, Copy, Mic, Paperclip, Radio, RefreshCw, Send, ShieldCheck, Zap } from "lucide-react";
+import { Copy, Mic, Paperclip, Radio, RefreshCw, Send, ShieldCheck, Zap } from "lucide-react";
+import ChatScrollRail from "./ChatScrollRail";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
@@ -488,30 +489,9 @@ export default function UnifiedChat() {
 
         </div>
 
-        {/* Slim arrow rail */}
-        <div className="pointer-events-none absolute bottom-3 left-2 z-20 flex flex-col overflow-hidden rounded-full border border-border bg-background/80 shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-          <button
-            type="button"
-            title="Scroll up (↑/PgUp)"
-            disabled={atTop}
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => scrollByDelta(-SCROLL_STEP)}
-            className="pointer-events-auto grid h-6 w-6 place-items-center text-muted-foreground/80 transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
-          >
-            <ChevronUp className="h-3 w-3" />
-          </button>
-          <span className="mx-1 h-px bg-border" />
-          <button
-            type="button"
-            title="Scroll down (↓/PgDn/End)"
-            disabled={atBottom}
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => scrollByDelta(SCROLL_STEP)}
-            className="pointer-events-auto grid h-6 w-6 place-items-center text-muted-foreground/80 transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
-          >
-            <ChevronDown className="h-3 w-3" />
-          </button>
-        </div>
+        {/* Red cinematic scroll rail — left edge */}
+        <ChatScrollRail targetRef={messagesRef} contentKey={messages.length} />
+
       </div>
 
       {/* Composer — pinned bottom */}
