@@ -153,6 +153,78 @@ export default function VersionsPanel() {
         </div>
       </PanelSection>
 
+      {checkoutNote && (
+        <div className="mx-3 mb-2 rounded-md border border-sky-500/30 bg-sky-500/[0.08] px-3 py-1.5 text-[11px] text-sky-200">
+          <GitCommitHorizontal className="mr-1 inline h-3 w-3" /> {checkoutNote}
+        </div>
+      )}
+
+      <PanelSection
+        title="Custom Domains — Caddy auto-SSL"
+        action={<span className="text-[10px] text-muted-foreground/60">{domains.length}</span>}
+      >
+        <div className="flex items-center gap-1.5 px-2 pb-2">
+          <input
+            value={newDomain}
+            onChange={(e) => setNewDomain(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") void onAttachDomain(); }}
+            placeholder="app.yourdomain.com"
+            className="flex-1 rounded-md border border-white/[0.08] bg-black/40 px-2 py-1 font-mono text-[11px] text-foreground/90 outline-none focus:border-[#E50914]/40"
+          />
+          <button
+            onClick={onAttachDomain}
+            disabled={attaching || !newDomain.trim()}
+            className="flex items-center gap-1 rounded-md border border-[#E50914]/30 bg-[#E50914]/10 px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wider text-[#ff7480] disabled:opacity-40"
+          >
+            {attaching ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+            Attach
+          </button>
+        </div>
+        {domainErr && (
+          <div className="mx-2 mb-2 rounded-md border border-amber-500/30 bg-amber-500/[0.06] px-2 py-1 text-[10px] text-amber-200">
+            {domainErr}
+          </div>
+        )}
+        <div className="flex flex-col gap-1">
+          {domains.length === 0 && (
+            <div className="px-3 py-2 text-[11px] text-muted-foreground/60">
+              No custom domains yet — attach one for auto-SSL via Caddy.
+            </div>
+          )}
+          {domains.map((dom) => (
+            <Row
+              key={dom.id}
+              left={
+                <>
+                  <Globe className="h-3 w-3 text-[#ff7480]" />
+                  <span className="font-mono truncate">{dom.domain}</span>
+                  <span className={`rounded px-1 py-px text-[9px] uppercase tracking-wider ${
+                    dom.ssl === "active"  ? "bg-emerald-500/15 text-emerald-300" :
+                    dom.ssl === "issuing" ? "bg-sky-500/15 text-sky-300"        :
+                    dom.ssl === "failed"  ? "bg-red-500/15 text-red-300"        :
+                                            "bg-white/[0.06] text-muted-foreground/70"
+                  }`}>
+                    {dom.ssl === "active" ? <ShieldCheck className="mr-0.5 inline h-2.5 w-2.5" /> : <ShieldAlert className="mr-0.5 inline h-2.5 w-2.5" />}
+                    {dom.ssl}
+                  </span>
+                </>
+              }
+              right={
+                <button
+                  onClick={() => onRevokeDomain(dom.id)}
+                  disabled={busy === dom.id}
+                  title="Revoke domain"
+                  className="grid h-5 w-5 place-items-center rounded hover:bg-red-500/[0.1] disabled:opacity-40"
+                >
+                  <Trash2 className="h-3 w-3 text-muted-foreground hover:text-red-300" />
+                </button>
+              }
+            />
+          ))}
+        </div>
+      </PanelSection>
+
+
       <PanelSection title="Snapshots — time travel">
         <div className="flex flex-col gap-1">
           {snaps.map((s, i) => (
