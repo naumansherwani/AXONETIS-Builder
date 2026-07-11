@@ -26,6 +26,7 @@ import {
   extractText,
   cleanAgentText,
   UNIFIED_CHAT_SLUGS,
+  type AgentMessageRow,
 } from "@/lib/agent-stream";
 
 type Agent = "founder" | "jimmy" | "sherlock";
@@ -110,6 +111,8 @@ export default function UnifiedChat() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const voiceChunksRef = useRef<Blob[]>([]);
   const pendingPlaceholderRef = useRef<string | null>(null);
+  const pendingUserMessageIdRef = useRef<string | null>(null);
+  const ignoredParentMessageIdsRef = useRef<Set<string>>(new Set());
   const seenMessageIdsRef = useRef<Set<string>>(new Set());
   const audioContextRef = useRef<AudioContext | null>(null);
 
@@ -172,44 +175,57 @@ export default function UnifiedChat() {
     textareaRef.current?.focus();
   }, [project, status]);
 
+  const ingestAgentRow = useCallback((row: AgentMessageRow) => {
+    if (seenMessageIdsRef.current.has(row.id)) return;
+    seenMessageIdsRef.current.add(row.id);
+    if (row.role !== "agent") return;
+    if (row.parent_message_id && ignoredParentMessageIdsRef.current.has(row.parent_message_id)) return;
+    if (pendingUserMessageIdRef.current && row.parent_message_id !== pendingUserMessageIdRef.current) return;
+    const slug = (row.agent_slug ?? "jimmy") as AgentSlug;
+    if (!UNIFIED_CHAT_SLUGS.has(slug)) return;
+    const text = extractText(row) || "(empty reply)";
+    const agent: Agent = slug === "sherlock" ? "sherlock" : "jimmy";
+    const meta = {
+      model: row.model ?? null,
+      tokensIn: row.tokens_in ?? 0,
+      tokensOut: row.tokens_out ?? 0,
+      createdAt: row.created_at,
+    };
+    setMessages((prev) => {
+      if (prev.some((m) => m.id === row.id)) return prev;
+      const next = [...prev];
+      const placeholderId = pendingPlaceholderRef.current;
+      const idx = placeholderId ? next.findIndex((m) => m.id === placeholderId) : -1;
+      if (idx >= 0) {
+        next[idx] = { ...next[idx], id: row.id, agent, text, thinking: false, meta };
+        pendingPlaceholderRef.current = null;
+        pendingUserMessageIdRef.current = null;
+      } else {
+        next.push({ id: row.id, agent, text, meta });
+      }
+      return next;
+    });
+    streamIdRef.current = null;
+    setStatus("ready");
+    setComposerNotice("");
+    textareaRef.current?.focus();
+  }, []);
+
   // Realtime thread subscription
   useEffect(() => {
     if (!threadId) return;
     void fetchThreadMessages(threadId).then((rows) => {
-      rows.forEach((r) => seenMessageIdsRef.current.add(r.id));
+      rows.forEach((row) => {
+        if (pendingPlaceholderRef.current || pendingUserMessageIdRef.current) ingestAgentRow(row);
+        else seenMessageIdsRef.current.add(row.id);
+      });
     });
     const unsub = subscribeThread(threadId, {
-      onMessage: (row) => {
-        if (seenMessageIdsRef.current.has(row.id)) return;
-        seenMessageIdsRef.current.add(row.id);
-        if (row.role !== "agent") return;
-        const slug = (row.agent_slug ?? "jimmy") as AgentSlug;
-        if (!UNIFIED_CHAT_SLUGS.has(slug)) return;
-        const text = extractText(row) || "(empty reply)";
-        const agent: Agent = slug === "sherlock" ? "sherlock" : "jimmy";
-        const meta = {
-          model: row.model ?? null,
-          tokensIn: row.tokens_in ?? 0,
-          tokensOut: row.tokens_out ?? 0,
-          createdAt: row.created_at,
-        };
-        setMessages((prev) => {
-          const next = [...prev];
-          const placeholderId = pendingPlaceholderRef.current;
-          const idx = placeholderId ? next.findIndex((m) => m.id === placeholderId) : -1;
-          if (idx >= 0) {
-            next[idx] = { ...next[idx], id: row.id, agent, text, thinking: false, meta };
-            pendingPlaceholderRef.current = null;
-          } else {
-            next.push({ id: row.id, agent, text, meta });
-          }
-          return next;
-        });
-      },
+      onMessage: ingestAgentRow,
       onError: (err) => console.warn("[UnifiedChat] thread stream error:", err),
     });
     return unsub;
-  }, [threadId]);
+  }, [ingestAgentRow, threadId]);
 
   const charCount = draft.length;
   const overLimit = charCount > MAX_CHARS;
@@ -232,16 +248,44 @@ export default function UnifiedChat() {
     setMessages((prev) => [
       ...prev,
       { id: `f-${Date.now()}`, agent: "founder", text: prompt, meta: { createdAt: now } },
-      { id: placeholderId, agent: targetAgent, text: `${targetAgent === "sherlock" ? "Auditing" : "Working"}…`, thinking: true, sourcePrompt: prompt, meta: { createdAt: now } },
+      { id: placeholderId, agent: targetAgent, text: "Thinking…", thinking: true, sourcePrompt: prompt, meta: { createdAt: now } },
     ]);
     setAttachments([]);
 
     const ctrl = new AbortController();
     abortRef.current = ctrl;
 
+    let waitingForRealtime = false;
     void chatWithAgent(targetAgent, { projectId: project, threadId, prompt: `${prompt}${attachmentNote}`, streamId }, { signal: ctrl.signal })
       .then((ack) => {
         if (!threadId && ack.threadId) setThreadId(ack.threadId);
+        if (ack.userMessageId) pendingUserMessageIdRef.current = ack.userMessageId;
+        if (ack.status === "queued" && !ack.assistantText) {
+          waitingForRealtime = true;
+          setComposerNotice("Thinking — response realtime se aa raha hai.");
+          const ackThreadId = ack.threadId;
+          void (async () => {
+            for (let i = 0; i < 55; i += 1) {
+              if (ctrl.signal.aborted || pendingPlaceholderRef.current !== placeholderId) return;
+              const rows = await fetchThreadMessages(ackThreadId);
+              rows.forEach(ingestAgentRow);
+              if (pendingPlaceholderRef.current !== placeholderId) return;
+              await new Promise((resolve) => setTimeout(resolve, 1_000));
+            }
+            if (!ctrl.signal.aborted && pendingPlaceholderRef.current === placeholderId) {
+              pendingPlaceholderRef.current = null;
+              setMessages((prev) => prev.map((m) => (
+                m.id === placeholderId
+                  ? { ...m, agent: "sherlock", text: "Endpoint audit: Brain response timeout. Server logs check karo.", thinking: false }
+                  : m
+              )));
+              setStatus("ready");
+              setComposerNotice("Brain timeout — server logs check karo.");
+              textareaRef.current?.focus();
+            }
+          })();
+          return;
+        }
         if (ack.assistantText) {
           const cleaned = cleanAgentText(ack.assistantText);
           setMessages((prev) => {
@@ -251,6 +295,7 @@ export default function UnifiedChat() {
             if (idx >= 0) {
               next[idx] = { ...next[idx], id: ack.assistantMessageId ?? currentPlaceholder ?? `j-${Date.now()}`, agent: targetAgent, text: cleaned, thinking: false };
               pendingPlaceholderRef.current = null;
+              pendingUserMessageIdRef.current = null;
             }
             return next;
           });
@@ -259,6 +304,8 @@ export default function UnifiedChat() {
       .catch((err) => {
         if (ctrl.signal.aborted) {
           setMessages((prev) => prev.map((m) => (m.id === placeholderId ? { ...m, text: "Stopped by founder.", thinking: false } : m)));
+          if (pendingUserMessageIdRef.current) ignoredParentMessageIdsRef.current.add(pendingUserMessageIdRef.current);
+          pendingUserMessageIdRef.current = null;
           return;
         }
         console.warn("[UnifiedChat] chatWithAgent failed:", err);
@@ -271,11 +318,13 @@ export default function UnifiedChat() {
       })
       .finally(() => {
         abortRef.current = null;
-        streamIdRef.current = null;
-        setStatus("ready");
-        textareaRef.current?.focus();
+        if (!waitingForRealtime) {
+          streamIdRef.current = null;
+          setStatus("ready");
+          textareaRef.current?.focus();
+        }
       });
-  }, [attachments, branch, environment, project, threadId]);
+  }, [attachments, branch, environment, ingestAgentRow, project, threadId]);
 
   const submit = useCallback(() => {
     const prompt = draft.trim();
@@ -302,7 +351,9 @@ export default function UnifiedChat() {
     abortRef.current?.abort();
     const streamId = streamIdRef.current;
     if (streamId) void cancelAgentStream(streamId).catch(() => undefined);
+    if (pendingUserMessageIdRef.current) ignoredParentMessageIdsRef.current.add(pendingUserMessageIdRef.current);
     pendingPlaceholderRef.current = null;
+    pendingUserMessageIdRef.current = null;
     setStatus("ready");
     setComposerNotice("Response stopped.");
     textareaRef.current?.focus();
@@ -682,7 +733,7 @@ export default function UnifiedChat() {
           </div>
         )}
         <div className="mt-2 flex items-center justify-between px-1 text-[10px] uppercase tracking-widest text-muted-foreground/45">
-          <span className="font-mono">Phase 3.9 · {busy ? "working" : "ready"}</span>
+          <span className="font-mono">Phase 3.9 · {busy ? "thinking" : "ready"}</span>
           <span className={`font-mono ${overLimit ? "text-red-400" : charCount > MAX_CHARS * 0.9 ? "text-amber-400" : "text-muted-foreground/50"}`}>
             {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()}
           </span>

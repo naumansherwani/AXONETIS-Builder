@@ -65,7 +65,7 @@ export async function fetchThreadMessages(threadId: string): Promise<AgentMessag
   if (!SUPABASE3_READY) return [];
   const { data, error } = await supabase3
     .from("agent_thread_messages")
-    .select("id, thread_id, role, agent_slug, parts, tokens_in, tokens_out, model, created_at")
+    .select("id, thread_id, parent_message_id, role, agent_slug, parts, tokens_in, tokens_out, model, created_at")
     .eq("thread_id", threadId)
     .order("created_at", { ascending: true })
     .limit(500);

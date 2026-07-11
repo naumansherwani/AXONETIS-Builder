@@ -12,9 +12,8 @@
  *   1. Validate slug + body.
  *   2. Ensure thread row in `agent_threads`.
  *   3. Insert user message into `agent_thread_messages`.
- *   4. AWAIT Rust ensemble (up to 120s) — Rust is sync.
- *   5. Insert assistant message; full Rust JSON kept in `metadata`.
- *   6. Return { threadId, userMessageId, assistantMessageId }.
+ *   4. Return ACK immediately so UI can stay fast.
+ *   5. Continue Rust ensemble in background and insert assistant row when ready.
  *      UnifiedChat Realtime sub picks up the assistant row instantly.
  *
  * Env required on Hetzner (pm2 axonetis-builder):
@@ -22,15 +21,25 @@
  *   RUST_BRAIN_URL (default http://127.0.0.1:8088)
  */
 import { createFileRoute } from "@tanstack/react-router";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const ALLOWED_SLUGS = new Set(["jimmy", "sherlock"]);
-const RUST_TIMEOUT_MS = 120_000;
+const RUST_TIMEOUT_MS = 45_000;
 
 type ChatBody = {
   projectId?: string;
   threadId?: string | null;
   prompt?: string;
+  streamId?: string;
+};
+
+type BrainJob = {
+  supabase: SupabaseClient;
+  slug: string;
+  prompt: string;
+  threadId: string;
+  userMessageId: string;
+  brainURL: string;
 };
 
 /**
@@ -56,6 +65,51 @@ function extractText(payload: unknown): string {
     if (typeof c === "string" && c.trim()) return c;
   }
   return JSON.stringify(payload, null, 2);
+}
+
+async function runBrainAndInsert({ supabase, slug, prompt, threadId, userMessageId, brainURL }: BrainJob) {
+  let assistantText = "";
+  let rustPayload: unknown = null;
+  let rustError: string | null = null;
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), RUST_TIMEOUT_MS);
+  try {
+    const r = await fetch(`${brainURL}/api/agents/${slug}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: prompt }),
+      signal: ctrl.signal,
+    });
+    if (!r.ok) {
+      rustError = `Rust ${r.status}: ${await r.text().catch(() => "")}`.slice(0, 500);
+    } else {
+      rustPayload = await r.json().catch(() => null);
+      assistantText = extractText(rustPayload);
+    }
+  } catch (err) {
+    rustError = err instanceof Error ? err.message : String(err);
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (rustError && !assistantText) {
+    assistantText = `⚠️ Brain unreachable: ${rustError}`;
+  }
+
+  const { error: aErr } = await supabase
+    .from("agent_thread_messages")
+    .insert({
+      thread_id: threadId,
+      role: "agent",
+      agent_slug: slug,
+      parent_message_id: userMessageId,
+      parts: [{ type: "text", text: assistantText }],
+    });
+
+  if (aErr) {
+    console.warn("[agents.chat] Assistant message insert failed:", aErr.message);
+  }
 }
 
 export const Route = createFileRoute("/api/agents/$slug/chat")({
@@ -189,70 +243,23 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
           );
         }
 
-        // 3. Call Rust ensemble (sync, await up to 120s)
+        // 3. Kick Rust ensemble in background. Do NOT hold the UI hostage.
         const brainURL = (process.env.RUST_BRAIN_URL ?? "http://127.0.0.1:8088").replace(/\/$/, "");
-        let assistantText = "";
-        let rustPayload: unknown = null;
-        let rustError: string | null = null;
-
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), RUST_TIMEOUT_MS);
-        try {
-          const r = await fetch(`${brainURL}/api/agents/${slug}/chat`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: prompt }),
-            signal: ctrl.signal,
-          });
-          if (!r.ok) {
-            rustError = `Rust ${r.status}: ${await r.text().catch(() => "")}`.slice(0, 500);
-          } else {
-            rustPayload = await r.json().catch(() => null);
-            assistantText = extractText(rustPayload);
-          }
-        } catch (err) {
-          rustError = err instanceof Error ? err.message : String(err);
-        } finally {
-          clearTimeout(timer);
-        }
-
-        if (rustError && !assistantText) {
-          assistantText = `⚠️ Brain unreachable: ${rustError}`;
-        }
-
-        // 4. Insert agent message (full Rust JSON in metadata for debug)
-        const { data: aMsg, error: aErr } = await supabase
-          .from("agent_thread_messages")
-          .insert({
-            thread_id: threadId,
-            role: "agent",
-            agent_slug: slug,
-            parent_message_id: userMsg.id,
-            parts: [{ type: "text", text: assistantText }],
-            metadata: rustPayload ? { ensemble: rustPayload } : { error: rustError },
-          })
-          .select("id")
-          .single();
-        if (aErr || !aMsg) {
-          return Response.json(
-            {
-              threadId,
-              userMessageId: userMsg.id,
-              assistantText,
-              warning: `Assistant message insert failed: ${aErr?.message ?? "unknown"}`,
-            },
-            { status: 200 },
-          );
-        }
+        const job = runBrainAndInsert({
+          supabase,
+          slug,
+          prompt,
+          threadId,
+          userMessageId: userMsg.id as string,
+          brainURL,
+        });
+        job.catch((err) => console.warn("[agents.chat] Brain job failed:", err));
 
         return Response.json(
           {
             threadId,
             userMessageId: userMsg.id,
-            assistantMessageId: aMsg.id,
-            assistantText,
-            status: "done",
-            rustError, // null on success
+            status: "queued",
           },
           { status: 200 },
         );

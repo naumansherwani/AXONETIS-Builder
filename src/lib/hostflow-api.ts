@@ -96,6 +96,7 @@ export interface AgentThread {
 export interface AgentMessage {
   id: string;
   thread_id: string;
+  parent_message_id?: string | null;
   role: "user" | "agent" | "system" | "tool";
   agent_slug: AgentSlug | null;
   parts: Array<{ type: string; text?: string; [k: string]: unknown }>;
