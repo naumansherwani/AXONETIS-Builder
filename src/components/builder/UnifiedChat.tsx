@@ -721,6 +721,29 @@ export default function UnifiedChat() {
           )}
         </AnimatePresence>
         <input ref={fileInputRef} type="file" multiple className="hidden" onChange={onAttach} />
+        {lastVisualEditPick && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="mb-2 flex items-center gap-2 rounded-lg border border-[#E50914]/30 bg-[#E50914]/[0.06] px-2.5 py-1.5 text-[11px]"
+          >
+            <MousePointerClick className="h-3 w-3 text-[#ff7480]" />
+            <span className="font-mono text-foreground/80">&lt;{lastVisualEditPick.tag}&gt;</span>
+            <span className="truncate font-mono text-muted-foreground/70">{lastVisualEditPick.selector}</span>
+            {lastVisualEditPick.text && (
+              <span className="truncate text-muted-foreground/60">"{lastVisualEditPick.text.slice(0, 40)}"</span>
+            )}
+            <button
+              type="button"
+              onClick={() => setLastVisualEditPick(null)}
+              className="ml-auto grid h-5 w-5 place-items-center rounded hover:bg-white/[0.06]"
+              title="Clear visual edit context"
+            >
+              <XIcon className="h-3 w-3 text-muted-foreground" />
+            </button>
+          </motion.div>
+        )}
         <PromptInput
           className="rounded-lg"
           onSubmit={(e) => { e.preventDefault(); submit(); }}
