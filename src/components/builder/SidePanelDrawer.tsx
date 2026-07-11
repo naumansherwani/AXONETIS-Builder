@@ -23,6 +23,9 @@ import DualBrainPanel from "./panels/DualBrainPanel";
 import CommandCenterPanel from "./panels/CommandCenterPanel";
 import CostsPanel from "./panels/CostsPanel";
 import SecurityPanel from "./panels/SecurityPanel";
+import StoragePanel from "./panels/StoragePanel";
+import SecretsPanel from "./panels/SecretsPanel";
+import ToolsPanel from "./panels/ToolsPanel";
 import GenericPanel from "./panels/GenericPanel";
 
 export default function SidePanelDrawer({ side }: { side: "left" | "right" }) {
