@@ -341,6 +341,20 @@ export default function UnifiedChat() {
   const overLimit = charCount > MAX_CHARS;
   const busy = status === "submitted" || status === "streaming";
 
+  // 3.9.7 — Global Router pre-send preview (debounced).
+  const [routerPreview, setRouterPreview] = useState<RouterPreview | null>(null);
+  useEffect(() => {
+    const prompt = draft.trim();
+    if (!prompt || prompt.length < 8) { setRouterPreview(null); return; }
+    const ctrl = new AbortController();
+    const t = window.setTimeout(async () => {
+      const agent = /@sherlock|\/scan|\/fix|\/review/i.test(prompt) ? "sherlock" : "jimmy";
+      const res = await previewRoute(prompt, agent, ctrl.signal);
+      if (!ctrl.signal.aborted) setRouterPreview(res);
+    }, 400);
+    return () => { window.clearTimeout(t); ctrl.abort(); };
+  }, [draft]);
+
   const executePrompt = useCallback((prompt: string) => {
     const targetAgent = resolveAgent(prompt);
     const placeholderId = `j-${Date.now() + 1}`;
