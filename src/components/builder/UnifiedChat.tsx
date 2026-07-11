@@ -213,7 +213,10 @@ export default function UnifiedChat() {
   useEffect(() => {
     if (!threadId) return;
     void fetchThreadMessages(threadId).then((rows) => {
-      rows.forEach(ingestAgentRow);
+      rows.forEach((row) => {
+        if (pendingPlaceholderRef.current || pendingUserMessageIdRef.current) ingestAgentRow(row);
+        else seenMessageIdsRef.current.add(row.id);
+      });
     });
     const unsub = subscribeThread(threadId, {
       onMessage: ingestAgentRow,
