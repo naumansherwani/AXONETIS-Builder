@@ -21,7 +21,7 @@
  *   RUST_BRAIN_URL (default http://127.0.0.1:8088)
  */
 import { createFileRoute } from "@tanstack/react-router";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const ALLOWED_SLUGS = new Set(["jimmy", "sherlock"]);
 const RUST_TIMEOUT_MS = 45_000;
@@ -35,7 +35,7 @@ type ChatBody = {
 };
 
 type BrainJob = {
-  supabase: ReturnType<typeof createClient>;
+  supabase: SupabaseClient;
   slug: string;
   prompt: string;
   threadId: string;
