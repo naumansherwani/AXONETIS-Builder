@@ -303,6 +303,50 @@ export default function UnifiedChat() {
     textareaRef.current?.focus();
   }, []);
 
+  // 3.9.1 — retry an assistant message by re-running its sourcePrompt.
+  const retry = useCallback((sourcePrompt: string) => {
+    if (busy || !sourcePrompt) return;
+    setStatus("submitted");
+    executePrompt(sourcePrompt);
+  }, [busy, executePrompt]);
+
+  // 3.9.1 — session token meter (sum of assistant tokens_out on this thread).
+  const sessionTokens = useMemo(() => {
+    let inTok = 0, outTok = 0;
+    for (const m of messages) {
+      if (m.meta?.tokensIn) inTok += m.meta.tokensIn;
+      if (m.meta?.tokensOut) outTok += m.meta.tokensOut;
+    }
+    return { inTok, outTok, total: inTok + outTok };
+  }, [messages]);
+
+  // 3.9.1 — slash + mention popover state derived from draft.
+  const slashSuggestions = useMemo(() => {
+    const t = draft.trimStart();
+    if (!t.startsWith("/")) return [];
+    const q = t.split(/\s/)[0].toLowerCase();
+    return SLASH_COMMANDS.filter((c) => c.cmd.startsWith(q));
+  }, [draft]);
+
+  const mentionSuggestions = useMemo(() => {
+    const match = draft.match(/(^|\s)@(\w*)$/);
+    if (!match) return [];
+    const q = `@${match[2].toLowerCase()}`;
+    return MENTIONS.filter((m) => m.tag.startsWith(q));
+  }, [draft]);
+
+  const applySlash = useCallback((cmd: string) => {
+    const rest = draft.trimStart().replace(/^\S+/, "").trim();
+    setDraft(rest ? `${cmd} ${rest}` : `${cmd} `);
+    textareaRef.current?.focus();
+  }, [draft]);
+
+  const applyMention = useCallback((tag: string) => {
+    setDraft((prev) => prev.replace(/(^|\s)@(\w*)$/, (_, lead) => `${lead}${tag} `));
+    textareaRef.current?.focus();
+  }, []);
+
+
   const onAttach = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
