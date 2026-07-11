@@ -11,11 +11,16 @@ cd /var/www/axonetis && git pull && bash server-snippets/hetzner-wire-phases-393
 
 Yeh single script migration, RPC wiring, Visual Edit bridge copy, Stop-button abort verify, build/restart, aur smoke-test khud karega. Manual nano/edit nahi chahiye.
 
-## 1. Apply migration (Supabase 3 = axonetis-builder)
+## 1. Apply migration (AXONETIS builder DB)
 
 ```bash
-cd /var/www/NEXATECT-Engine
-psql "$SUPABASE3_DB_URL" -f /var/www/axonetis/hetzner-migrations/20260711000002_phase_396_397_marketplace_router.sql
+cd /var/www/axonetis && git pull && bash server-snippets/hetzner-wire-phases-393-397.sh
+```
+
+Script DB URL khud PM2/env files se detect karega. Agar phir bhi na mile:
+
+```bash
+AXONETIS_DB_URL='postgresql://...' bash server-snippets/hetzner-wire-phases-393-397.sh
 ```
 
 Verifies:
@@ -27,10 +32,7 @@ select column_name from information_schema.columns
 
 ## 2. Wire new RPC routes into existing router
 
-Copy `server-snippets/rpc-phase-396-397.additions.ts` into
-`/var/www/NEXATECT-Engine/server/routes/` and register once inside the
-existing `rpc.routes.ts` (right below the 3.9.3/3.9.4 registrations —
-NO duplicate router instance):
+One-command installer `hostflow-server` / `hostflowai-brain` path PM2 se detect karke `rpc.routes.ts` mein register karta hai — NO duplicate router instance:
 
 ```ts
 import { registerRouterAndMarketplaceRoutes } from "./rpc-phase-396-397.additions";
