@@ -111,6 +111,7 @@ export default function UnifiedChat() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const voiceChunksRef = useRef<Blob[]>([]);
   const pendingPlaceholderRef = useRef<string | null>(null);
+  const pendingUserMessageIdRef = useRef<string | null>(null);
   const seenMessageIdsRef = useRef<Set<string>>(new Set());
   const audioContextRef = useRef<AudioContext | null>(null);
 
@@ -177,6 +178,7 @@ export default function UnifiedChat() {
     if (seenMessageIdsRef.current.has(row.id)) return;
     seenMessageIdsRef.current.add(row.id);
     if (row.role !== "agent") return;
+    if (pendingUserMessageIdRef.current && row.parent_message_id !== pendingUserMessageIdRef.current) return;
     const slug = (row.agent_slug ?? "jimmy") as AgentSlug;
     if (!UNIFIED_CHAT_SLUGS.has(slug)) return;
     const text = extractText(row) || "(empty reply)";
@@ -195,6 +197,7 @@ export default function UnifiedChat() {
       if (idx >= 0) {
         next[idx] = { ...next[idx], id: row.id, agent, text, thinking: false, meta };
         pendingPlaceholderRef.current = null;
+        pendingUserMessageIdRef.current = null;
       } else {
         next.push({ id: row.id, agent, text, meta });
       }
@@ -251,6 +254,7 @@ export default function UnifiedChat() {
     void chatWithAgent(targetAgent, { projectId: project, threadId, prompt: `${prompt}${attachmentNote}`, streamId }, { signal: ctrl.signal })
       .then((ack) => {
         if (!threadId && ack.threadId) setThreadId(ack.threadId);
+        if (ack.userMessageId) pendingUserMessageIdRef.current = ack.userMessageId;
         if (ack.status === "queued" && !ack.assistantText) {
           waitingForRealtime = true;
           setComposerNotice("Thinking — response realtime se aa raha hai.");
@@ -286,6 +290,7 @@ export default function UnifiedChat() {
             if (idx >= 0) {
               next[idx] = { ...next[idx], id: ack.assistantMessageId ?? currentPlaceholder ?? `j-${Date.now()}`, agent: targetAgent, text: cleaned, thinking: false };
               pendingPlaceholderRef.current = null;
+              pendingUserMessageIdRef.current = null;
             }
             return next;
           });
@@ -294,6 +299,7 @@ export default function UnifiedChat() {
       .catch((err) => {
         if (ctrl.signal.aborted) {
           setMessages((prev) => prev.map((m) => (m.id === placeholderId ? { ...m, text: "Stopped by founder.", thinking: false } : m)));
+          pendingUserMessageIdRef.current = null;
           return;
         }
         console.warn("[UnifiedChat] chatWithAgent failed:", err);
@@ -340,6 +346,7 @@ export default function UnifiedChat() {
     const streamId = streamIdRef.current;
     if (streamId) void cancelAgentStream(streamId).catch(() => undefined);
     pendingPlaceholderRef.current = null;
+    pendingUserMessageIdRef.current = null;
     setStatus("ready");
     setComposerNotice("Response stopped.");
     textareaRef.current?.focus();
