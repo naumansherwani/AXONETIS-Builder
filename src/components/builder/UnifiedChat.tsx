@@ -438,7 +438,24 @@ export default function UnifiedChat() {
             </span>
           )}
         </div>
-        <span className="shrink-0 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/50">{bridgeStatus}</span>
+        <div className="flex shrink-0 items-center gap-2">
+          {sessionTokens.total > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/80">
+                  <Zap className="h-2.5 w-2.5 text-amber-400" />
+                  {sessionTokens.total.toLocaleString()} tok
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="text-[10px] font-mono">
+                  in: {sessionTokens.inTok.toLocaleString()} · out: {sessionTokens.outTok.toLocaleString()}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )}
+          <span className="shrink-0 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/50">{bridgeStatus}</span>
+        </div>
       </div>
 
       {/* Messages — native scroll, keyboard accessible */}
