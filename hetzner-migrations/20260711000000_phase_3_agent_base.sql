@@ -7,6 +7,38 @@
 
 create extension if not exists "pgcrypto";
 
+-- Plain Postgres compatibility mode.
+-- Hetzner box currently has only the default `postgres` database, not the
+-- managed Auth schema. Create the tiny auth/role surface these founder-only
+-- tables need so migrations run out-of-box without external DB keys.
+create schema if not exists auth;
+
+do $$ begin
+  create role authenticated;
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create role service_role;
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create role anon;
+exception when duplicate_object then null; end $$;
+
+create table if not exists auth.users (
+  id uuid primary key default gen_random_uuid(),
+  email text unique,
+  created_at timestamptz not null default now()
+);
+
+create or replace function auth.uid()
+returns uuid
+language sql
+stable
+as $$
+  select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
+$$;
+
 do $$ begin
   create type public.app_role as enum ('admin', 'founder', 'service');
 exception when duplicate_object then null; end $$;
