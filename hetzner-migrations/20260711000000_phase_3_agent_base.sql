@@ -68,7 +68,7 @@ begin
         language sql
         stable
         as $fn$
-          select nullif(current_setting(''request.jwt.claim.sub'', true), '''')::uuid
+          select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
         $fn$
       $sql$;
     exception when insufficient_privilege then
