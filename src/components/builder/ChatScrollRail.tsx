@@ -119,13 +119,13 @@ export default function ChatScrollRail({ targetRef, contentKey }: Props) {
         </svg>
       </button>
 
-      {/* Track */}
+      {/* Track — cinematic red glowing vertical line */}
       <div
         ref={trackRef}
         onClick={onTrackClick}
-        className="pointer-events-auto relative min-h-0 w-[2px] flex-1 cursor-pointer rounded-full bg-white/[0.05]"
+        className="pointer-events-auto relative min-h-0 w-[2px] flex-1 cursor-pointer rounded-full bg-gradient-to-b from-[#E50914]/70 via-[#E50914] to-[#E50914]/70 shadow-[0_0_8px_rgba(229,9,20,0.75),0_0_16px_rgba(229,9,20,0.45)]"
       >
-        {/* Thumb — compact dark pill with subtle red edge */}
+        {/* Thumb — small dark pill riding the glow */}
         <div
           data-role="thumb"
           onPointerDown={(e) => {
@@ -136,10 +136,8 @@ export default function ChatScrollRail({ targetRef, contentKey }: Props) {
             top: `${thumbTop}px`,
             height: `${thumbHeight}px`,
           }}
-          className={`absolute left-1/2 -translate-x-1/2 rounded-[3px] border border-white/10 bg-[#0d0d10] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_0_0_1px_rgba(0,0,0,0.6)] transition-[width,box-shadow,border-color] ${
-            dragging
-              ? "w-[8px] border-[#E50914]/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_8px_rgba(229,9,20,0.35)]"
-              : "w-[6px] hover:w-[7px] hover:border-[#E50914]/30"
+          className={`absolute left-1/2 -translate-x-1/2 rounded-[3px] border border-white/15 bg-[#0a0a0d] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_0_1px_rgba(0,0,0,0.7),0_0_10px_rgba(229,9,20,0.35)] transition-[width,box-shadow] ${
+            dragging ? "w-[9px]" : "w-[7px] hover:w-[8px]"
           }`}
         />
       </div>
