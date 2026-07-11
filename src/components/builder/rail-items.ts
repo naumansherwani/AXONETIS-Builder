@@ -3,8 +3,8 @@
  * LEFT rail = project navigation. RIGHT rail = workspace (Files · DB · Agents · Logs · Deploy).
  */
 import {
-  Activity, BookOpen, Boxes, Brain, Code2, Compass, Database, FileCode2, FileText, Files,
-  Folder, GitBranch, History, Layers, LineChart, Rocket, ScrollText,
+  Activity, BookOpen, Boxes, Brain, Code2, Coins, Compass, Database, FileCode2, FileText, Files,
+  Folder, GitBranch, History, Layers, LineChart, Rocket, ScrollText, Shield,
   ShieldCheck, Terminal, Users,
 } from "lucide-react";
 
