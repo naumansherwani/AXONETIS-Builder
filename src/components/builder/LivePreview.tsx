@@ -135,6 +135,17 @@ export default function LivePreview() {
           </button>
 
           <button
+            onClick={() => setVisualEditMode(!visualEditMode)}
+            title={visualEditMode ? "Exit Visual Edit — click any element in preview" : "Enter Visual Edit — pick element to edit"}
+            className={`grid h-7 w-7 place-items-center rounded-md border transition-colors ${
+              visualEditMode
+                ? "border-[#E50914]/50 bg-[#E50914]/[0.15] text-[#ff7480] shadow-[0_0_16px_rgba(229,9,20,0.35)]"
+                : "border-white/[0.08] bg-white/[0.02] text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <MousePointerClick className="h-3.5 w-3.5" />
+          </button>
+          <button
             onClick={() => setReloadKey((k) => k + 1)}
             className="grid h-7 w-7 place-items-center rounded-md border border-white/[0.08] bg-white/[0.02] text-muted-foreground hover:text-foreground"
           >
