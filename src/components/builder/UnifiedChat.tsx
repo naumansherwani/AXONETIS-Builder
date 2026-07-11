@@ -248,7 +248,7 @@ export default function UnifiedChat() {
     setMessages((prev) => [
       ...prev,
       { id: `f-${Date.now()}`, agent: "founder", text: prompt, meta: { createdAt: now } },
-      { id: placeholderId, agent: targetAgent, text: "Thinking…", thinking: true, sourcePrompt: prompt, meta: { createdAt: now } },
+      { id: placeholderId, agent: targetAgent, text: targetAgent === "sherlock" ? "Auditing…" : "Thinking…", thinking: true, sourcePrompt: prompt, meta: { createdAt: now } },
     ]);
     setAttachments([]);
 
