@@ -615,6 +615,7 @@ export default function UnifiedChat() {
         </div>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
 
