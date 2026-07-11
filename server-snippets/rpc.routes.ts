@@ -23,6 +23,22 @@ import { promisify } from "util";
 import { mkdir, rm, writeFile } from "fs/promises";
 import { supabase3 as supabase } from "../integrations/supabase3/client.js";
 
+type CustomDomainRow = {
+  id: string;
+  domain: string;
+  target: string;
+  ssl: string;
+  attached_at: string | null;
+  last_check: string | null;
+};
+
+type RrwebSessionRow = {
+  id: string;
+  started_at: string;
+  last_event_at: string | null;
+  event_count: number | null;
+};
+
 const execFileAsync = promisify(execFile);
 const router = Router();
 
@@ -320,7 +336,7 @@ router.get("/caddy.list", async (req, res) => {
       .order("attached_at", { ascending: false });
     if (error) throw error;
 
-    return res.json((data ?? []).map((d) => ({
+    return res.json(((data ?? []) as CustomDomainRow[]).map((d) => ({
       id: d.id,
       domain: d.domain,
       target: d.target,
@@ -488,7 +504,7 @@ router.get("/rrweb.list", async (req, res) => {
       .limit(100);
     if (error) throw error;
 
-    return res.json((data ?? []).map((s) => ({
+    return res.json(((data ?? []) as RrwebSessionRow[]).map((s) => ({
       id: s.id,
       startedAt: s.started_at,
       durationMs: Math.max(0, new Date(s.last_event_at ?? s.started_at).getTime() - new Date(s.started_at).getTime()),
