@@ -34,6 +34,7 @@ import { generateText } from "ai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createGroq } from "@ai-sdk/groq";
 import { createOllama } from "ollama-ai-provider-v2";
+import { createHash } from "crypto";
 
 // ── Supabase 3 (service role — worker only, NEVER ship to frontend) ──
 const supabase = createClient(
@@ -65,7 +66,12 @@ interface EnqueueArgs {
   agentSlug: AgentSlug;
   projectId: string;
   prompt: string;
+  userId?: string;
 }
+
+type ProjectFileSnapshot = { path: string; content: string | null };
+type PatchOperation = { path: string; action?: "upsert" | "delete"; content?: string };
+const MAX_SHERLOCK_LOOPS = 3;
 
 // ── Public entrypoint ────────────────────────────────────────────────
 export function enqueueAgentReply(args: EnqueueArgs): void {
@@ -81,7 +87,7 @@ export function enqueueAgentReply(args: EnqueueArgs): void {
   });
 }
 
-async function runAgentReply({ threadId, agentSlug, projectId, prompt }: EnqueueArgs): Promise<void> {
+async function runAgentReply({ threadId, agentSlug, projectId, prompt, userId }: EnqueueArgs): Promise<void> {
   const t0 = Date.now();
 
   // 1. Read this agent's routing config from Supabase 3 (source of truth).
@@ -135,6 +141,11 @@ async function runAgentReply({ threadId, agentSlug, projectId, prompt }: Enqueue
   }
   if (!replyText) throw lastErr ?? new Error("All providers failed");
 
+  if (agentSlug === "jimmy") {
+    const looped = await runJimmySherlockLoop({ threadId, projectId, prompt, jimmyReply: replyText, userId, usedModel });
+    replyText = looped.replyText;
+  }
+
   // 5. Insert assistant message — Realtime broadcasts to UnifiedChat.
   const { data: inserted, error: insErr } = await supabase
     .from("agent_thread_messages")
@@ -156,14 +167,129 @@ async function runAgentReply({ threadId, agentSlug, projectId, prompt }: Enqueue
     status: "online",
   });
 
-  // 7. Auto-fire Sherlock audit ONLY when Jimmy just spoke (constitutional rule).
-  if (agentSlug === "jimmy") {
-    void runSherlockAuditAsync({
-      threadId, projectId,
-      jimmyReply: replyText,
-      jimmyMessageId: inserted.id,
-    });
+  void inserted;
+}
+
+async function resolveProjectUuid(projectId: string) {
+  if (/^[0-9a-f-]{36}$/i.test(projectId)) return projectId;
+  const { data } = await supabase.from("projects").select("id").eq("slug", projectId).maybeSingle();
+  return (data?.id as string | undefined) ?? projectId;
+}
+
+async function loadProjectFiles(projectUuid: string): Promise<ProjectFileSnapshot[]> {
+  const { data } = await supabase
+    .from("project_files")
+    .select("path, content")
+    .eq("project_id", projectUuid)
+    .eq("is_deleted", false)
+    .order("updated_at", { ascending: false })
+    .limit(80);
+  return (data ?? []).map((r: any) => ({ path: String(r.path), content: r.content ?? null })).filter((r) => r.path);
+}
+
+function compactFiles(files: ProjectFileSnapshot[]) {
+  return files.slice(0, 40).map((f) => `--- FILE: ${f.path}\n${(f.content ?? "").slice(0, 6000)}`).join("\n\n");
+}
+
+function parsePatch(text: string): PatchOperation[] {
+  const match = text.match(/```axonetis-patch\s*([\s\S]*?)```/i);
+  if (!match) return [];
+  try {
+    const arr = JSON.parse(match[1].trim());
+    if (!Array.isArray(arr)) return [];
+    return arr.map((x) => ({
+      path: String(x.path ?? "").trim().replace(/^\/+/, ""),
+      action: x.action === "delete" ? "delete" : "upsert",
+      content: typeof x.content === "string" ? x.content : undefined,
+    })).filter((x) => x.path && !x.path.includes("..") && !x.path.startsWith("."));
+  } catch { return []; }
+}
+
+function stripPatch(text: string) {
+  return text.replace(/```axonetis-patch\s*[\s\S]*?```/gi, "").trim();
+}
+
+async function applyPatch(projectUuid: string, ops: PatchOperation[], iteration: number, userId?: string) {
+  const applied: string[] = [];
+  for (const op of ops.slice(0, 12)) {
+    if (op.action === "delete") {
+      const { error } = await supabase.from("project_files").update({ is_deleted: true, updated_by: userId ?? null }).eq("project_id", projectUuid).eq("path", op.path);
+      if (error) throw error;
+      applied.push(`deleted ${op.path}`);
+      continue;
+    }
+    const content = op.content ?? "";
+    const { error } = await supabase.from("project_files").upsert({
+      project_id: projectUuid,
+      path: op.path,
+      content,
+      size_bytes: Buffer.byteLength(content, "utf8"),
+      checksum: createHash("sha256").update(content).digest("hex"),
+      is_deleted: false,
+      updated_by: userId ?? null,
+      version: iteration,
+    }, { onConflict: "project_id,path" });
+    if (error) throw error;
+    applied.push(`wrote ${op.path}`);
   }
+  return applied;
+}
+
+async function generateAgentText(agentSlug: AgentSlug, system: string, prompt: string) {
+  const { data: reg } = await supabase.from("agent_registry").select("routing_config, model_primary, model_fallback").eq("slug", agentSlug).single();
+  const attempts = buildAttempts((reg?.routing_config ?? {}) as RoutingConfig, reg?.model_primary, reg?.model_fallback);
+  for (const attempt of attempts) {
+    try {
+      const out = await generateText({ model: attempt.model, system, messages: [{ role: "user", content: prompt }] });
+      return { text: out.text, model: attempt.label, tokensIn: out.usage?.inputTokens ?? 0, tokensOut: out.usage?.outputTokens ?? 0 };
+    } catch (err) { console.warn(`[agent-loop] ${attempt.label} failed:`, err); }
+  }
+  return null;
+}
+
+async function runJimmySherlockLoop(args: { threadId: string; projectId: string; prompt: string; jimmyReply: string; userId?: string; usedModel: string }) {
+  const projectUuid = await resolveProjectUuid(args.projectId);
+  let files = await loadProjectFiles(projectUuid);
+  let jimmyReply = args.jimmyReply;
+  let audit = "";
+  const appliedAll: string[] = [];
+
+  for (let i = 1; i <= MAX_SHERLOCK_LOOPS; i += 1) {
+    const ops = parsePatch(jimmyReply);
+    if (ops.length === 0 || i > 1) {
+      const prompt = [
+        "You are JimmyBuild. Produce real project file changes. Return summary plus ```axonetis-patch JSON array``` with full file content.",
+        audit ? `Fix Sherlock audit:\n${audit}` : "",
+        `Founder request:\n${args.prompt}`,
+        compactFiles(files),
+      ].filter(Boolean).join("\n\n");
+      const next = await generateAgentText("jimmy", "You write production code patches only.", prompt);
+      if (next?.text) jimmyReply = next.text;
+    }
+
+    const applied = await applyPatch(projectUuid, parsePatch(jimmyReply), i, args.userId);
+    appliedAll.push(...applied.map((x) => `loop ${i}: ${x}`));
+    files = await loadProjectFiles(projectUuid);
+
+    const auditPrompt = [
+      "Return APPROVED or CHANGES_REQUIRED. Audit real project_files changes, no dummy features, no duplicate files, security/syntax sane.",
+      `Founder request:\n${args.prompt}`,
+      `Jimmy reply:\n${jimmyReply}`,
+      compactFiles(files),
+    ].join("\n\n");
+    const verdict = await generateAgentText("sherlock", "You are SherlockReview. Be strict and concise.", auditPrompt);
+    audit = verdict?.text ?? "CHANGES_REQUIRED — audit unavailable";
+    await supabase.from("agent_thread_messages").insert({ thread_id: args.threadId, role: "agent", agent_slug: "sherlock", parts: [{ type: "text", text: `Loop ${i}/3 — ${audit}` }], model: verdict?.model ?? "unknown" });
+    if (/^\s*APPROVED\b/i.test(audit)) break;
+  }
+
+  return {
+    replyText: [
+      stripPatch(jimmyReply) || "Jimmy ne project_files update kar diye.",
+      appliedAll.length ? `\nApplied files:\n${appliedAll.map((x) => `- ${x}`).join("\n")}` : "\nNo patch applied.",
+      audit ? `\nSherlock final:\n${audit}` : "",
+    ].join("\n").trim(),
+  };
 }
 
 // ── Sherlock auto-audit (Phase A.1 minimal: text verdict, no diff) ──
