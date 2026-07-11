@@ -306,17 +306,18 @@ log "1) Latest builder repo pull"
 cd "$BUILDER_DIR"
 git pull --ff-only || warn "git pull failed/dirty tree — continuing with current files"
 
-log "2) DB migrations apply on Supabase 3 / AXONETIS DB"
+log "2) DB migrations apply on AXONETIS self-hosted DB"
 DB_URL="${SUPABASE3_DB_URL:-${AXONETIS_DB_URL:-}}"
 if [ -z "$DB_URL" ]; then DB_URL="$(detect_db_url || true)"; fi
-[ -n "$DB_URL" ] || die "DB URL auto-detect failed. Export AXONETIS_DB_URL or SUPABASE3_DB_URL once, then rerun same command. Script will not print secrets."
+[ -n "$DB_URL" ] || die "DB URL auto-detect failed. Export AXONETIS_DB_URL with the real self-hosted Postgres URL, then rerun. Script will not print secrets."
+validate_db_url "$DB_URL"
 ok "DB URL detected (hidden)"
-psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$BUILDER_DIR/hetzner-migrations/20260711000001_phase_393_394_publish_power_tools.sql"
-psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$BUILDER_DIR/hetzner-migrations/20260711000002_phase_396_397_marketplace_router.sql"
+run_psql "$BUILDER_DIR/hetzner-migrations/20260711000001_phase_393_394_publish_power_tools.sql" file
+run_psql "$BUILDER_DIR/hetzner-migrations/20260711000002_phase_396_397_marketplace_router.sql" file
 
 log "3) DB verify"
-psql "$DB_URL" -v ON_ERROR_STOP=1 -c "select count(*) as marketplace_agents from public.marketplace_agents;"
-psql "$DB_URL" -v ON_ERROR_STOP=1 -c "select column_name from information_schema.columns where table_schema='public' and table_name='agent_thread_messages' and column_name in ('cost_usd','saved_vs_default_usd','default_model') order by column_name;"
+run_psql "select count(*) as marketplace_agents from public.marketplace_agents;" command
+run_psql "select column_name from information_schema.columns where table_schema='public' and table_name='agent_thread_messages' and column_name in ('cost_usd','saved_vs_default_usd','default_model') order by column_name;" command
 
 log "4) Wire /rpc routes in engine — NO duplicate router"
 if [ ! -f "$RPC_FILE" ]; then
