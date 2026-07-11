@@ -497,6 +497,15 @@ function streamBrainToClient(job: BrainJob) {
                 if (!data || data === "[DONE]") continue;
                 let payload: unknown = data;
                 try { payload = JSON.parse(data); } catch { /* plain token */ }
+                const payloadModel = extractModel(payload);
+                const payloadUsage = extractUsage(payload);
+                if (payloadModel || payloadUsage.tokensIn || payloadUsage.tokensOut) {
+                  meta = {
+                    model: payloadModel ?? meta?.model,
+                    tokensIn: payloadUsage.tokensIn ?? meta?.tokensIn,
+                    tokensOut: payloadUsage.tokensOut ?? meta?.tokensOut,
+                  };
+                }
                 const delta = extractDelta(payload);
                 if (delta) {
                   if (hasProviderKeyFailure(delta)) {
