@@ -228,6 +228,35 @@ export default function UnifiedChat() {
     return unsub;
   }, [ingestAgentRow, threadId]);
 
+  // Auto-Sherlock audit — founder-only. Har Jimmy reply ke baad Sherlock ko
+  // background mein audit prompt bhejta hai. Sherlock ki reply usi thread
+  // pe realtime se aa jayegi (subscribeThread ingest kar lega).
+  useEffect(() => {
+    if (!threadId) return;
+    for (const m of messages) {
+      if (m.agent !== "jimmy") continue;
+      if (m.thinking) continue;
+      if (!m.text || m.text.length < 8) continue;
+      if (m.id.startsWith("j-") || m.id.startsWith("placeholder")) continue;
+      if (auditedMessageIdsRef.current.has(m.id)) continue;
+      auditedMessageIdsRef.current.add(m.id);
+      const jimmyText = m.text.slice(0, 4_000);
+      const sourcePrompt = (m.sourcePrompt ?? "").slice(0, 2_000);
+      const auditPrompt = [
+        "SHERLOCK AUTO-AUDIT (founder-only, background)",
+        "Founder prompt:",
+        sourcePrompt || "(unknown)",
+        "",
+        "Jimmy's reply:",
+        jimmyText,
+        "",
+        "Task: 1) Verdict (PASS / WARN / FAIL). 2) Bullet issues (security, correctness, hallucination, missing steps). 3) One concrete next action. Keep under 120 words. No preamble.",
+      ].join("\n");
+      void chatWithAgent("sherlock", { projectId: project, threadId, prompt: auditPrompt, streamId: `audit-${m.id}` })
+        .catch((err) => console.warn("[UnifiedChat] auto-audit failed:", err));
+    }
+  }, [messages, project, threadId]);
+
   const charCount = draft.length;
   const overLimit = charCount > MAX_CHARS;
   const busy = status === "submitted" || status === "streaming";
