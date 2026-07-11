@@ -136,22 +136,61 @@ try {
 } catch {}
 
 const exact = [
-  "SUPABASE3_DB_URL", "AXONETIS_DB_URL", "AXONETIS_SUPABASE_DB_URL", "BUILDER_DB_URL",
-  "SUPABASE_DB_URL", "POSTGRES_URL", "POSTGRESQL_URL", "DATABASE_URL", "DIRECT_URL"
+  "AXONETIS_DB_URL", "BUILDER_DB_URL", "AXONETIS_POSTGRES_URL", "AXONETIS_DATABASE_URL",
+  "HOSTFLOW_DB_URL", "HOSTFLOW_POSTGRES_URL", "LOCAL_DB_URL", "POSTGRES_URL", "POSTGRESQL_URL", "DATABASE_URL", "DIRECT_URL",
+  "SUPABASE3_DB_URL", "SUPABASE_DB_URL"
 ];
 
 function isPg(v) { return typeof v === "string" && /^postgres(ql)?:\/\//i.test(v); }
-
-for (const env of envs) {
-  for (const key of exact) if (isPg(env[key])) { process.stdout.write(env[key]); process.exit(0); }
+function usable(v) {
+  if (!isPg(v)) return false;
+  if (v.includes("...")) return false;
+  if (/placeholder/i.test(v)) return false;
+  // This builder is locked to founder self-hosted DB on Hetzner. Do not auto-pick old cloud pooler URLs.
+  if (/\.supabase\.co/i.test(v)) return false;
+  return true;
 }
 
 for (const env of envs) {
-  const entries = Object.entries(env).filter(([k, v]) => isPg(v) && /(?:SUPABASE|AXONETIS|BUILDER|POSTGRES|DATABASE|DB).*URL/i.test(k));
-  const preferred = entries.find(([k]) => /3|AXONETIS|BUILDER/i.test(k)) || entries[0];
+  for (const key of exact) if (usable(env[key])) { process.stdout.write(env[key]); process.exit(0); }
+}
+
+for (const env of envs) {
+  const entries = Object.entries(env).filter(([k, v]) => usable(v) && /(?:AXONETIS|BUILDER|HOSTFLOW|LOCAL|POSTGRES|DATABASE|DB).*URL/i.test(k));
+  const preferred = entries.find(([k]) => /AXONETIS|BUILDER|HOSTFLOW|LOCAL/i.test(k)) || entries[0];
   if (preferred) { process.stdout.write(preferred[1]); process.exit(0); }
 }
 NODE
+}
+
+validate_db_url() {
+  local value="$1"
+  [ -n "$value" ] || return 1
+  case "$value" in
+    *...*|*placeholder*) die "AXONETIS_DB_URL placeholder hai. Actual self-hosted Postgres URL paste karo, 'postgresql://...' nahi." ;;
+    *supabase.co*) die "Old cloud DB URL detect hua (*.supabase.co). AXONETIS self-hosted Hetzner Postgres URL do: AXONETIS_DB_URL='postgresql://USER:PASS@HOST:5432/DB'" ;;
+  esac
+  return 0
+}
+
+run_psql() {
+  local sql_arg="$1" mode="$2"
+  set +e
+  if [ "$mode" = "file" ]; then
+    PSQL_OUT="$(psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$sql_arg" 2>&1)"
+  else
+    PSQL_OUT="$(psql "$DB_URL" -v ON_ERROR_STOP=1 -c "$sql_arg" 2>&1)"
+  fi
+  local code=$?
+  set -e
+  if [ "$code" -ne 0 ]; then
+    printf '%s\n' "$PSQL_OUT" >&2
+    if printf '%s' "$PSQL_OUT" | grep -qi "could not translate host name\|Name or service not known"; then
+      die "DB host resolve nahi ho raha. Yeh script server edit nahi karegi jab tak real Hetzner DB URL na ho. Run: AXONETIS_DB_URL='postgresql://USER:PASS@127.0.0.1:5432/DB' bash server-snippets/hetzner-wire-phases-393-397.sh"
+    fi
+    die "psql failed during DB migration/verify. Output above."
+  fi
+  printf '%s\n' "$PSQL_OUT"
 }
 
 find_server_entry() {
