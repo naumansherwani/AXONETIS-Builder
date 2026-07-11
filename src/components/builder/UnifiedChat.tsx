@@ -820,9 +820,11 @@ export default function UnifiedChat() {
               {queue.length > 0 && (
                 <span className="rounded-md border border-white/[0.06] px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">Queue {queue.length}</span>
               )}
-              <PromptInputSubmit status={status} disabled={!draft.trim() || overLimit} onStop={stop}>
-                {status === "ready" ? <Send className="h-3.5 w-3.5" /> : undefined}
-              </PromptInputSubmit>
+              <span className={`relative inline-flex ${busy ? "fb-submit-shimmer" : ""}`}>
+                <PromptInputSubmit status={status} disabled={!draft.trim() || overLimit} onStop={stop}>
+                  {status === "ready" ? <Send className="h-3.5 w-3.5" /> : undefined}
+                </PromptInputSubmit>
+              </span>
             </div>
           </PromptInputFooter>
         </PromptInput>
