@@ -205,6 +205,10 @@ export default function UnifiedChat() {
           }
           return next;
         });
+        streamIdRef.current = null;
+        setStatus("ready");
+        setComposerNotice("");
+        textareaRef.current?.focus();
       },
       onError: (err) => console.warn("[UnifiedChat] thread stream error:", err),
     });
