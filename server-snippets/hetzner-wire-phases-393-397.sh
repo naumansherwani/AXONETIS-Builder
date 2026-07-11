@@ -144,6 +144,7 @@ const exact = [
 function isPg(v) { return typeof v === "string" && /^postgres(ql)?:\/\//i.test(v); }
 function usable(v) {
   if (!isPg(v)) return false;
+  if (/REAL_USER|REAL_PASSWORD|REAL_DB|USER:PASS|YOUR_REAL_PASSWORD|YOUR_PASSWORD/i.test(v)) return false;
   if (v.includes("...")) return false;
   if (/placeholder/i.test(v)) return false;
   // This builder is locked to founder self-hosted DB on Hetzner. Do not auto-pick old cloud pooler URLs.
@@ -153,7 +154,7 @@ function usable(v) {
 
 function buildFromParts(env) {
   const password = env.AXONETIS_DB_PASSWORD || env.POSTGRES_PASSWORD || env.POSTGRESQL_PASSWORD || env.DB_PASSWORD;
-  if (!password || password.includes("...") || /placeholder/i.test(password)) return "";
+  if (!password || password.includes("...") || /placeholder|REAL_PASSWORD|YOUR_REAL_PASSWORD|YOUR_PASSWORD/i.test(password)) return "";
   const user = env.AXONETIS_DB_USER || env.POSTGRES_USER || env.POSTGRESQL_USER || env.DB_USER || "postgres";
   const db = env.AXONETIS_DB_NAME || env.POSTGRES_DB || env.POSTGRESQL_DATABASE || env.DB_NAME || "postgres";
   const host = env.AXONETIS_DB_HOST || env.POSTGRES_HOST || env.POSTGRESQL_HOST || env.DB_HOST || "127.0.0.1";
@@ -182,6 +183,7 @@ validate_db_url() {
   local value="$1"
   [ -n "$value" ] || return 1
   case "$value" in
+    *REAL_USER*|*REAL_PASSWORD*|*REAL_DB*|*USER:PASS*|*YOUR_REAL_PASSWORD*|*YOUR_PASSWORD*) die "AXONETIS_DB_URL example placeholder hai. REAL_USER/REAL_PASSWORD/REAL_DB ko apne actual Postgres user/password/db se replace karo." ;;
     *...*|*placeholder*) die "AXONETIS_DB_URL placeholder hai. Actual self-hosted Postgres URL paste karo, 'postgresql://...' nahi." ;;
     *supabase.co*) die "Old cloud DB URL detect hua (*.supabase.co). AXONETIS self-hosted Hetzner Postgres URL do: AXONETIS_DB_URL='postgresql://USER:PASS@HOST:5432/DB'" ;;
     local-peer:*) return 0 ;;
@@ -194,6 +196,7 @@ db_url_problem() {
   local value="$1"
   [ -n "$value" ] || { printf 'empty'; return 0; }
   case "$value" in
+    *REAL_USER*|*REAL_PASSWORD*|*REAL_DB*|*USER:PASS*|*YOUR_REAL_PASSWORD*|*YOUR_PASSWORD*) printf "example placeholder value, real DB credentials required" ;;
     *...*|*placeholder*) printf "placeholder value ('postgresql://...' real URL nahi hota)" ;;
     *supabase.co*) printf "old cloud URL (*.supabase.co), self-hosted Hetzner DB URL chahiye" ;;
     local-peer:*) ;;
@@ -225,13 +228,23 @@ detect_local_peer_db() {
 select_db_url() {
   local key value reason
 
-  # Founder-provided AXONETIS_* override always wins. This fixes old PM2 SUPABASE3_DB_URL shadowing.
+  # Founder-provided AXONETIS_* override always wins. Invalid legacy envs are ignored instead of blocking local peer fallback.
   for key in AXONETIS_DB_URL BUILDER_DB_URL AXONETIS_POSTGRES_URL AXONETIS_DATABASE_URL HOSTFLOW_DB_URL HOSTFLOW_POSTGRES_URL LOCAL_DB_URL POSTGRES_URL POSTGRESQL_URL DATABASE_URL DIRECT_URL; do
     value="${!key:-}"
     [ -n "$value" ] || continue
-    validate_db_url "$value"
-    printf '%s' "$value"
-    return 0
+    reason="$(db_url_problem "$value")"
+    if [ -z "$reason" ]; then
+      printf '%s' "$value"
+      return 0
+    fi
+    case "$key" in
+      AXONETIS_DB_URL|BUILDER_DB_URL|AXONETIS_POSTGRES_URL|AXONETIS_DATABASE_URL)
+        die "$key invalid hai: $reason. Isko actual self-hosted Postgres URL banao, e.g. postgresql://postgres:REAL_PASSWORD@127.0.0.1:5432/postgres"
+        ;;
+      *)
+        warn "Ignoring $key: $reason"
+        ;;
+    esac
   done
 
   # Legacy names are accepted only if they are not the old cloud URL/placeholder.
