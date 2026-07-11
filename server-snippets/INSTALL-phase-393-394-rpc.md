@@ -10,10 +10,17 @@ cd /var/www/axonetis && git pull && bash server-snippets/hetzner-wire-phases-393
 
 Yeh 3.9.3 se 3.9.7 tak saari pending server wiring ek saath karega: DB migrations, `/rpc/*`, Visual Edit bridge, Stop abort verify, build/restart, smoke tests.
 
-Script self-hosted DB URL khud PM2/env files se detect karega. Old cloud `*.supabase.co` URL intentionally reject hota hai. Agar phir bhi na mile:
+Script self-hosted DB khud detect karega. Agar purana `SUPABASE3_DB_URL=db.*.supabase.co` env mein ho, script usko ignore karega. Agar local Postgres peer access available ho to password ke bina migration chal jayegi. Agar phir bhi DB na mile, **real URL** do — `postgresql://...` placeholder mat dena:
 
 ```bash
 AXONETIS_DB_URL='postgresql://USER:PASS@127.0.0.1:5432/DB' bash server-snippets/hetzner-wire-phases-393-397.sh
+```
+
+Password alag env mein hai to yeh bhi chalega:
+
+```bash
+AXONETIS_DB_NAME='postgres' AXONETIS_DB_USER='postgres' AXONETIS_DB_PASSWORD='YOUR_REAL_PASSWORD' \
+  bash server-snippets/hetzner-wire-phases-393-397.sh
 ```
 
 ## 1) DB migration
@@ -22,7 +29,8 @@ AXONETIS_DB_URL='postgresql://USER:PASS@127.0.0.1:5432/DB' bash server-snippets/
 cd /var/www/axonetis
 nano hetzner-migrations/20260711000001_phase_393_394_publish_power_tools.sql
 # Lovable repo se same file ka full content paste karo
-psql "$AXONETIS_DB_URL" -f hetzner-migrations/20260711000001_phase_393_394_publish_power_tools.sql
+AXONETIS_DB_URL='postgresql://USER:PASS@127.0.0.1:5432/DB' \
+  psql "$AXONETIS_DB_URL" -f hetzner-migrations/20260711000001_phase_393_394_publish_power_tools.sql
 ```
 
 ## 2) RPC router paste
