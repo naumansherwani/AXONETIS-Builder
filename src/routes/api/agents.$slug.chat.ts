@@ -97,15 +97,21 @@ async function runBrainAndInsert({ supabase, slug, prompt, threadId, userMessage
     assistantText = `⚠️ Brain unreachable: ${rustError}`;
   }
 
-  const { error: aErr } = await supabase
+  const baseRow = {
+    thread_id: threadId,
+    role: "agent" as const,
+    agent_slug: slug,
+    parts: [{ type: "text", text: assistantText }],
+  };
+  let { error: aErr } = await supabase
     .from("agent_thread_messages")
-    .insert({
-      thread_id: threadId,
-      role: "agent",
-      agent_slug: slug,
-      parent_message_id: userMessageId,
-      parts: [{ type: "text", text: assistantText }],
-    });
+    .insert({ ...baseRow, parent_message_id: userMessageId });
+
+  if (aErr && /parent_message_id/.test(aErr.message)) {
+    // Server DB hasn't been migrated with parent_message_id yet — retry without it.
+    const retry = await supabase.from("agent_thread_messages").insert(baseRow);
+    aErr = retry.error;
+  }
 
   if (aErr) {
     console.warn("[agents.chat] Assistant message insert failed:", aErr.message);
