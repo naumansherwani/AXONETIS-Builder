@@ -35,6 +35,7 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createGroq } from "@ai-sdk/groq";
 import { createOllama } from "ollama-ai-provider-v2";
 import { createHash } from "crypto";
+import { registerRun, releaseRun, isCancelled } from "./agents.cancel.js";
 
 // ── Supabase 3 (service role — worker only, NEVER ship to frontend) ──
 const supabase = createClient(
@@ -87,8 +88,11 @@ export function enqueueAgentReply(args: EnqueueArgs): void {
   });
 }
 
-async function runAgentReply({ threadId, agentSlug, projectId, prompt, userId }: EnqueueArgs): Promise<void> {
+async function runAgentReply({ threadId, messageId, agentSlug, projectId, prompt, userId }: EnqueueArgs): Promise<void> {
   const t0 = Date.now();
+  const controller = registerRun(messageId);
+  const abortSignal = controller.signal;
+  try {
 
   // 1. Read this agent's routing config from Supabase 3 (source of truth).
   const { data: reg, error: regErr } = await supabase
