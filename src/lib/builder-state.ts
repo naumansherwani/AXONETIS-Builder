@@ -41,6 +41,14 @@ export type BottomTabId =
 
 export type PreviewMode = "single" | "triptych";
 
+export interface VisualEditPick {
+  selector: string;
+  tag: string;
+  text?: string;
+  path?: string;
+  at: number;
+}
+
 export interface BuilderState {
   project: ProjectId;
   branch: Branch;
@@ -53,6 +61,8 @@ export interface BuilderState {
   lastBridgeEvent: PreviewBridgeEvent | null;
   previewEnv: PreviewEnv;
   lastPreviewChange: PreviewFileChange | null;
+  visualEditMode: boolean;
+  lastVisualEditPick: VisualEditPick | null;
   setPreviewEnv: (e: PreviewEnv) => void;
   setLastPreviewChange: (c: PreviewFileChange | null) => void;
   setProject: (p: ProjectId) => void;
@@ -64,6 +74,8 @@ export interface BuilderState {
   setAgentState: (s: AgentState) => void;
   setBridgeStatus: (s: BridgeStatus) => void;
   setLastBridgeEvent: (e: PreviewBridgeEvent | null) => void;
+  setVisualEditMode: (v: boolean) => void;
+  setLastVisualEditPick: (p: VisualEditPick | null) => void;
 }
 
 
