@@ -5,7 +5,7 @@
 //   listens: visual:edit:toggle
 //   emits:   visual:edit:pick
 // Sources emitted by hostname:
-//   hostflow-preview | rapidpay-preview | axonetis-preview
+//   hostflow-preview | anexvotaipay-preview | axonetis-preview
 // ============================================================
 (function axonetisPreviewVisualBridge() {
   if (window.__AXONETIS_VISUAL_EDIT_BRIDGE__) return;
@@ -18,7 +18,7 @@
 
   function sourceName() {
     var host = location.hostname.toLowerCase();
-    if (host.includes("rapidpay") || host.includes("anexvot")) return "rapidpay-preview";
+    if (host.includes("anexvot") || host.includes("rapidpay")) return "anexvotaipay-preview";
     if (host.includes("builder") || host.includes("axon") || host.includes("aiaxonetis")) return "axonetis-preview";
     return "hostflow-preview";
   }

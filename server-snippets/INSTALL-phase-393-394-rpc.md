@@ -8,7 +8,13 @@ Founder, yeh woh missing server-side copy-paste hai. Frontend already wired hai;
 cd /var/www/axonetis && git pull && bash server-snippets/hetzner-wire-phases-393-397.sh
 ```
 
-Yeh 3.9.3 se 3.9.7 tak saari pending server wiring ek saath karega: migrations, `/rpc/*`, Visual Edit bridge, Stop abort verify, build/restart, smoke tests.
+Yeh 3.9.3 se 3.9.7 tak saari pending server wiring ek saath karega: DB migrations, `/rpc/*`, Visual Edit bridge, Stop abort verify, build/restart, smoke tests.
+
+Script DB URL khud PM2/env files se detect karega. Agar phir bhi na mile:
+
+```bash
+AXONETIS_DB_URL='postgresql://...' bash server-snippets/hetzner-wire-phases-393-397.sh
+```
 
 ## 1) DB migration
 
@@ -43,7 +49,7 @@ Har preview app mein once paste/import:
 # HostFlow preview repo
 nano public/axonetis-preview-bridge.js
 
-# RapidPay preview repo
+# ANEXVOT AI Pay preview repo
 nano public/axonetis-preview-bridge.js
 
 # AXONETIS preview repo
@@ -58,7 +64,7 @@ Lovable repo: `server-snippets/preview-visual-edit-bridge.js` ka full content pa
 
 It listens to `visual:edit:toggle` and emits `visual:edit:pick` with one of:
 - `hostflow-preview`
-- `rapidpay-preview`
+- `anexvotaipay-preview`
 - `axonetis-preview`
 
 ## 4) Build + restart
