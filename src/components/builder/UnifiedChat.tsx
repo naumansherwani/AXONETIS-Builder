@@ -885,8 +885,20 @@ export default function UnifiedChat() {
             ))}
           </div>
         )}
-        <div className="mt-2 flex items-center justify-between px-1 text-[10px] uppercase tracking-widest text-muted-foreground/45">
+        <div className="mt-2 flex items-center justify-between gap-2 px-1 text-[10px] uppercase tracking-widest text-muted-foreground/45">
           <span className="font-mono">Phase 3.9 · {busy ? (messages.slice().reverse().find((m) => m.thinking)?.agent === "sherlock" ? "auditing" : "streaming") : "ready"}</span>
+          {routerPreview && !busy && (
+            <span
+              className="hidden items-center gap-1.5 rounded-md border border-emerald-400/25 bg-emerald-400/[0.06] px-1.5 py-0.5 font-mono text-emerald-300/90 sm:inline-flex"
+              title={`${routerPreview.reason} · default ${shortModelTag(routerPreview.default_model) ?? "—"}`}
+            >
+              <Zap className="h-2.5 w-2.5" />
+              <span>→ {shortModelTag(routerPreview.model) ?? routerPreview.model}</span>
+              {routerPreview.est_saved_usd > 0 && (
+                <span className="text-emerald-200/90">save {formatUsd(routerPreview.est_saved_usd)}</span>
+              )}
+            </span>
+          )}
           <span className={`font-mono ${overLimit ? "text-red-400" : charCount > MAX_CHARS * 0.9 ? "text-amber-400" : "text-muted-foreground/50"}`}>
             {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()}
           </span>
