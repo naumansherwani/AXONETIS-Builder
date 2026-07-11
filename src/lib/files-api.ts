@@ -37,6 +37,29 @@ export async function fetchProjectFiles(projectId: ProjectId): Promise<ProjectFi
   return (data ?? []) as ProjectFileRow[];
 }
 
+/** Fetch a single file's content from Supabase 3 project_files. */
+export async function fetchFileContent(
+  projectId: ProjectId,
+  path: string,
+): Promise<{ content: string | null; updated_at: string | null; size: number | null }> {
+  if (!SUPABASE3_READY) return { content: null, updated_at: null, size: null };
+  const { data, error } = await supabase3
+    .from("project_files")
+    .select("content, size_bytes, updated_at")
+    .eq("project_id", projectId)
+    .eq("path", path)
+    .maybeSingle();
+  if (error) {
+    console.warn("[files-api] content fetch failed:", error.message);
+    return { content: null, updated_at: null, size: null };
+  }
+  return {
+    content: (data?.content as string | null) ?? null,
+    updated_at: (data?.updated_at as string | null) ?? null,
+    size: (data?.size_bytes as number | null) ?? null,
+  };
+}
+
 /** Turn a flat list of paths into a nested tree. */
 export function buildTree(rows: ProjectFileRow[]): FileTreeNode[] {
   const root: FileTreeNode[] = [];
