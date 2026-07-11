@@ -21,6 +21,8 @@ import ActivityFeedPanel from "./panels/ActivityFeedPanel";
 import MemoryPanel from "./panels/MemoryPanel";
 import DualBrainPanel from "./panels/DualBrainPanel";
 import CommandCenterPanel from "./panels/CommandCenterPanel";
+import CostsPanel from "./panels/CostsPanel";
+import SecurityPanel from "./panels/SecurityPanel";
 import GenericPanel from "./panels/GenericPanel";
 
 export default function SidePanelDrawer({ side }: { side: "left" | "right" }) {
@@ -87,6 +89,8 @@ function renderPanel(
     case "memory":    return <MemoryPanel />;
     case "dualbrain": return <DualBrainPanel />;
     case "command":   return <CommandCenterPanel />;
+    case "costs":     return <CostsPanel />;
+    case "security":  return <SecurityPanel />;
     case "terminal":  return <TerminalRailPanel />;
     default:
       return <GenericPanel icon={Icon as never} title={label} hint={hint} />;
