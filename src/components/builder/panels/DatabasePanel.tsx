@@ -47,6 +47,14 @@ export default function DatabasePanel() {
     setRunning(false);
   };
 
+  const doValidate = async () => {
+    if (!sql.trim() || validating) return;
+    setValidating(true);
+    const v = await validateSql(sql, project);
+    setValidation(v);
+    setValidating(false);
+  };
+
   return (
     <div>
       <PanelSection title="Connection">
