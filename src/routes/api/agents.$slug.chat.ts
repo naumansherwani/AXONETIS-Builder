@@ -957,7 +957,6 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
           userMessageId: userMsg.id as string,
           userId,
           brainURL,
-          signal: request.signal,
         });
         job.catch((err) => console.warn("[agents.chat] Brain job failed:", err));
 
