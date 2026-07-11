@@ -98,6 +98,8 @@ export default function UnifiedChat() {
   const [composerNotice, setComposerNotice] = useState("");
   const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(true);
+  const [recording, setRecording] = useState(false);
+  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
 
   const messagesRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
@@ -109,6 +111,7 @@ export default function UnifiedChat() {
   const voiceChunksRef = useRef<Blob[]>([]);
   const pendingPlaceholderRef = useRef<string | null>(null);
   const seenMessageIdsRef = useRef<Set<string>>(new Set());
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   // --- Scroll helpers ---
   const updateScrollEdges = useCallback(() => {
