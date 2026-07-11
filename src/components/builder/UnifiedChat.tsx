@@ -112,6 +112,7 @@ export default function UnifiedChat() {
   const voiceChunksRef = useRef<Blob[]>([]);
   const pendingPlaceholderRef = useRef<string | null>(null);
   const pendingUserMessageIdRef = useRef<string | null>(null);
+  const ignoredParentMessageIdsRef = useRef<Set<string>>(new Set());
   const seenMessageIdsRef = useRef<Set<string>>(new Set());
   const audioContextRef = useRef<AudioContext | null>(null);
 
@@ -178,6 +179,7 @@ export default function UnifiedChat() {
     if (seenMessageIdsRef.current.has(row.id)) return;
     seenMessageIdsRef.current.add(row.id);
     if (row.role !== "agent") return;
+    if (row.parent_message_id && ignoredParentMessageIdsRef.current.has(row.parent_message_id)) return;
     if (pendingUserMessageIdRef.current && row.parent_message_id !== pendingUserMessageIdRef.current) return;
     const slug = (row.agent_slug ?? "jimmy") as AgentSlug;
     if (!UNIFIED_CHAT_SLUGS.has(slug)) return;
@@ -302,6 +304,7 @@ export default function UnifiedChat() {
       .catch((err) => {
         if (ctrl.signal.aborted) {
           setMessages((prev) => prev.map((m) => (m.id === placeholderId ? { ...m, text: "Stopped by founder.", thinking: false } : m)));
+          if (pendingUserMessageIdRef.current) ignoredParentMessageIdsRef.current.add(pendingUserMessageIdRef.current);
           pendingUserMessageIdRef.current = null;
           return;
         }
@@ -348,6 +351,7 @@ export default function UnifiedChat() {
     abortRef.current?.abort();
     const streamId = streamIdRef.current;
     if (streamId) void cancelAgentStream(streamId).catch(() => undefined);
+    if (pendingUserMessageIdRef.current) ignoredParentMessageIdsRef.current.add(pendingUserMessageIdRef.current);
     pendingPlaceholderRef.current = null;
     pendingUserMessageIdRef.current = null;
     setStatus("ready");
