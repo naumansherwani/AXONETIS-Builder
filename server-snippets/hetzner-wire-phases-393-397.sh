@@ -298,18 +298,13 @@ select_db_url() {
 ensure_supabase3_client() {
   local root="$1" route_dir="$2" target=""
   if grep -q 'integrations/supabase3/client' "$route_dir/rpc.routes.ts" 2>/dev/null; then
-    local try_paths=(
-      "$root/server/integrations/supabase3/client.ts"
-      "$root/src/integrations/supabase3/client.ts"
-      "$root/integrations/supabase3/client.ts"
-    )
-    for p in "${try_paths[@]}"; do [ -f "$p" ] && return 0; done
     case "$route_dir" in
       */server/routes) target="${route_dir%/routes}/integrations/supabase3/client.ts" ;;
       */src/routes) target="${route_dir%/routes}/integrations/supabase3/client.ts" ;;
       */routes) target="$root/integrations/supabase3/client.ts" ;;
       *) target="$root/server/integrations/supabase3/client.ts" ;;
     esac
+    [ -f "$target" ] && { ok "Supabase3 client already present at $target"; return 0; }
     mkdir -p "$(dirname "$target")"
     cat > "$target" <<'TS'
 import { createClient } from "@supabase/supabase-js";
@@ -489,8 +484,9 @@ node --input-type=module - "$RPC_FILE" <<'NODE'
 import fs from "node:fs";
 const file = process.argv[2];
 let src = fs.readFileSync(file, "utf8");
+src = src.replace(/from\s+["']\.\/rpc-phase-396-397\.additions(?:\.ts|\.js)?["']/g, 'from "./rpc-phase-396-397.additions.js"');
 if (!src.includes('rpc-phase-396-397.additions')) {
-  const importLine = 'import { registerRouterAndMarketplaceRoutes } from "./rpc-phase-396-397.additions";\n';
+  const importLine = 'import { registerRouterAndMarketplaceRoutes } from "./rpc-phase-396-397.additions.js";\n';
   const imports = [...src.matchAll(/^import .*$/gm)];
   if (imports.length) {
     const last = imports.at(-1);
