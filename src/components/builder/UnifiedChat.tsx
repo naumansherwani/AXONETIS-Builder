@@ -588,8 +588,18 @@ export default function UnifiedChat() {
       setComposerNotice("Transcribing voice…");
       try {
         const text = await transcribeVoice(project, audio);
-        if (text) setDraft((prev) => `${prev}${prev ? " " : ""}${text}`);
-        setComposerNotice(text ? "Voice inserted." : "Voice transcript empty.");
+        if (!text) { setComposerNotice("Voice transcript empty."); return; }
+        // 3.9.6 — Voice deploy: intent detected → auto-execute slash command.
+        const intent = detectVoiceIntent(text);
+        if (intent && !busy) {
+          setDraft("");
+          setStatus("submitted");
+          setComposerNotice(`Voice → ${intent.slash} · executing…`);
+          executePrompt(intent.prompt);
+        } else {
+          setDraft((prev) => `${prev}${prev ? " " : ""}${text}`);
+          setComposerNotice(intent ? `Voice → ${intent.slash} queued (agent busy).` : "Voice inserted.");
+        }
       } catch (err) {
         setComposerNotice(err instanceof Error ? err.message : "Voice endpoint pending.");
       } finally {
@@ -597,7 +607,7 @@ export default function UnifiedChat() {
       }
     };
     recorder.stop();
-  }, [project, teardownAudio]);
+  }, [busy, executePrompt, project, teardownAudio]);
 
   // Keyboard navigation on message list (and Ctrl/Cmd+Arrow from anywhere inside chat)
   const onListKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
