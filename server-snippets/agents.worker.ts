@@ -126,12 +126,13 @@ async function runAgentReply({ threadId, messageId, agentSlug, projectId, prompt
   let lastErr: unknown = null;
 
   for (const attempt of attempts) {
+    if (abortSignal.aborted) break;
     try {
       const out = await generateText({
         model: attempt.model,
         system,
         messages: [...messages, { role: "user", content: prompt }],
-        // Phase A.1: plain text reply. Tool loop = Phase 3.10.
+        abortSignal, // ← Phase 3.9.5 stop wire — user_stop aborts inflight model call
       });
       replyText = out.text;
       usedModel = attempt.label;
@@ -139,15 +140,29 @@ async function runAgentReply({ threadId, messageId, agentSlug, projectId, prompt
       tokensOut = out.usage?.outputTokens ?? 0;
       break;
     } catch (err) {
+      if (abortSignal.aborted) { lastErr = err; break; } // don't fall through on cancel
       lastErr = err;
       console.warn(`[agents.worker] ${attempt.label} failed, falling through:`, err);
     }
   }
+
+  // If the founder pressed Stop, exit cleanly — cancel endpoint already wrote _Stopped._ marker.
+  if (abortSignal.aborted) {
+    await supabase.from("agent_activity").insert({
+      agent_slug: agentSlug, project_id: projectId, thread_id: threadId,
+      kind: "chat", summary: "Run cancelled by founder",
+      tokens_in: tokensIn, tokens_out: tokensOut, cost_usd: 0,
+      duration_ms: Date.now() - t0, status: "cancelled",
+    });
+    return;
+  }
+
   if (!replyText) throw lastErr ?? new Error("All providers failed");
 
   if (agentSlug === "jimmy") {
-    const looped = await runJimmySherlockLoop({ threadId, projectId, prompt, jimmyReply: replyText, userId, usedModel });
+    const looped = await runJimmySherlockLoop({ threadId, projectId, prompt, jimmyReply: replyText, userId, usedModel, abortSignal });
     replyText = looped.replyText;
+    if (abortSignal.aborted) return; // loop bailed out — activity already logged
   }
 
   // 5. Insert assistant message — Realtime broadcasts to UnifiedChat.
@@ -172,6 +187,9 @@ async function runAgentReply({ threadId, messageId, agentSlug, projectId, prompt
   });
 
   void inserted;
+  } finally {
+    releaseRun(messageId);
+  }
 }
 
 async function resolveProjectUuid(projectId: string) {
