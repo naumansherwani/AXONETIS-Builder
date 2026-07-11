@@ -13,6 +13,7 @@ import HorizontalSplit from "./HorizontalSplit";
 import type { BridgeStatus, PreviewBridgeEvent } from "@/lib/preview-bridge";
 import type { PreviewEnv, PreviewFileChange } from "@/lib/preview-engine";
 import { loadWorkspace, patchWorkspace } from "@/lib/project-workspace";
+import { useRrwebRecorder } from "@/lib/rrweb-recorder";
 
 const ACTIVE_PROJECT_KEY = "axonetis.phase7.activeProject.v1";
 
@@ -57,6 +58,10 @@ export default function BuilderShell() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // rrweb session replay — records builder UI, ships to Hetzner every 5s.
+  useRrwebRecorder(project, true);
+
 
   const value = useMemo(
     () => ({
