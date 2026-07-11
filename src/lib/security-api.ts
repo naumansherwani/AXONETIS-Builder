@@ -37,7 +37,7 @@ const EMPTY: SecuritySnapshot = {
 
 export async function fetchSecurity(): Promise<SecuritySnapshot> {
   try {
-    const res = await fetch(`${HOSTFLOW_BASE}/api/agents/founder/security`, {
+    const res = await fetch(`${BASE}/api/agents/founder/security`, {
       signal: AbortSignal.timeout(5000),
       headers: { accept: "application/json" },
     });
@@ -59,7 +59,7 @@ export async function fetchSecurity(): Promise<SecuritySnapshot> {
 
 export async function triggerSherlockScan(): Promise<{ ok: boolean; scan_id?: string }> {
   try {
-    const res = await fetch(`${HOSTFLOW_BASE}/api/agents/founder/security/scan`, {
+    const res = await fetch(`${BASE}/api/agents/founder/security/scan`, {
       method: "POST",
       signal: AbortSignal.timeout(8000),
     });
