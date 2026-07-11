@@ -115,6 +115,7 @@ export default function UnifiedChat() {
   const ignoredParentMessageIdsRef = useRef<Set<string>>(new Set());
   const seenMessageIdsRef = useRef<Set<string>>(new Set());
   const auditedMessageIdsRef = useRef<Set<string>>(new Set());
+  const autoFixHandledIdsRef = useRef<Set<string>>(new Set());
   const audioContextRef = useRef<AudioContext | null>(null);
 
   // --- Scroll helpers ---
