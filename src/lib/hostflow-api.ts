@@ -151,6 +151,13 @@ export interface AgentChatResponse {
   rustError?: string | null;
   status: "queued" | "streaming" | "done";
 }
+
+export type AgentChatStreamEvent =
+  | { type: "ack"; threadId: string; userMessageId?: string; status?: string }
+  | { type: "token"; delta: string }
+  | { type: "done"; threadId?: string; userMessageId?: string; assistantMessageId?: string | null; assistantText?: string; status?: string }
+  | { type: "error"; error: string };
+
 export async function chatWithAgent(slug: AgentSlug, body: AgentChatRequest, options: { signal?: AbortSignal } = {}) {
   // Phase A.1 (3-process-split-LOCKED Option B): same-origin TanStack proxy
   // → inserts user msg into Supabase 3 → forwards to Rust brain :8088.
@@ -172,6 +179,84 @@ export async function chatWithAgent(slug: AgentSlug, body: AgentChatRequest, opt
     throw new Error(`chatWithAgent ${slug} failed (${res.status}): ${text}`);
   }
   return (await res.json()) as AgentChatResponse;
+}
+
+export async function streamChatWithAgent(
+  slug: AgentSlug,
+  body: AgentChatRequest,
+  handlers: {
+    onAck?: (event: Extract<AgentChatStreamEvent, { type: "ack" }>) => void;
+    onToken?: (delta: string) => void;
+    onDone?: (event: Extract<AgentChatStreamEvent, { type: "done" }>) => void;
+    onError?: (error: string) => void;
+  },
+  options: { signal?: AbortSignal } = {},
+) {
+  const { supabase3 } = await import("@/integrations/supabase3/client");
+  const { data: { session } } = await supabase3.auth.getSession();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "text/event-stream",
+  };
+  if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
+
+  const res = await fetch(`/api/agents/${slug}/chat`, {
+    method: "POST",
+    headers,
+    credentials: "same-origin",
+    body: JSON.stringify({ ...body, stream: true }),
+    signal: options.signal,
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`streamChatWithAgent ${slug} failed (${res.status}): ${text}`);
+  }
+  if (!res.body) throw new Error("streamChatWithAgent failed: empty response body");
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const frames = buffer.split(/\r?\n\r?\n/);
+    buffer = frames.pop() ?? "";
+    for (const frame of frames) {
+      let event = "message";
+      let data = "";
+      for (const line of frame.split(/\r?\n/)) {
+        if (line.startsWith("event:")) event = line.slice(6).trim();
+        if (line.startsWith("data:")) data += `${line.slice(5).trimStart()}\n`;
+      }
+      data = data.trimEnd();
+      if (!data) continue;
+      let payload: Record<string, unknown> = {};
+      try { payload = JSON.parse(data) as Record<string, unknown>; } catch { payload = { delta: data }; }
+      if (event === "ack") {
+        handlers.onAck?.({
+          type: "ack",
+          threadId: String(payload.threadId ?? ""),
+          userMessageId: typeof payload.userMessageId === "string" ? payload.userMessageId : undefined,
+          status: typeof payload.status === "string" ? payload.status : undefined,
+        });
+      } else if (event === "token") {
+        const delta = typeof payload.delta === "string" ? payload.delta : "";
+        if (delta) handlers.onToken?.(delta);
+      } else if (event === "done") {
+        handlers.onDone?.({
+          type: "done",
+          threadId: typeof payload.threadId === "string" ? payload.threadId : undefined,
+          userMessageId: typeof payload.userMessageId === "string" ? payload.userMessageId : undefined,
+          assistantMessageId: typeof payload.assistantMessageId === "string" ? payload.assistantMessageId : null,
+          assistantText: typeof payload.assistantText === "string" ? payload.assistantText : undefined,
+          status: typeof payload.status === "string" ? payload.status : undefined,
+        });
+      } else if (event === "error") {
+        handlers.onError?.(typeof payload.error === "string" ? payload.error : "Unknown stream error");
+      }
+    }
+  }
 }
 
 export async function cancelAgentStream(streamId: string) {
