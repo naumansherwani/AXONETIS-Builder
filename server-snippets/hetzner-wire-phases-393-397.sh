@@ -182,6 +182,7 @@ validate_db_url() {
   local value="$1"
   [ -n "$value" ] || return 1
   case "$value" in
+    *REAL_USER*|*REAL_PASSWORD*|*REAL_DB*|*USER:PASS*|*YOUR_REAL_PASSWORD*|*YOUR_PASSWORD*) die "AXONETIS_DB_URL example placeholder hai. REAL_USER/REAL_PASSWORD/REAL_DB ko apne actual Postgres user/password/db se replace karo." ;;
     *...*|*placeholder*) die "AXONETIS_DB_URL placeholder hai. Actual self-hosted Postgres URL paste karo, 'postgresql://...' nahi." ;;
     *supabase.co*) die "Old cloud DB URL detect hua (*.supabase.co). AXONETIS self-hosted Hetzner Postgres URL do: AXONETIS_DB_URL='postgresql://USER:PASS@HOST:5432/DB'" ;;
     local-peer:*) return 0 ;;
@@ -194,6 +195,7 @@ db_url_problem() {
   local value="$1"
   [ -n "$value" ] || { printf 'empty'; return 0; }
   case "$value" in
+    *REAL_USER*|*REAL_PASSWORD*|*REAL_DB*|*USER:PASS*|*YOUR_REAL_PASSWORD*|*YOUR_PASSWORD*) printf "example placeholder value, real DB credentials required" ;;
     *...*|*placeholder*) printf "placeholder value ('postgresql://...' real URL nahi hota)" ;;
     *supabase.co*) printf "old cloud URL (*.supabase.co), self-hosted Hetzner DB URL chahiye" ;;
     local-peer:*) ;;
@@ -225,13 +227,23 @@ detect_local_peer_db() {
 select_db_url() {
   local key value reason
 
-  # Founder-provided AXONETIS_* override always wins. This fixes old PM2 SUPABASE3_DB_URL shadowing.
+  # Founder-provided AXONETIS_* override always wins. Invalid legacy envs are ignored instead of blocking local peer fallback.
   for key in AXONETIS_DB_URL BUILDER_DB_URL AXONETIS_POSTGRES_URL AXONETIS_DATABASE_URL HOSTFLOW_DB_URL HOSTFLOW_POSTGRES_URL LOCAL_DB_URL POSTGRES_URL POSTGRESQL_URL DATABASE_URL DIRECT_URL; do
     value="${!key:-}"
     [ -n "$value" ] || continue
-    validate_db_url "$value"
-    printf '%s' "$value"
-    return 0
+    reason="$(db_url_problem "$value")"
+    if [ -z "$reason" ]; then
+      printf '%s' "$value"
+      return 0
+    fi
+    case "$key" in
+      AXONETIS_DB_URL|BUILDER_DB_URL|AXONETIS_POSTGRES_URL|AXONETIS_DATABASE_URL)
+        die "$key invalid hai: $reason. Isko actual self-hosted Postgres URL banao, e.g. postgresql://postgres:REAL_PASSWORD@127.0.0.1:5432/postgres"
+        ;;
+      *)
+        warn "Ignoring $key: $reason"
+        ;;
+    esac
   done
 
   # Legacy names are accepted only if they are not the old cloud URL/placeholder.
