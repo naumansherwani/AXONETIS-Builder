@@ -53,6 +53,7 @@ grant select on public.marketplace_agents to authenticated;
 grant all    on public.marketplace_agents to service_role;
 
 alter table public.marketplace_agents enable row level security;
+drop policy if exists "marketplace_agents readable by founder" on public.marketplace_agents;
 create policy "marketplace_agents readable by founder"
   on public.marketplace_agents for select
   to authenticated
@@ -78,8 +79,10 @@ grant select, insert, update, delete on public.marketplace_installs to authentic
 grant all on public.marketplace_installs to service_role;
 
 alter table public.marketplace_installs enable row level security;
+drop policy if exists "installs readable" on public.marketplace_installs;
 create policy "installs readable"
   on public.marketplace_installs for select to authenticated using (true);
+drop policy if exists "installs writable" on public.marketplace_installs;
 create policy "installs writable"
   on public.marketplace_installs for all to authenticated
   using (true) with check (true);
@@ -112,8 +115,10 @@ grant select, insert on public.router_decisions to authenticated;
 grant all on public.router_decisions to service_role;
 
 alter table public.router_decisions enable row level security;
+drop policy if exists "router_decisions readable" on public.router_decisions;
 create policy "router_decisions readable"
   on public.router_decisions for select to authenticated using (true);
+drop policy if exists "router_decisions insertable by service" on public.router_decisions;
 create policy "router_decisions insertable by service"
   on public.router_decisions for insert to authenticated with check (true);
 
