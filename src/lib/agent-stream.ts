@@ -101,6 +101,49 @@ export function extractText(row: AgentMessageRow): string {
 }
 
 /**
+ * 3.9.1 — Extract structured tool_call / diff parts from an AgentMessage.
+ * Server contract (Rust runtime):
+ *   { type: "tool_call", id, name, args, status, output?, cost_usd?, duration_ms?, error? }
+ *   { type: "diff",      diff_id?, path, old, new, language? }
+ * Returns empty arrays when the row has no structured parts (no dummy data).
+ */
+export function extractStructured(row: AgentMessageRow): {
+  toolCalls: import("@/components/builder/ToolCallBubble").ToolCallPart[];
+  diffs: import("@/components/builder/DiffPreview").DiffPart[];
+} {
+  const toolCalls: import("@/components/builder/ToolCallBubble").ToolCallPart[] = [];
+  const diffs: import("@/components/builder/DiffPreview").DiffPart[] = [];
+  if (!Array.isArray(row.parts)) return { toolCalls, diffs };
+  for (const p of row.parts) {
+    if (!p || typeof p !== "object") continue;
+    const rec = p as Record<string, unknown>;
+    if (rec.type === "tool_call" && typeof rec.name === "string") {
+      const status = (typeof rec.status === "string" ? rec.status : "queued") as
+        import("@/components/builder/ToolCallBubble").ToolCallStatus;
+      toolCalls.push({
+        id: String(rec.id ?? `${row.id}-tc-${toolCalls.length}`),
+        name: rec.name,
+        args: rec.args,
+        status: ["queued", "running", "success", "error"].includes(status) ? status : "queued",
+        output: rec.output,
+        cost_usd: typeof rec.cost_usd === "number" ? rec.cost_usd : undefined,
+        duration_ms: typeof rec.duration_ms === "number" ? rec.duration_ms : undefined,
+        error: typeof rec.error === "string" ? rec.error : undefined,
+      });
+    } else if (rec.type === "diff" && typeof rec.path === "string") {
+      diffs.push({
+        diff_id: typeof rec.diff_id === "string" ? rec.diff_id : undefined,
+        path: rec.path,
+        old: typeof rec.old === "string" ? rec.old : "",
+        new: typeof rec.new === "string" ? rec.new : "",
+        language: typeof rec.language === "string" ? rec.language : undefined,
+      });
+    }
+  }
+  return { toolCalls, diffs };
+}
+
+/**
  * Sanitize raw model output before showing in chat.
  * - Strips `<think>...</think>` reasoning blocks (Qwen/DeepSeek).
  * - If output is JSON with `final_answer`, extract that.
