@@ -94,6 +94,9 @@ function renderPanel(
     case "command":   return <CommandCenterPanel />;
     case "costs":     return <CostsPanel />;
     case "security":  return <SecurityPanel />;
+    case "storage":   return <StoragePanel />;
+    case "secrets":   return <SecretsPanel />;
+    case "tools":     return <ToolsPanel />;
     case "terminal":  return <TerminalRailPanel />;
     default:
       return <GenericPanel icon={Icon as never} title={label} hint={hint} />;
