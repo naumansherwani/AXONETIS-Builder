@@ -21,6 +21,10 @@ export interface ChatMsgMeta {
   tokensIn?: number;
   tokensOut?: number;
   createdAt?: string;
+  /** 3.9.7 — Global Router cost meter. */
+  costUsd?: number;
+  savedVsDefaultUsd?: number;
+  defaultModel?: string | null;
 }
 
 export interface ChatMsg {

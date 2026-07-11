@@ -32,6 +32,7 @@ import {
   UNIFIED_CHAT_SLUGS,
   type AgentMessageRow,
 } from "@/lib/agent-stream";
+import { previewRoute, shortModelTag, formatUsd, type RouterPreview } from "@/lib/router-api";
 
 type Agent = "founder" | "jimmy" | "sherlock";
 type Msg = ChatMsg;
@@ -60,6 +61,27 @@ const MENTIONS: Array<{ tag: string; agent: UnifiedAgentSlug; hint: string }> = 
   { tag: "@jimmy",    agent: "jimmy",    hint: "Build agent"  },
   { tag: "@sherlock", agent: "sherlock", hint: "Review agent" },
 ];
+
+/**
+ * 3.9.6 — Voice-deploy intent detection.
+ * If the founder speaks "deploy karo" / "rollback karo" / "scan karo" etc.,
+ * we auto-fire the matching slash-command instead of just inserting text.
+ * Supports Roman-Urdu + English keywords.
+ */
+function detectVoiceIntent(text: string): { slash: string; prompt: string } | null {
+  const t = text.toLowerCase();
+  if (/\b(deploy|publish|ship|live\s*karo|deploy\s*karo|publish\s*karo)\b/.test(t))
+    return { slash: "/publish", prompt: `/publish (voice) — ${text}` };
+  if (/\b(rollback|revert|undo|wapas|rollback\s*karo)\b/.test(t))
+    return { slash: "/rollback", prompt: `/rollback (voice) — ${text}` };
+  if (/\b(scan|audit|sherlock\s*scan|scan\s*karo|audit\s*karo)\b/.test(t))
+    return { slash: "/scan", prompt: `/scan (voice) — ${text}` };
+  if (/\b(fix|fix\s*karo|repair)\b/.test(t))
+    return { slash: "/fix", prompt: `/fix (voice) — ${text}` };
+  if (/\b(review|review\s*karo|check\s*diff)\b/.test(t))
+    return { slash: "/review", prompt: `/review (voice) — ${text}` };
+  return null;
+}
 
 const resolveAgent = (prompt: string): UnifiedAgentSlug => {
   const p = prompt.toLowerCase();
@@ -197,6 +219,9 @@ export default function UnifiedChat() {
       tokensIn: row.tokens_in ?? 0,
       tokensOut: row.tokens_out ?? 0,
       createdAt: row.created_at,
+      costUsd: typeof row.cost_usd === "number" ? row.cost_usd : undefined,
+      savedVsDefaultUsd: typeof row.saved_vs_default_usd === "number" ? row.saved_vs_default_usd : undefined,
+      defaultModel: row.default_model ?? null,
     };
     setMessages((prev) => {
       if (prev.some((m) => m.id === row.id)) return prev;
@@ -315,6 +340,20 @@ export default function UnifiedChat() {
   const charCount = draft.length;
   const overLimit = charCount > MAX_CHARS;
   const busy = status === "submitted" || status === "streaming";
+
+  // 3.9.7 — Global Router pre-send preview (debounced).
+  const [routerPreview, setRouterPreview] = useState<RouterPreview | null>(null);
+  useEffect(() => {
+    const prompt = draft.trim();
+    if (!prompt || prompt.length < 8) { setRouterPreview(null); return; }
+    const ctrl = new AbortController();
+    const t = window.setTimeout(async () => {
+      const agent = /@sherlock|\/scan|\/fix|\/review/i.test(prompt) ? "sherlock" : "jimmy";
+      const res = await previewRoute(prompt, agent, ctrl.signal);
+      if (!ctrl.signal.aborted) setRouterPreview(res);
+    }, 400);
+    return () => { window.clearTimeout(t); ctrl.abort(); };
+  }, [draft]);
 
   const executePrompt = useCallback((prompt: string) => {
     const targetAgent = resolveAgent(prompt);
@@ -563,8 +602,18 @@ export default function UnifiedChat() {
       setComposerNotice("Transcribing voice…");
       try {
         const text = await transcribeVoice(project, audio);
-        if (text) setDraft((prev) => `${prev}${prev ? " " : ""}${text}`);
-        setComposerNotice(text ? "Voice inserted." : "Voice transcript empty.");
+        if (!text) { setComposerNotice("Voice transcript empty."); return; }
+        // 3.9.6 — Voice deploy: intent detected → auto-execute slash command.
+        const intent = detectVoiceIntent(text);
+        if (intent && !busy) {
+          setDraft("");
+          setStatus("submitted");
+          setComposerNotice(`Voice → ${intent.slash} · executing…`);
+          executePrompt(intent.prompt);
+        } else {
+          setDraft((prev) => `${prev}${prev ? " " : ""}${text}`);
+          setComposerNotice(intent ? `Voice → ${intent.slash} queued (agent busy).` : "Voice inserted.");
+        }
       } catch (err) {
         setComposerNotice(err instanceof Error ? err.message : "Voice endpoint pending.");
       } finally {
@@ -572,7 +621,7 @@ export default function UnifiedChat() {
       }
     };
     recorder.stop();
-  }, [project, teardownAudio]);
+  }, [busy, executePrompt, project, teardownAudio]);
 
   // Keyboard navigation on message list (and Ctrl/Cmd+Arrow from anywhere inside chat)
   const onListKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -836,8 +885,20 @@ export default function UnifiedChat() {
             ))}
           </div>
         )}
-        <div className="mt-2 flex items-center justify-between px-1 text-[10px] uppercase tracking-widest text-muted-foreground/45">
+        <div className="mt-2 flex items-center justify-between gap-2 px-1 text-[10px] uppercase tracking-widest text-muted-foreground/45">
           <span className="font-mono">Phase 3.9 · {busy ? (messages.slice().reverse().find((m) => m.thinking)?.agent === "sherlock" ? "auditing" : "streaming") : "ready"}</span>
+          {routerPreview && !busy && (
+            <span
+              className="hidden items-center gap-1.5 rounded-md border border-emerald-400/25 bg-emerald-400/[0.06] px-1.5 py-0.5 font-mono text-emerald-300/90 sm:inline-flex"
+              title={`${routerPreview.reason} · default ${shortModelTag(routerPreview.default_model) ?? "—"}`}
+            >
+              <Zap className="h-2.5 w-2.5" />
+              <span>→ {shortModelTag(routerPreview.model) ?? routerPreview.model}</span>
+              {routerPreview.est_saved_usd > 0 && (
+                <span className="text-emerald-200/90">save {formatUsd(routerPreview.est_saved_usd)}</span>
+              )}
+            </span>
+          )}
           <span className={`font-mono ${overLimit ? "text-red-400" : charCount > MAX_CHARS * 0.9 ? "text-amber-400" : "text-muted-foreground/50"}`}>
             {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()}
           </span>
@@ -902,11 +963,29 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
                 {modelShort}
               </span>
             )}
+            {msg.meta?.tokensIn ? (
+              <span className="rounded-md border border-white/[0.06] bg-white/[0.02] px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/50">
+                {msg.meta.tokensIn.toLocaleString()} in
+              </span>
+            ) : null}
             {msg.meta?.tokensOut ? (
               <span className="rounded-md border border-white/[0.06] bg-white/[0.02] px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/60">
                 {msg.meta.tokensOut.toLocaleString()} out
               </span>
             ) : null}
+            {typeof msg.meta?.costUsd === "number" && msg.meta.costUsd > 0 && (
+              <span className="rounded-md border border-[#E50914]/30 bg-[#E50914]/[0.06] px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wider text-[#ff7480]">
+                {msg.meta.costUsd < 0.001 ? `$${msg.meta.costUsd.toFixed(5)}` : msg.meta.costUsd < 1 ? `$${msg.meta.costUsd.toFixed(4)}` : `$${msg.meta.costUsd.toFixed(2)}`}
+              </span>
+            )}
+            {typeof msg.meta?.savedVsDefaultUsd === "number" && msg.meta.savedVsDefaultUsd > 0 && (
+              <span
+                className="rounded-md border border-emerald-400/30 bg-emerald-400/[0.06] px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wider text-emerald-300"
+                title={`Saved vs default${msg.meta.defaultModel ? ` (${msg.meta.defaultModel.split("/").slice(-1)[0]})` : ""}`}
+              >
+                saved {msg.meta.savedVsDefaultUsd < 0.001 ? `$${msg.meta.savedVsDefaultUsd.toFixed(5)}` : `$${msg.meta.savedVsDefaultUsd.toFixed(4)}`}
+              </span>
+            )}
             <div className="ml-auto flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
               <Tooltip>
                 <TooltipTrigger asChild>
