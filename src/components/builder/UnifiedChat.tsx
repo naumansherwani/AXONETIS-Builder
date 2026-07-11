@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Copy, Mic, Paperclip, Radio, RefreshCw, Send, ShieldCheck, Zap } from "lucide-react";
+import { Copy, DollarSign, Mic, Paperclip, Radio, RefreshCw, Send, ShieldCheck, Zap } from "lucide-react";
 import ChatScrollRail from "./ChatScrollRail";
+import VoiceWaveform from "./VoiceWaveform";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
@@ -97,6 +98,8 @@ export default function UnifiedChat() {
   const [composerNotice, setComposerNotice] = useState("");
   const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(true);
+  const [recording, setRecording] = useState(false);
+  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
 
   const messagesRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
@@ -108,6 +111,7 @@ export default function UnifiedChat() {
   const voiceChunksRef = useRef<Blob[]>([]);
   const pendingPlaceholderRef = useRef<string | null>(null);
   const seenMessageIdsRef = useRef<Set<string>>(new Set());
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   // --- Scroll helpers ---
   const updateScrollEdges = useCallback(() => {
@@ -311,14 +315,26 @@ export default function UnifiedChat() {
     executePrompt(sourcePrompt);
   }, [busy, executePrompt]);
 
-  // 3.9.1 — session token meter (sum of assistant tokens_out on this thread).
+  // 3.9.1 — session token meter (sum of assistant tokens on this thread).
+  // Blended per-model USD estimate; conservative for OpenRouter/Groq mix used by Jimmy/Sherlock.
   const sessionTokens = useMemo(() => {
-    let inTok = 0, outTok = 0;
+    let inTok = 0, outTok = 0, usd = 0;
     for (const m of messages) {
-      if (m.meta?.tokensIn) inTok += m.meta.tokensIn;
-      if (m.meta?.tokensOut) outTok += m.meta.tokensOut;
+      const ti = m.meta?.tokensIn ?? 0;
+      const to = m.meta?.tokensOut ?? 0;
+      inTok += ti; outTok += to;
+      const model = (m.meta?.model ?? "").toLowerCase();
+      // rough per-1M-token pricing (USD)
+      let pIn = 0.6, pOut = 2.4;
+      if (model.includes("hermes") && model.includes("405")) { pIn = 3.0; pOut = 3.0; }
+      else if (model.includes("qwen3-coder") || model.includes("qwen-3-coder")) { pIn = 0.9; pOut = 0.9; }
+      else if (model.includes("deepseek-r1") || model.includes("deepseek/r1")) { pIn = 0.55; pOut = 2.19; }
+      else if (model.includes("gpt-oss-120b")) { pIn = 0.15; pOut = 0.6; }
+      else if (model.includes("llama-3.3-70b") || model.includes("llama3.3-70b")) { pIn = 0.12; pOut = 0.3; }
+      else if (model.includes("groq")) { pIn = 0.1; pOut = 0.4; }
+      usd += (ti / 1_000_000) * pIn + (to / 1_000_000) * pOut;
     }
-    return { inTok, outTok, total: inTok + outTok };
+    return { inTok, outTok, total: inTok + outTok, usd };
   }, [messages]);
 
   // 3.9.1 — slash + mention popover state derived from draft.
@@ -376,20 +392,44 @@ export default function UnifiedChat() {
       mediaRecorderRef.current = recorder;
       recorder.ondataavailable = (event) => { if (event.data.size) voiceChunksRef.current.push(event.data); };
       recorder.onstop = () => { stream.getTracks().forEach((track) => track.stop()); };
+
+      // Wire Web Audio analyser for cinematic waveform.
+      try {
+        const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const ac = new AC();
+        audioContextRef.current = ac;
+        const src = ac.createMediaStreamSource(stream);
+        const node = ac.createAnalyser();
+        node.fftSize = 128;
+        node.smoothingTimeConstant = 0.75;
+        src.connect(node);
+        setAnalyser(node);
+      } catch { /* analyser optional */ }
+
       recorder.start();
+      setRecording(true);
       setComposerNotice("Recording… release mic to transcribe.");
     } catch (err) {
       setComposerNotice(err instanceof Error ? err.message : "Mic permission failed.");
     }
   }, []);
 
+  const teardownAudio = useCallback(() => {
+    setRecording(false);
+    setAnalyser(null);
+    const ac = audioContextRef.current;
+    if (ac && ac.state !== "closed") void ac.close().catch(() => undefined);
+    audioContextRef.current = null;
+  }, []);
+
   const stopVoice = useCallback(() => {
     const recorder = mediaRecorderRef.current;
-    if (!recorder || recorder.state === "inactive") return;
+    if (!recorder || recorder.state === "inactive") { teardownAudio(); return; }
     recorder.onstop = async () => {
       const audio = new Blob(voiceChunksRef.current, { type: "audio/webm" });
       recorder.stream.getTracks().forEach((track) => track.stop());
       mediaRecorderRef.current = null;
+      teardownAudio();
       setComposerNotice("Transcribing voice…");
       try {
         const text = await transcribeVoice(project, audio);
@@ -402,7 +442,7 @@ export default function UnifiedChat() {
       }
     };
     recorder.stop();
-  }, [project]);
+  }, [project, teardownAudio]);
 
   // Keyboard navigation on message list (and Ctrl/Cmd+Arrow from anywhere inside chat)
   const onListKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -457,6 +497,21 @@ export default function UnifiedChat() {
               </TooltipContent>
             </Tooltip>
           )}
+          {sessionTokens.usd > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/[0.06] px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-emerald-300/90">
+                  <DollarSign className="h-2.5 w-2.5" />
+                  {sessionTokens.usd < 0.01 ? sessionTokens.usd.toFixed(4) : sessionTokens.usd.toFixed(3)}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="text-[10px] font-mono">
+                  Session cost estimate · blended OpenRouter/Groq rates
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )}
           <span className="shrink-0 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/50">{bridgeStatus}</span>
         </div>
       </div>
@@ -496,6 +551,8 @@ export default function UnifiedChat() {
 
       {/* Composer — pinned bottom */}
       <div className="relative shrink-0 border-t border-border bg-background/75 p-3 backdrop-blur-xl">
+        {/* 3.9.1 — voice waveform overlay */}
+        <VoiceWaveform analyser={analyser} active={recording} />
         {/* 3.9.1 — slash + @mention popovers */}
         <AnimatePresence>
           {(slashSuggestions.length > 0 || mentionSuggestions.length > 0) && (
