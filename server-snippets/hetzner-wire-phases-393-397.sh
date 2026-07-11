@@ -6,10 +6,7 @@ set -Eeuo pipefail
 # No manual nano/edit required.
 
 BUILDER_DIR="${BUILDER_DIR:-/var/www/axonetis}"
-ENGINE_DIR="${ENGINE_DIR:-/var/www/NEXATECT-Engine}"
 DOMAIN="${AXONETIS_DOMAIN:-https://aiaxonetis.hostflowai.net}"
-RPC_FILE="$ENGINE_DIR/server/routes/rpc.routes.ts"
-PHASE_396_FILE="$ENGINE_DIR/server/routes/rpc-phase-396-397.additions.ts"
 STAMP="$(date +%Y%m%d%H%M%S)"
 
 log() { printf '\n\033[1;36m%s\033[0m\n' "$*"; }
@@ -22,7 +19,28 @@ require_dir() { [ -d "$1" ] || die "Missing directory: $1"; }
 
 log "0) Paths verify"
 require_dir "$BUILDER_DIR"
-require_dir "$ENGINE_DIR"
+
+# Auto-detect NEXATECT-Engine location (case-insensitive, common paths).
+if [ -z "${ENGINE_DIR:-}" ]; then
+  for cand in \
+    /var/www/NEXATECT-Engine /var/www/nexatect-engine /var/www/nexatect \
+    /var/www/NEXATECT_Engine /root/NEXATECT-Engine /opt/NEXATECT-Engine \
+    /var/www/hostflowai-brain /var/www/hostflow-brain /var/www/hostflowai \
+    /opt/hostflow-ecosystem/hostflowai-brain /opt/hostflow-ecosystem/hostflow-server; do
+    if [ -d "$cand" ] && [ -d "$cand/server" -o -d "$cand/routes" -o -d "$cand/src" ]; then
+      ENGINE_DIR="$cand"; break
+    fi
+  done
+fi
+if [ -z "${ENGINE_DIR:-}" ]; then
+  # Fallback: scan PM2 cwd for hostflowai-brain
+  ENGINE_DIR="$(pm2 jlist 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);const p=j.find(x=>x.name==="hostflowai-brain");if(p&&p.pm2_env&&p.pm2_env.pm_cwd)console.log(p.pm2_env.pm_cwd)}catch(e){}})' 2>/dev/null || true)"
+fi
+[ -n "${ENGINE_DIR:-}" ] && [ -d "$ENGINE_DIR" ] || die "Engine dir not found. Export ENGINE_DIR=/path/to/NEXATECT-Engine and rerun."
+log "Using ENGINE_DIR=$ENGINE_DIR"
+
+RPC_FILE="$ENGINE_DIR/server/routes/rpc.routes.ts"
+PHASE_396_FILE="$ENGINE_DIR/server/routes/rpc-phase-396-397.additions.ts"
 require_file "$BUILDER_DIR/hetzner-migrations/20260711000001_phase_393_394_publish_power_tools.sql"
 require_file "$BUILDER_DIR/hetzner-migrations/20260711000002_phase_396_397_marketplace_router.sql"
 require_file "$BUILDER_DIR/server-snippets/rpc.routes.ts"
