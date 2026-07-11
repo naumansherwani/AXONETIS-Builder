@@ -87,7 +87,7 @@ function relTime(iso?: string): string {
 }
 
 export default function UnifiedChat() {
-  const { project, branch, environment, bridgeStatus } = useBuilder();
+  const { project, branch, environment, bridgeStatus, lastVisualEditPick, setLastVisualEditPick } = useBuilder();
   const activeProject = PROJECTS.find((p) => p.id === project)!;
 
   const [messages, setMessages] = useState<Msg[]>(() => {
