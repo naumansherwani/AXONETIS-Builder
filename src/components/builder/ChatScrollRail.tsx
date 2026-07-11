@@ -104,7 +104,7 @@ export default function ChatScrollRail({ targetRef, contentKey }: Props) {
   return (
     <div
       aria-hidden={false}
-      className="pointer-events-none absolute inset-y-2 left-1 z-30 flex w-3 flex-col items-center gap-1"
+      className="pointer-events-none absolute inset-y-2 right-1 z-30 flex w-3 flex-col items-center gap-1"
     >
       {/* Up caret — tiny triangle */}
       <button
