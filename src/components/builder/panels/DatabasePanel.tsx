@@ -4,12 +4,15 @@
  */
 import { useEffect, useState } from "react";
 import { PanelSection, Row } from "./PanelChrome";
-import { Database as DbIcon, Table2, Loader2, Play, ShieldAlert } from "lucide-react";
+import { Database as DbIcon, Table2, Loader2, Play, ShieldAlert, ShieldCheck, ShieldX } from "lucide-react";
 import { fetchTableCounts, runSql, type TableCount, type SqlResult } from "@/lib/database-api";
+import { validateSql, type SqlValidation } from "@/lib/power-tools-api";
+import { useBuilder } from "@/lib/builder-state";
 
 const SAMPLE = "SELECT id, name, created_at\nFROM projects\nORDER BY created_at DESC\nLIMIT 10;";
 
 export default function DatabasePanel() {
+  const { project } = useBuilder();
   const [core, setCore] = useState<TableCount[]>([]);
   const [mirror, setMirror] = useState<TableCount[]>([]);
   const [live, setLive] = useState(false);
@@ -19,6 +22,8 @@ export default function DatabasePanel() {
   const [dryRun, setDryRun] = useState(true);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<SqlResult | null>(null);
+  const [validating, setValidating] = useState(false);
+  const [validation, setValidation] = useState<SqlValidation | null>(null);
 
   useEffect(() => {
     let alive = true;
