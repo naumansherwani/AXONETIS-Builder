@@ -262,7 +262,7 @@ export default function UnifiedChat() {
         if (ack.userMessageId) pendingUserMessageIdRef.current = ack.userMessageId;
         if (ack.status === "queued" && !ack.assistantText) {
           waitingForRealtime = true;
-          setComposerNotice("Thinking — response realtime se aa raha hai.");
+          setComposerNotice(targetAgent === "sherlock" ? "Sherlock audit chal raha hai — realtime response aa raha hai." : "Jimmy soch raha hai — realtime response aa raha hai.");
           const ackThreadId = ack.threadId;
           void (async () => {
             for (let i = 0; i < 55; i += 1) {
