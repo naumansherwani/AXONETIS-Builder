@@ -219,6 +219,9 @@ export default function UnifiedChat() {
       rows.forEach((row) => {
         if (pendingPlaceholderRef.current || pendingUserMessageIdRef.current) ingestAgentRow(row);
         else seenMessageIdsRef.current.add(row.id);
+        // Historical Jimmy replies: mark as already audited so we don't
+        // re-fire Sherlock on every mount / thread switch.
+        if (row.agent_slug === "jimmy") auditedMessageIdsRef.current.add(row.id);
       });
     });
     const unsub = subscribeThread(threadId, {
