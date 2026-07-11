@@ -515,7 +515,44 @@ export default function UnifiedChat() {
       </div>
 
       {/* Composer — pinned bottom */}
-      <div className="shrink-0 border-t border-border bg-background/75 p-3 backdrop-blur-xl">
+      <div className="relative shrink-0 border-t border-border bg-background/75 p-3 backdrop-blur-xl">
+        {/* 3.9.1 — slash + @mention popovers */}
+        <AnimatePresence>
+          {(slashSuggestions.length > 0 || mentionSuggestions.length > 0) && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ type: "spring", stiffness: 220, damping: 22 }}
+              className="absolute bottom-full left-3 right-3 mb-2 overflow-hidden rounded-xl border border-white/[0.08] bg-background/95 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl"
+            >
+              {slashSuggestions.map((c) => (
+                <button
+                  key={c.cmd}
+                  type="button"
+                  onClick={() => applySlash(c.cmd)}
+                  className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-accent/40"
+                >
+                  <span className={`grid h-5 w-5 place-items-center rounded text-[9px] font-bold ${AGENT_META[c.agent].chip} ring-1 ${AGENT_META[c.agent].ring}`}>{AGENT_META[c.agent].initial}</span>
+                  <span className="font-mono text-[11px] font-semibold text-foreground">{c.label}</span>
+                  <span className="truncate text-[10px] text-muted-foreground">{c.hint}</span>
+                </button>
+              ))}
+              {mentionSuggestions.map((mn) => (
+                <button
+                  key={mn.tag}
+                  type="button"
+                  onClick={() => applyMention(mn.tag)}
+                  className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-accent/40"
+                >
+                  <span className={`grid h-5 w-5 place-items-center rounded text-[9px] font-bold ${AGENT_META[mn.agent].chip} ring-1 ${AGENT_META[mn.agent].ring}`}>{AGENT_META[mn.agent].initial}</span>
+                  <span className="font-mono text-[11px] font-semibold text-foreground">{mn.tag}</span>
+                  <span className="truncate text-[10px] text-muted-foreground">{mn.hint}</span>
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
         <input ref={fileInputRef} type="file" multiple className="hidden" onChange={onAttach} />
         <PromptInput
           className="rounded-lg"
