@@ -254,6 +254,27 @@ export default function UnifiedChat() {
         if (ack.status === "queued" && !ack.assistantText) {
           waitingForRealtime = true;
           setComposerNotice("Thinking — response realtime se aa raha hai.");
+          const ackThreadId = ack.threadId;
+          void (async () => {
+            for (let i = 0; i < 55; i += 1) {
+              if (ctrl.signal.aborted || pendingPlaceholderRef.current !== placeholderId) return;
+              const rows = await fetchThreadMessages(ackThreadId);
+              rows.forEach(ingestAgentRow);
+              if (pendingPlaceholderRef.current !== placeholderId) return;
+              await new Promise((resolve) => setTimeout(resolve, 1_000));
+            }
+            if (!ctrl.signal.aborted && pendingPlaceholderRef.current === placeholderId) {
+              pendingPlaceholderRef.current = null;
+              setMessages((prev) => prev.map((m) => (
+                m.id === placeholderId
+                  ? { ...m, agent: "sherlock", text: "Endpoint audit: Brain response timeout. Server logs check karo.", thinking: false }
+                  : m
+              )));
+              setStatus("ready");
+              setComposerNotice("Brain timeout — server logs check karo.");
+              textareaRef.current?.focus();
+            }
+          })();
           return;
         }
         if (ack.assistantText) {
@@ -291,7 +312,7 @@ export default function UnifiedChat() {
           textareaRef.current?.focus();
         }
       });
-  }, [attachments, branch, environment, project, threadId]);
+  }, [attachments, branch, environment, ingestAgentRow, project, threadId]);
 
   const submit = useCallback(() => {
     const prompt = draft.trim();
