@@ -25,7 +25,6 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const ALLOWED_SLUGS = new Set(["jimmy", "sherlock"]);
 const RUST_TIMEOUT_MS = 45_000;
-const BRAIN_MAX_OUTPUT_TOKENS = 8_192;
 
 type ChatBody = {
   projectId?: string;
@@ -79,14 +78,7 @@ async function runBrainAndInsert({ supabase, slug, prompt, threadId, userMessage
     const r = await fetch(`${brainURL}/api/agents/${slug}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: prompt,
-        stream: true,
-        generationConfig: {
-          maxOutputTokens: BRAIN_MAX_OUTPUT_TOKENS,
-          temperature: 0.35,
-        },
-      }),
+      body: JSON.stringify({ message: prompt }),
       signal: ctrl.signal,
     });
     if (!r.ok) {
