@@ -2,6 +2,14 @@
 
 Founder, yeh woh missing server-side copy-paste hai. Frontend already wired hai; ab Hetzner pe yeh 3 cheezen lagani hain.
 
+## Recommended — one command, no manual edit
+
+```bash
+cd /var/www/axonetis && git pull && bash server-snippets/hetzner-wire-phases-393-397.sh
+```
+
+Yeh 3.9.3 se 3.9.7 tak saari pending server wiring ek saath karega: migrations, `/rpc/*`, Visual Edit bridge, Stop abort verify, build/restart, smoke tests.
+
 ## 1) DB migration
 
 ```bash
