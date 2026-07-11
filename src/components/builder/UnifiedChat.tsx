@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Copy, DollarSign, Mic, Paperclip, Radio, RefreshCw, Send, ShieldCheck, Zap } from "lucide-react";
+import { Copy, DollarSign, Mic, MousePointerClick, Paperclip, Radio, RefreshCw, Send, ShieldCheck, X as XIcon, Zap } from "lucide-react";
 import ChatScrollRail from "./ChatScrollRail";
 import VoiceWaveform from "./VoiceWaveform";
 import ToolCallBubble from "./ToolCallBubble";
@@ -87,7 +87,7 @@ function relTime(iso?: string): string {
 }
 
 export default function UnifiedChat() {
-  const { project, branch, environment, bridgeStatus } = useBuilder();
+  const { project, branch, environment, bridgeStatus, lastVisualEditPick, setLastVisualEditPick } = useBuilder();
   const activeProject = PROJECTS.find((p) => p.id === project)!;
 
   const [messages, setMessages] = useState<Msg[]>(() => {
@@ -400,15 +400,23 @@ export default function UnifiedChat() {
   const submit = useCallback(() => {
     const prompt = draft.trim();
     if (!prompt || overLimit) return;
+    // Phase 3.9.5 — prepend Visual Edit context if founder picked an element.
+    let final = prompt;
+    if (lastVisualEditPick) {
+      const p = lastVisualEditPick;
+      const ctx = `[Visual Edit] <${p.tag}> selector=\`${p.selector}\`${p.path ? ` at ${p.path}` : ""}${p.text ? ` — "${p.text.slice(0, 80)}"` : ""}`;
+      final = `${ctx}\n${prompt}`;
+      setLastVisualEditPick(null);
+    }
     setDraft("");
     if (busy) {
-      setQueue((prev) => [...prev, prompt]);
+      setQueue((prev) => [...prev, final]);
       setComposerNotice("Prompt queued — current response pehle complete hogi.");
       return;
     }
     setStatus("submitted");
-    executePrompt(prompt);
-  }, [busy, draft, executePrompt, overLimit]);
+    executePrompt(final);
+  }, [busy, draft, executePrompt, overLimit, lastVisualEditPick, setLastVisualEditPick]);
 
   useEffect(() => {
     if (busy || queue.length === 0) return;
@@ -713,6 +721,29 @@ export default function UnifiedChat() {
           )}
         </AnimatePresence>
         <input ref={fileInputRef} type="file" multiple className="hidden" onChange={onAttach} />
+        {lastVisualEditPick && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="mb-2 flex items-center gap-2 rounded-lg border border-[#E50914]/30 bg-[#E50914]/[0.06] px-2.5 py-1.5 text-[11px]"
+          >
+            <MousePointerClick className="h-3 w-3 text-[#ff7480]" />
+            <span className="font-mono text-foreground/80">&lt;{lastVisualEditPick.tag}&gt;</span>
+            <span className="truncate font-mono text-muted-foreground/70">{lastVisualEditPick.selector}</span>
+            {lastVisualEditPick.text && (
+              <span className="truncate text-muted-foreground/60">"{lastVisualEditPick.text.slice(0, 40)}"</span>
+            )}
+            <button
+              type="button"
+              onClick={() => setLastVisualEditPick(null)}
+              className="ml-auto grid h-5 w-5 place-items-center rounded hover:bg-white/[0.06]"
+              title="Clear visual edit context"
+            >
+              <XIcon className="h-3 w-3 text-muted-foreground" />
+            </button>
+          </motion.div>
+        )}
         <PromptInput
           className="rounded-lg"
           onSubmit={(e) => { e.preventDefault(); submit(); }}
@@ -789,9 +820,11 @@ export default function UnifiedChat() {
               {queue.length > 0 && (
                 <span className="rounded-md border border-white/[0.06] px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">Queue {queue.length}</span>
               )}
-              <PromptInputSubmit status={status} disabled={!draft.trim() || overLimit} onStop={stop}>
-                {status === "ready" ? <Send className="h-3.5 w-3.5" /> : undefined}
-              </PromptInputSubmit>
+              <span className={`relative inline-flex ${busy ? "fb-submit-shimmer" : ""}`}>
+                <PromptInputSubmit status={status} disabled={!draft.trim() || overLimit} onStop={stop}>
+                  {status === "ready" ? <Send className="h-3.5 w-3.5" /> : undefined}
+                </PromptInputSubmit>
+              </span>
             </div>
           </PromptInputFooter>
         </PromptInput>

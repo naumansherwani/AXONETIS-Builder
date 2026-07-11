@@ -234,3 +234,21 @@
 .fb-no-scrollbar, .fb-no-scrollbar * { scrollbar-width: none; -ms-overflow-style: none; }
 
 textarea.fb-no-scrollbar::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+/* Phase 3.9.5 — Shimmer glow around submit button while agent is generating. */
+.fb-submit-shimmer::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 12px;
+  background: conic-gradient(from 0deg, transparent 0%, rgba(229,9,20,0.55) 25%, transparent 50%, rgba(124,58,237,0.55) 75%, transparent 100%);
+  filter: blur(6px);
+  opacity: 0.9;
+  z-index: -1;
+  animation: fb-submit-spin 2.4s linear infinite;
+  pointer-events: none;
+}
+@keyframes fb-submit-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}

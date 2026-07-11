@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { motion } from "framer-motion";
-import { Monitor, RefreshCw, Smartphone, Tablet, Columns3, FlaskConical, Rocket } from "lucide-react";
+import { Monitor, RefreshCw, Smartphone, Tablet, Columns3, FlaskConical, Rocket, MousePointerClick } from "lucide-react";
 import { useBuilder } from "@/lib/builder-state";
 import { PROJECTS } from "@/lib/projects";
 import { createBridgeHandshake, getProjectOrigin, normalizePreviewBridgeEvent } from "@/lib/preview-bridge";
@@ -10,7 +10,11 @@ type Device = "mobile" | "tablet" | "desktop";
 const DEVICE_WIDTH: Record<Device, number> = { mobile: 375, tablet: 768, desktop: 1440 };
 
 export default function LivePreview() {
-  const { project, previewMode, setPreviewMode, bridgeStatus, setBridgeStatus, setLastBridgeEvent, previewEnv, setPreviewEnv, setLastPreviewChange } = useBuilder();
+  const {
+    project, previewMode, setPreviewMode, bridgeStatus, setBridgeStatus, setLastBridgeEvent,
+    previewEnv, setPreviewEnv, setLastPreviewChange,
+    visualEditMode, setVisualEditMode, setLastVisualEditPick,
+  } = useBuilder();
   const active = PROJECTS.find((p) => p.id === project)!;
   const [device, setDevice] = useState<Device>("desktop");
   const [reloadKey, setReloadKey] = useState(0);
@@ -36,10 +40,32 @@ export default function LivePreview() {
       if (!bridgeEvent) return;
       setLastBridgeEvent(bridgeEvent);
       setBridgeStatus("connected");
+      // Phase 3.9.5 — Visual Edit Mode pick event.
+      if (bridgeEvent.type === "visual:edit:pick" && bridgeEvent.payload && typeof bridgeEvent.payload === "object") {
+        const p = bridgeEvent.payload as { selector?: string; tag?: string; text?: string; path?: string };
+        if (p.selector && p.tag) {
+          setLastVisualEditPick({
+            selector: p.selector,
+            tag: p.tag,
+            text: p.text,
+            path: p.path,
+            at: Date.now(),
+          });
+          setVisualEditMode(false);
+        }
+      }
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [setBridgeStatus, setLastBridgeEvent]);
+  }, [setBridgeStatus, setLastBridgeEvent, setLastVisualEditPick, setVisualEditMode]);
+
+  // Phase 3.9.5 — broadcast visual-edit toggle to preview iframe.
+  useEffect(() => {
+    frameRef.current?.contentWindow?.postMessage(
+      { source: "axonetis-builder", type: "visual:edit:toggle", enabled: visualEditMode },
+      getProjectOrigin(project),
+    );
+  }, [visualEditMode, project]);
 
   // Phase 5: Realtime HMR — sandbox file changes auto-reload the iframe.
   useEffect(() => {
@@ -108,6 +134,17 @@ export default function LivePreview() {
             Triptych
           </button>
 
+          <button
+            onClick={() => setVisualEditMode(!visualEditMode)}
+            title={visualEditMode ? "Exit Visual Edit — click any element in preview" : "Enter Visual Edit — pick element to edit"}
+            className={`grid h-7 w-7 place-items-center rounded-md border transition-colors ${
+              visualEditMode
+                ? "border-[#E50914]/50 bg-[#E50914]/[0.15] text-[#ff7480] shadow-[0_0_16px_rgba(229,9,20,0.35)]"
+                : "border-white/[0.08] bg-white/[0.02] text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <MousePointerClick className="h-3.5 w-3.5" />
+          </button>
           <button
             onClick={() => setReloadKey((k) => k + 1)}
             className="grid h-7 w-7 place-items-center rounded-md border border-white/[0.08] bg-white/[0.02] text-muted-foreground hover:text-foreground"

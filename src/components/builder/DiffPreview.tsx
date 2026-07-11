@@ -8,7 +8,8 @@
  */
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Check, ChevronDown, ChevronRight, FileDiff, X } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, FileDiff, Maximize2, X } from "lucide-react";
+import MonacoDiffModal from "./MonacoDiffModal";
 
 export interface DiffPart {
   /** Optional server-side identifier used to POST the founder decision. */
@@ -61,6 +62,7 @@ async function postDecision(diffId: string, decision: "approve" | "reject") {
 export default function DiffPreview({ diff }: { diff: DiffPart }) {
   const [open, setOpen] = useState(true);
   const [decision, setDecision] = useState<"approve" | "reject" | null>(null);
+  const [monacoOpen, setMonacoOpen] = useState(false);
   const rows = useMemo(() => computeDiff(diff.old ?? "", diff.new ?? ""), [diff.old, diff.new]);
   const adds = rows.filter((r) => r.kind === "add").length;
   const dels = rows.filter((r) => r.kind === "del").length;
@@ -134,14 +136,30 @@ export default function DiffPreview({ diff }: { diff: DiffPart }) {
             >
               <X className="h-3 w-3" /> {decision === "reject" ? "Rejected" : "Reject"}
             </button>
+            <button
+              type="button"
+              onClick={() => setMonacoOpen(true)}
+              title="Open full Monaco diff"
+              className="ml-auto flex items-center gap-1 rounded-md border border-white/[0.08] px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-foreground/70 transition-colors hover:border-[#7c3aed]/40 hover:text-[#c4a8ff]"
+            >
+              <Maximize2 className="h-3 w-3" /> Full diff
+            </button>
             {!diff.diff_id && (
-              <span className="ml-auto font-mono text-[9px] uppercase tracking-wider text-muted-foreground/40">
-                Server decision endpoint pending
+              <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/40">
+                Decision endpoint pending
               </span>
             )}
           </div>
         </div>
       )}
+      <MonacoDiffModal
+        open={monacoOpen}
+        onClose={() => setMonacoOpen(false)}
+        path={diff.path}
+        oldValue={diff.old ?? ""}
+        newValue={diff.new ?? ""}
+        language={diff.language}
+      />
     </motion.div>
   );
 }
