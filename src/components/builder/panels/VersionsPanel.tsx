@@ -125,14 +125,26 @@ export default function VersionsPanel() {
                 <span className="flex items-center gap-2">
                   <span className="text-[10px] text-muted-foreground/70">{rel(d.started_at)}</span>
                   {!d.current && (
-                    <button
-                      onClick={() => onRollback("deployment", d.id)}
-                      disabled={busy === d.id}
-                      title="Restore this deployment"
-                      className="grid h-5 w-5 place-items-center rounded hover:bg-white/[0.06] disabled:opacity-40"
-                    >
-                      <RotateCcw className="h-3 w-3 text-muted-foreground hover:text-[#ff7480]" />
-                    </button>
+                    <>
+                      <button
+                        onClick={() => onCheckout(d.id)}
+                        disabled={checkoutBusy === d.id}
+                        title="Checkout this commit into preview (time-travel)"
+                        className="grid h-5 w-5 place-items-center rounded hover:bg-white/[0.06] disabled:opacity-40"
+                      >
+                        {checkoutBusy === d.id
+                          ? <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                          : <Play className="h-3 w-3 text-muted-foreground hover:text-sky-300" />}
+                      </button>
+                      <button
+                        onClick={() => onRollback("deployment", d.id)}
+                        disabled={busy === d.id}
+                        title="Restore this deployment"
+                        className="grid h-5 w-5 place-items-center rounded hover:bg-white/[0.06] disabled:opacity-40"
+                      >
+                        <RotateCcw className="h-3 w-3 text-muted-foreground hover:text-[#ff7480]" />
+                      </button>
+                    </>
                   )}
                 </span>
               }
