@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Copy, DollarSign, Mic, Paperclip, Radio, RefreshCw, Send, ShieldCheck, Zap } from "lucide-react";
 import ChatScrollRail from "./ChatScrollRail";
 import VoiceWaveform from "./VoiceWaveform";
+import ToolCallBubble from "./ToolCallBubble";
+import DiffPreview from "./DiffPreview";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
@@ -25,6 +27,7 @@ import {
   subscribeThread,
   fetchThreadMessages,
   extractText,
+  extractStructured,
   cleanAgentText,
   UNIFIED_CHAT_SLUGS,
   type AgentMessageRow,
