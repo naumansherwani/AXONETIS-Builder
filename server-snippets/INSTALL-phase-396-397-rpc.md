@@ -3,6 +3,14 @@
 Founder-only Hetzner deploy on `aiaxonetis.hostflowai.net`.
 NO DUPLICATE — everything appends to existing files from 3.9.3/3.9.4.
 
+## Zero-manual command (recommended)
+
+```bash
+cd /var/www/axonetis && git pull && bash server-snippets/hetzner-wire-phases-393-397.sh
+```
+
+Yeh single script migration, RPC wiring, Visual Edit bridge copy, Stop-button abort verify, build/restart, aur smoke-test khud karega. Manual nano/edit nahi chahiye.
+
 ## 1. Apply migration (Supabase 3 = axonetis-builder)
 
 ```bash

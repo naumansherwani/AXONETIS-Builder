@@ -1,8 +1,8 @@
 /**
  * Phase 3.9.6 + 3.9.7 — additions to /var/www/NEXATECT-Engine/server/routes/rpc.routes.ts
  *
- * APPEND these handlers to the existing router (do NOT create a new file — no duplicate).
- * Assumes the same Express-style `router` object as rpc.routes.ts uses in 3.9.3/3.9.4.
+ * APPEND/register these handlers on the existing /rpc router (NO duplicate router).
+ * IMPORTANT: paths below are WITHOUT `/rpc` because rpc.routes.ts is mounted as app.use("/rpc", router).
  *
  * Deps:
  *   supabase3 = createClient(SUPABASE3_URL, SUPABASE3_SERVICE_ROLE_KEY)   // already exists
@@ -49,7 +49,7 @@ function classifyTier(prompt: string, agent: "jimmy" | "sherlock"): "classify" |
 export function registerRouterAndMarketplaceRoutes(router: Router, supabase3: any /* SupabaseClient */) {
 
   // ── POST /rpc/router.preview ────────────────────────────────────────────
-  router.post("/rpc/router.preview", async (req: Request, res: Response) => {
+  router.post("/router.preview", async (req: Request, res: Response) => {
     try {
       const { prompt, agent } = req.body ?? {};
       if (typeof prompt !== "string" || !prompt.trim() || (agent !== "jimmy" && agent !== "sherlock")) {
@@ -122,7 +122,7 @@ export function registerRouterAndMarketplaceRoutes(router: Router, supabase3: an
   (router as any).logRouterDecision = logRouterDecision;
 
   // ── GET /rpc/marketplace.list ───────────────────────────────────────────
-  router.get("/rpc/marketplace.list", async (_req, res) => {
+  router.get("/marketplace.list", async (_req, res) => {
     const { data, error } = await supabase3
       .from("marketplace_agents")
       .select("*")
@@ -133,7 +133,7 @@ export function registerRouterAndMarketplaceRoutes(router: Router, supabase3: an
   });
 
   // ── GET /rpc/marketplace.installed?projectId=... ────────────────────────
-  router.get("/rpc/marketplace.installed", async (req, res) => {
+  router.get("/marketplace.installed", async (req, res) => {
     const projectId = String(req.query.projectId ?? "");
     if (!projectId) return res.status(400).json({ error: "projectId required" });
     const { data, error } = await supabase3
@@ -152,7 +152,7 @@ export function registerRouterAndMarketplaceRoutes(router: Router, supabase3: an
   });
 
   // ── POST /rpc/marketplace.install  { projectId, slug } ──────────────────
-  router.post("/rpc/marketplace.install", async (req, res) => {
+  router.post("/marketplace.install", async (req, res) => {
     const { projectId, slug } = req.body ?? {};
     if (!projectId || !slug) return res.status(400).json({ error: "projectId + slug required" });
 
@@ -169,15 +169,12 @@ export function registerRouterAndMarketplaceRoutes(router: Router, supabase3: an
     if (error) return res.status(500).json({ error: error.message });
 
     await supabase3.rpc("increment_marketplace_installs", { p_slug: slug }).catch(() => null);
-    // Fallback if RPC doesn't exist:
-    await supabase3.from("marketplace_agents").update({ installs: (undefined as any) })
-      .eq("slug", slug).catch(() => null);
 
     return res.json({ ok: true });
   });
 
   // ── POST /rpc/marketplace.uninstall  { projectId, slug } ────────────────
-  router.post("/rpc/marketplace.uninstall", async (req, res) => {
+  router.post("/marketplace.uninstall", async (req, res) => {
     const { projectId, slug } = req.body ?? {};
     if (!projectId || !slug) return res.status(400).json({ error: "projectId + slug required" });
     const { error } = await supabase3
