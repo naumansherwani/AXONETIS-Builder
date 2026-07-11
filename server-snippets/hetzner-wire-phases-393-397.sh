@@ -555,6 +555,9 @@ log "7) Engine install/build/restart"
 cd "$ENGINE_DIR"
 git pull --ff-only || warn "Engine git pull failed/dirty tree — continuing with current files"
 bun install
+if [ -f package.json ] && ! node -e 'const p=require("./package.json"); const d={...(p.dependencies||{}), ...(p.devDependencies||{})}; process.exit(d["@supabase/supabase-js"]?0:1)' 2>/dev/null; then
+  bun add @supabase/supabase-js
+fi
 if [ -f package.json ] && node -e 'const p=require("./package.json"); process.exit(p.scripts&&p.scripts.build?0:1)' 2>/dev/null; then
   bun run build
 fi
