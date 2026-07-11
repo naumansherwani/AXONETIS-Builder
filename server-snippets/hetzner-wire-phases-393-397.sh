@@ -226,16 +226,19 @@ detect_local_peer_db() {
   local db
   for db in $candidates; do
     [ -n "$db" ] || continue
-    if sudo -n -u postgres psql -d "$db" -v ON_ERROR_STOP=1 -tAc 'select 1' >/dev/null 2>&1; then
+    if sudo -n -u postgres psql -d "$db" -v ON_ERROR_STOP=1 -tAc "select to_regclass('auth.users') is not null" 2>/dev/null | grep -qx 't'; then
       printf 'local-peer:%s' "$db"
       return 0
     fi
   done
 
-  db="$(sudo -n -u postgres psql -d postgres -tAc "select datname from pg_database where datistemplate=false and datallowconn=true order by case when datname='postgres' then 0 when datname ilike '%axonetis%' then 1 else 2 end, datname limit 1" 2>/dev/null | tr -d '[:space:]' || true)"
-  if [ -n "$db" ] && sudo -n -u postgres psql -d "$db" -v ON_ERROR_STOP=1 -tAc 'select 1' >/dev/null 2>&1; then
-    printf 'local-peer:%s' "$db"
-  fi
+  while IFS= read -r db; do
+    [ -n "$db" ] || continue
+    if sudo -n -u postgres psql -d "$db" -v ON_ERROR_STOP=1 -tAc "select to_regclass('auth.users') is not null" 2>/dev/null | grep -qx 't'; then
+      printf 'local-peer:%s' "$db"
+      return 0
+    fi
+  done < <(sudo -n -u postgres psql -d postgres -tAc "select datname from pg_database where datistemplate=false and datallowconn=true order by case when datname ilike '%supabase%' then 0 when datname ilike '%axon%' then 1 when datname ilike '%builder%' then 2 when datname='postgres' then 9 else 5 end, datname" 2>/dev/null | tr -d '[:space:]' || true)
 }
 
 select_db_url() {
@@ -282,7 +285,7 @@ select_db_url() {
 
   value="$(detect_local_peer_db || true)"
   if [ -n "$value" ]; then
-    warn "No usable DB URL found; using local postgres peer access on this Hetzner box."
+    warn "No usable DB URL found; using local Supabase-compatible peer DB (${value#local-peer:}) on this Hetzner box."
     printf '%s' "$value"
   fi
 }
@@ -343,7 +346,7 @@ run_psql() {
       local peer_url=""
       peer_url="$(detect_local_peer_db || true)"
       if [ -n "$peer_url" ]; then
-        warn "TCP password failed; switching to local postgres peer access on this Hetzner box. No DB password needed."
+        warn "TCP password failed; switching to local Supabase-compatible peer DB (${peer_url#local-peer:}). No DB password needed."
         DB_URL="$peer_url"
         set +e
         local peer_db="${DB_URL#local-peer:}"
