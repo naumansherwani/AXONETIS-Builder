@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ChangeEvent } from "react";
-import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp, Mic, Paperclip, Radio, Send, ShieldCheck } from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, ChevronUp, Copy, Mic, Paperclip, Radio, RefreshCw, Send, ShieldCheck, Zap } from "lucide-react";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
@@ -38,9 +38,26 @@ const BOTTOM_THRESHOLD = 24;
 
 const SEED: Msg[] = [];
 
+/** 3.9.1 slash commands — quick actions parsed from draft. */
+const SLASH_COMMANDS: Array<{ cmd: string; label: string; hint: string; agent: UnifiedAgentSlug }> = [
+  { cmd: "/scan",     label: "/scan",     hint: "Sherlock full audit",         agent: "sherlock" },
+  { cmd: "/fix",      label: "/fix",      hint: "Auto-fix last error",         agent: "sherlock" },
+  { cmd: "/review",   label: "/review",   hint: "Review current diff",         agent: "sherlock" },
+  { cmd: "/rollback", label: "/rollback", hint: "Roll back last change",       agent: "jimmy"    },
+  { cmd: "/versions", label: "/versions", hint: "Show version history",        agent: "jimmy"    },
+  { cmd: "/publish",  label: "/publish",  hint: "Promote sandbox → prod",      agent: "jimmy"    },
+  { cmd: "/help",     label: "/help",     hint: "Show commands",               agent: "jimmy"    },
+];
+
+const MENTIONS: Array<{ tag: string; agent: UnifiedAgentSlug; hint: string }> = [
+  { tag: "@jimmy",    agent: "jimmy",    hint: "Build agent"  },
+  { tag: "@sherlock", agent: "sherlock", hint: "Review agent" },
+];
 
 const resolveAgent = (prompt: string): UnifiedAgentSlug => {
   const p = prompt.toLowerCase();
+  if (p.includes("@sherlock")) return "sherlock";
+  if (p.includes("@jimmy")) return "jimmy";
   return p.includes("sherlock") || p.includes("/scan") || p.includes("/fix") || p.includes("/review") ? "sherlock" : "jimmy";
 };
 
@@ -49,6 +66,18 @@ const AGENT_META: Record<Agent, { name: string; subtitle: string; rail: string; 
   jimmy: { name: "Jimmy", subtitle: "Build Agent", rail: "bg-[#E50914] shadow-[0_0_18px_#E50914]", chip: "bg-[#E50914]/15 text-[#ff7480] border-[#E50914]/40", ring: "ring-[#E50914]/50", initial: "J" },
   sherlock: { name: "Sherlock", subtitle: "Review · Audit", rail: "bg-[#7c3aed] shadow-[0_0_18px_#7c3aed]", chip: "bg-[#7c3aed]/15 text-[#c4a8ff] border-[#7c3aed]/40", ring: "ring-[#7c3aed]/50", initial: "S" },
 };
+
+function relTime(iso?: string): string {
+  if (!iso) return "";
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return "";
+  const diff = (Date.now() - t) / 1000;
+  if (diff < 5) return "just now";
+  if (diff < 60) return `${Math.floor(diff)}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return new Date(iso).toLocaleDateString();
+}
 
 export default function UnifiedChat() {
   const { project, branch, environment, bridgeStatus } = useBuilder();
@@ -153,15 +182,21 @@ export default function UnifiedChat() {
         if (!UNIFIED_CHAT_SLUGS.has(slug)) return;
         const text = extractText(row) || "(empty reply)";
         const agent: Agent = slug === "sherlock" ? "sherlock" : "jimmy";
+        const meta = {
+          model: row.model ?? null,
+          tokensIn: row.tokens_in ?? 0,
+          tokensOut: row.tokens_out ?? 0,
+          createdAt: row.created_at,
+        };
         setMessages((prev) => {
           const next = [...prev];
           const placeholderId = pendingPlaceholderRef.current;
           const idx = placeholderId ? next.findIndex((m) => m.id === placeholderId) : -1;
           if (idx >= 0) {
-            next[idx] = { id: row.id, agent, text };
+            next[idx] = { ...next[idx], id: row.id, agent, text, thinking: false, meta };
             pendingPlaceholderRef.current = null;
           } else {
-            next.push({ id: row.id, agent, text });
+            next.push({ id: row.id, agent, text, meta });
           }
           return next;
         });
@@ -188,10 +223,11 @@ export default function UnifiedChat() {
     setStatus("streaming");
     setComposerNotice("");
     stickToBottomRef.current = true;
+    const now = new Date().toISOString();
     setMessages((prev) => [
       ...prev,
-      { id: `f-${Date.now()}`, agent: "founder", text: prompt },
-      { id: placeholderId, agent: targetAgent, text: `${targetAgent === "sherlock" ? "Auditing" : "Working"}…`, thinking: true },
+      { id: `f-${Date.now()}`, agent: "founder", text: prompt, meta: { createdAt: now } },
+      { id: placeholderId, agent: targetAgent, text: `${targetAgent === "sherlock" ? "Auditing" : "Working"}…`, thinking: true, sourcePrompt: prompt, meta: { createdAt: now } },
     ]);
     setAttachments([]);
 
@@ -208,7 +244,7 @@ export default function UnifiedChat() {
             const currentPlaceholder = pendingPlaceholderRef.current;
             const idx = currentPlaceholder ? next.findIndex((m) => m.id === currentPlaceholder) : -1;
             if (idx >= 0) {
-              next[idx] = { id: ack.assistantMessageId ?? currentPlaceholder ?? `j-${Date.now()}`, agent: targetAgent, text: cleaned };
+              next[idx] = { ...next[idx], id: ack.assistantMessageId ?? currentPlaceholder ?? `j-${Date.now()}`, agent: targetAgent, text: cleaned, thinking: false };
               pendingPlaceholderRef.current = null;
             }
             return next;
@@ -266,6 +302,50 @@ export default function UnifiedChat() {
     setComposerNotice("Response stopped.");
     textareaRef.current?.focus();
   }, []);
+
+  // 3.9.1 — retry an assistant message by re-running its sourcePrompt.
+  const retry = useCallback((sourcePrompt: string) => {
+    if (busy || !sourcePrompt) return;
+    setStatus("submitted");
+    executePrompt(sourcePrompt);
+  }, [busy, executePrompt]);
+
+  // 3.9.1 — session token meter (sum of assistant tokens_out on this thread).
+  const sessionTokens = useMemo(() => {
+    let inTok = 0, outTok = 0;
+    for (const m of messages) {
+      if (m.meta?.tokensIn) inTok += m.meta.tokensIn;
+      if (m.meta?.tokensOut) outTok += m.meta.tokensOut;
+    }
+    return { inTok, outTok, total: inTok + outTok };
+  }, [messages]);
+
+  // 3.9.1 — slash + mention popover state derived from draft.
+  const slashSuggestions = useMemo(() => {
+    const t = draft.trimStart();
+    if (!t.startsWith("/")) return [];
+    const q = t.split(/\s/)[0].toLowerCase();
+    return SLASH_COMMANDS.filter((c) => c.cmd.startsWith(q));
+  }, [draft]);
+
+  const mentionSuggestions = useMemo(() => {
+    const match = draft.match(/(^|\s)@(\w*)$/);
+    if (!match) return [];
+    const q = `@${match[2].toLowerCase()}`;
+    return MENTIONS.filter((m) => m.tag.startsWith(q));
+  }, [draft]);
+
+  const applySlash = useCallback((cmd: string) => {
+    const rest = draft.trimStart().replace(/^\S+/, "").trim();
+    setDraft(rest ? `${cmd} ${rest}` : `${cmd} `);
+    textareaRef.current?.focus();
+  }, [draft]);
+
+  const applyMention = useCallback((tag: string) => {
+    setDraft((prev) => prev.replace(/(^|\s)@(\w*)$/, (_, lead) => `${lead}${tag} `));
+    textareaRef.current?.focus();
+  }, []);
+
 
   const onAttach = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
@@ -338,7 +418,9 @@ export default function UnifiedChat() {
   }, [scrollByDelta, scrollToBottom, scrollToTop]);
 
   return (
+    <TooltipProvider delayDuration={150}>
     <div className="flex h-full min-h-0 flex-col bg-background">
+
       {/* Header */}
       <div className="relative grid h-12 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background/70 px-4 backdrop-blur-xl">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#E50914]/40 to-transparent" />
@@ -358,7 +440,24 @@ export default function UnifiedChat() {
             </span>
           )}
         </div>
-        <span className="shrink-0 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/50">{bridgeStatus}</span>
+        <div className="flex shrink-0 items-center gap-2">
+          {sessionTokens.total > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/80">
+                  <Zap className="h-2.5 w-2.5 text-amber-400" />
+                  {sessionTokens.total.toLocaleString()} tok
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="text-[10px] font-mono">
+                  in: {sessionTokens.inTok.toLocaleString()} · out: {sessionTokens.outTok.toLocaleString()}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )}
+          <span className="shrink-0 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/50">{bridgeStatus}</span>
+        </div>
       </div>
 
       {/* Messages — native scroll, keyboard accessible */}
@@ -381,7 +480,7 @@ export default function UnifiedChat() {
             ) : (
               messages.map((msg) => (
                 <div key={msg.id} className="px-4 py-2.5">
-                  <MessageRow msg={msg} />
+                  <MessageRow msg={msg} onRetry={retry} />
                 </div>
               ))
             )}
@@ -416,7 +515,44 @@ export default function UnifiedChat() {
       </div>
 
       {/* Composer — pinned bottom */}
-      <div className="shrink-0 border-t border-border bg-background/75 p-3 backdrop-blur-xl">
+      <div className="relative shrink-0 border-t border-border bg-background/75 p-3 backdrop-blur-xl">
+        {/* 3.9.1 — slash + @mention popovers */}
+        <AnimatePresence>
+          {(slashSuggestions.length > 0 || mentionSuggestions.length > 0) && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ type: "spring", stiffness: 220, damping: 22 }}
+              className="absolute bottom-full left-3 right-3 mb-2 overflow-hidden rounded-xl border border-white/[0.08] bg-background/95 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl"
+            >
+              {slashSuggestions.map((c) => (
+                <button
+                  key={c.cmd}
+                  type="button"
+                  onClick={() => applySlash(c.cmd)}
+                  className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-accent/40"
+                >
+                  <span className={`grid h-5 w-5 place-items-center rounded text-[9px] font-bold ${AGENT_META[c.agent].chip} ring-1 ${AGENT_META[c.agent].ring}`}>{AGENT_META[c.agent].initial}</span>
+                  <span className="font-mono text-[11px] font-semibold text-foreground">{c.label}</span>
+                  <span className="truncate text-[10px] text-muted-foreground">{c.hint}</span>
+                </button>
+              ))}
+              {mentionSuggestions.map((mn) => (
+                <button
+                  key={mn.tag}
+                  type="button"
+                  onClick={() => applyMention(mn.tag)}
+                  className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-accent/40"
+                >
+                  <span className={`grid h-5 w-5 place-items-center rounded text-[9px] font-bold ${AGENT_META[mn.agent].chip} ring-1 ${AGENT_META[mn.agent].ring}`}>{AGENT_META[mn.agent].initial}</span>
+                  <span className="font-mono text-[11px] font-semibold text-foreground">{mn.tag}</span>
+                  <span className="truncate text-[10px] text-muted-foreground">{mn.hint}</span>
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
         <input ref={fileInputRef} type="file" multiple className="hidden" onChange={onAttach} />
         <PromptInput
           className="rounded-lg"
@@ -516,27 +652,84 @@ export default function UnifiedChat() {
         </div>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
 
-function MessageRow({ msg }: { msg: Msg }) {
+function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string) => void }) {
   const m = AGENT_META[msg.agent];
+  const [copied, setCopied] = useState(false);
+  const isAssistant = msg.agent !== "founder";
+  const canRetry = isAssistant && !!msg.sourcePrompt && !msg.thinking;
+  const modelShort = msg.meta?.model
+    ? msg.meta.model.split("/").slice(-1)[0].replace(/-instruct$|:free$/gi, "")
+    : null;
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(msg.text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1400);
+    } catch { /* ignore */ }
+  };
+
   return (
     <motion.div
       layout
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 80, damping: 15 }}
-      className="grid grid-cols-[2px_30px_minmax(0,1fr)] gap-3"
+      className="group relative grid grid-cols-[2px_30px_minmax(0,1fr)] gap-3"
     >
       <div className={`mt-1 w-[2px] shrink-0 rounded-full ${m.rail}`} />
       <div className={`grid h-[30px] w-[30px] shrink-0 place-items-center rounded-lg border text-[11px] font-bold ${m.chip} ring-1 ${m.ring}`}>{m.initial}</div>
       <div className="min-w-0 flex-1">
-        <div className="mb-1 flex min-w-0 items-baseline gap-2">
+        <div className="mb-1 flex min-w-0 items-center gap-2">
           <span className="text-[13px] font-semibold">{m.name}</span>
           <span className="truncate text-[10px] uppercase tracking-widest text-muted-foreground/55">{m.subtitle}</span>
+          {msg.meta?.createdAt && (
+            <span className="ml-auto shrink-0 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100">
+              {relTime(msg.meta.createdAt)}
+            </span>
+          )}
         </div>
         {msg.thinking ? <Shimmer className="text-[14px]" duration={2}>{msg.text}</Shimmer> : <MessageResponse>{msg.text}</MessageResponse>}
+
+        {/* meta chips + hover actions */}
+        {isAssistant && !msg.thinking && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            {modelShort && (
+              <span className="rounded-md border border-white/[0.06] bg-white/[0.02] px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/70">
+                {modelShort}
+              </span>
+            )}
+            {msg.meta?.tokensOut ? (
+              <span className="rounded-md border border-white/[0.06] bg-white/[0.02] px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/60">
+                {msg.meta.tokensOut.toLocaleString()} out
+              </span>
+            ) : null}
+            <div className="ml-auto flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" onClick={copy} className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground/70 hover:bg-accent hover:text-foreground">
+                    <Copy className="h-3 w-3" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>{copied ? "Copied!" : "Copy"}</TooltipContent>
+              </Tooltip>
+              {canRetry && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" onClick={() => onRetry(msg.sourcePrompt!)} className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground/70 hover:bg-accent hover:text-foreground">
+                      <RefreshCw className="h-3 w-3" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Retry</TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </motion.div>
   );
