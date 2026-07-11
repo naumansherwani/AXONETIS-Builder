@@ -136,14 +136,30 @@ export default function DiffPreview({ diff }: { diff: DiffPart }) {
             >
               <X className="h-3 w-3" /> {decision === "reject" ? "Rejected" : "Reject"}
             </button>
+            <button
+              type="button"
+              onClick={() => setMonacoOpen(true)}
+              title="Open full Monaco diff"
+              className="ml-auto flex items-center gap-1 rounded-md border border-white/[0.08] px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-foreground/70 transition-colors hover:border-[#7c3aed]/40 hover:text-[#c4a8ff]"
+            >
+              <Maximize2 className="h-3 w-3" /> Full diff
+            </button>
             {!diff.diff_id && (
-              <span className="ml-auto font-mono text-[9px] uppercase tracking-wider text-muted-foreground/40">
-                Server decision endpoint pending
+              <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/40">
+                Decision endpoint pending
               </span>
             )}
           </div>
         </div>
       )}
+      <MonacoDiffModal
+        open={monacoOpen}
+        onClose={() => setMonacoOpen(false)}
+        path={diff.path}
+        oldValue={diff.old ?? ""}
+        newValue={diff.new ?? ""}
+        language={diff.language}
+      />
     </motion.div>
   );
 }
