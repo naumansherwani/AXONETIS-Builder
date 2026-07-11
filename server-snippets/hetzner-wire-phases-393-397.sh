@@ -471,10 +471,10 @@ log "4) Wire /rpc routes in engine — NO duplicate router"
 if [ ! -f "$RPC_FILE" ]; then
   cp "$BUILDER_DIR/server-snippets/rpc.routes.ts" "$RPC_FILE"
   ok "Installed rpc.routes.ts"
-elif ! grep -q "publish.state" "$RPC_FILE" || ! grep -q "sql.validate" "$RPC_FILE"; then
+elif ! grep -q "publish.state" "$RPC_FILE" || ! grep -q "sql.validate" "$RPC_FILE" || ! grep -q "type CustomDomainRow" "$RPC_FILE"; then
   backup "$RPC_FILE"
   cp "$BUILDER_DIR/server-snippets/rpc.routes.ts" "$RPC_FILE"
-  ok "Replaced incomplete rpc.routes.ts with complete 3.9.3/3.9.4 router (backup kept)"
+  ok "Replaced incomplete/old rpc.routes.ts with strict complete 3.9.3/3.9.4 router (backup kept)"
 else
   ok "Existing rpc.routes.ts already has 3.9.3/3.9.4 endpoints"
 fi
