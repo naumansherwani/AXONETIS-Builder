@@ -733,7 +733,7 @@ export default function UnifiedChat() {
           </div>
         )}
         <div className="mt-2 flex items-center justify-between px-1 text-[10px] uppercase tracking-widest text-muted-foreground/45">
-          <span className="font-mono">Phase 3.9 · {busy ? (targetAgent === "sherlock" ? "auditing" : "thinking") : "ready"}</span>
+          <span className="font-mono">Phase 3.9 · {busy ? (messages.slice().reverse().find((m) => m.thinking)?.agent === "sherlock" ? "auditing" : "thinking") : "ready"}</span>
           <span className={`font-mono ${overLimit ? "text-red-400" : charCount > MAX_CHARS * 0.9 ? "text-amber-400" : "text-muted-foreground/50"}`}>
             {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()}
           </span>
