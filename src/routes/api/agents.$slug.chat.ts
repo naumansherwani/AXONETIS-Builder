@@ -25,6 +25,8 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const ALLOWED_SLUGS = new Set(["jimmy", "sherlock"]);
 const RUST_TIMEOUT_MS = 45_000;
+const DIRECT_FALLBACK_TIMEOUT_MS = 30_000;
+const DISABLED_PROVIDER_IDS = ["J-bk-deepseek-v31-fr", "S-bk-llama-70b-fr"];
 const SSE_HEADERS = {
   "Content-Type": "text/event-stream; charset=utf-8",
   "Cache-Control": "no-cache, no-transform",
@@ -56,6 +58,146 @@ function sseFrame(event: string, data: unknown) {
 
 function isBackgroundSherlockAudit(slug: string, prompt: string) {
   return slug === "sherlock" && prompt.trim().startsWith("SHERLOCK AUTO-AUDIT");
+}
+
+function hasProviderKeyFailure(text: string | null | undefined) {
+  if (!text) return false;
+  return /all providers failed|no key|missing.*key|provider.*failed/i.test(text);
+}
+
+function providerEnv(...names: string[]) {
+  for (const name of names) {
+    const value = process.env[name]?.trim();
+    if (value) return value;
+  }
+  return "";
+}
+
+function modelsFromEnv(envName: string, fallback: string[]) {
+  const configured = process.env[envName]
+    ?.split(",")
+    .map((m) => m.trim())
+    .filter(Boolean);
+  return configured?.length ? configured : fallback;
+}
+
+function directSystemPrompt(slug: string) {
+  if (slug === "sherlock") {
+    return "You are SherlockReview, AXONETIS AI Builder's strict audit/debug agent. Reply in concise Roman Urdu/Hindi when the founder writes that way. Be practical, identify root cause, and never invent fake backend results.";
+  }
+  return "You are JimmyBuild Agent for AXONETIS AI Builder. Reply in concise Roman Urdu/Hindi when the founder writes that way. Help build real production features, explain exact next actions, and never pretend a backend action happened if it did not.";
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function callGroqFallback(slug: string, prompt: string) {
+  const key = providerEnv("GROQ_API_KEY", "GROQ_KEY", "NEXATECT_GROQ_API_KEY", "HOSTFLOW_GROQ_API_KEY");
+  if (!key) return null;
+
+  const models = modelsFromEnv(
+    slug === "sherlock" ? "AXONETIS_SHERLOCK_GROQ_MODELS" : "AXONETIS_JIMMY_GROQ_MODELS",
+    slug === "sherlock"
+      ? ["llama-3.3-70b-versatile", "openai/gpt-oss-120b"]
+      : ["llama-3.3-70b-versatile", "qwen/qwen3-32b", "openai/gpt-oss-120b"],
+  );
+
+  let lastError = "";
+  for (const model of models) {
+    try {
+      const r = await fetchWithTimeout("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${key}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: directSystemPrompt(slug) },
+            { role: "user", content: prompt },
+          ],
+          temperature: slug === "sherlock" ? 0.2 : 0.45,
+        }),
+      }, DIRECT_FALLBACK_TIMEOUT_MS);
+      if (!r.ok) {
+        lastError = `${model}: ${r.status} ${await r.text().catch(() => "")}`.slice(0, 280);
+        continue;
+      }
+      const payload = await r.json().catch(() => null) as { choices?: Array<{ message?: { content?: string } }> } | null;
+      const text = payload?.choices?.[0]?.message?.content?.trim();
+      if (text) return { text, model: `groq:${model}` };
+    } catch (err) {
+      lastError = `${model}: ${err instanceof Error ? err.message : String(err)}`.slice(0, 280);
+    }
+  }
+  return lastError ? { error: lastError } : null;
+}
+
+async function callOpenRouterFallback(slug: string, prompt: string) {
+  const key = providerEnv("OPENROUTER_API_KEY", "OPENROUTER_KEY", "NEXATECT_OPENROUTER_API_KEY", "HOSTFLOW_OPENROUTER_API_KEY");
+  if (!key) return null;
+
+  const models = modelsFromEnv(
+    slug === "sherlock" ? "AXONETIS_SHERLOCK_OPENROUTER_MODELS" : "AXONETIS_JIMMY_OPENROUTER_MODELS",
+    slug === "sherlock"
+      ? ["deepseek/deepseek-r1:free", "meta-llama/llama-3.3-70b-instruct:free", "qwen/qwen-2.5-coder-32b-instruct"]
+      : ["qwen/qwen-2.5-coder-32b-instruct", "deepseek/deepseek-chat-v3.1:free", "meta-llama/llama-3.3-70b-instruct:free"],
+  );
+
+  let lastError = "";
+  for (const model of models) {
+    try {
+      const r = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${key}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://axonetis.lovable.app",
+          "X-Title": "AXONETIS AI Builder",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: directSystemPrompt(slug) },
+            { role: "user", content: prompt },
+          ],
+          temperature: slug === "sherlock" ? 0.2 : 0.45,
+        }),
+      }, DIRECT_FALLBACK_TIMEOUT_MS);
+      if (!r.ok) {
+        lastError = `${model}: ${r.status} ${await r.text().catch(() => "")}`.slice(0, 280);
+        continue;
+      }
+      const payload = await r.json().catch(() => null) as { choices?: Array<{ message?: { content?: string } }> } | null;
+      const text = payload?.choices?.[0]?.message?.content?.trim();
+      if (text) return { text, model: `openrouter:${model}` };
+    } catch (err) {
+      lastError = `${model}: ${err instanceof Error ? err.message : String(err)}`.slice(0, 280);
+    }
+  }
+  return lastError ? { error: lastError } : null;
+}
+
+async function runDirectFallback(slug: string, prompt: string) {
+  const primary = slug === "sherlock"
+    ? [callGroqFallback, callOpenRouterFallback]
+    : [callGroqFallback, callOpenRouterFallback];
+  const errors: string[] = [];
+  for (const call of primary) {
+    const result = await call(slug, prompt);
+    if (!result) continue;
+    if ("text" in result && result.text) return result;
+    if ("error" in result && result.error) errors.push(result.error);
+  }
+  return errors.length ? { error: errors.join(" | ").slice(0, 600) } : null;
 }
 
 /**
@@ -144,7 +286,12 @@ async function runBrainAndInsert({ supabase, slug, prompt, threadId, userMessage
     const r = await fetch(`${brainURL}/api/agents/${slug}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: prompt }),
+      body: JSON.stringify({
+        message: prompt,
+        disabledProviders: DISABLED_PROVIDER_IDS,
+        excludeProviderIds: DISABLED_PROVIDER_IDS,
+        skipProviderIds: DISABLED_PROVIDER_IDS,
+      }),
       signal: ctrl.signal,
     });
     if (!r.ok) {
@@ -159,6 +306,17 @@ async function runBrainAndInsert({ supabase, slug, prompt, threadId, userMessage
       : err instanceof Error ? err.message : String(err);
   } finally {
     clearTimeout(timer);
+  }
+
+  if (hasProviderKeyFailure(rustError ?? assistantText)) {
+    const direct = await runDirectFallback(slug, prompt);
+    if (direct && "text" in direct && direct.text) {
+      assistantText = direct.text;
+      rustError = null;
+    } else if (direct && "error" in direct && direct.error) {
+      rustError = `Direct fallback failed: ${direct.error}`;
+      assistantText = "";
+    }
   }
 
   if (rustError && !assistantText) {
@@ -188,7 +346,13 @@ function streamBrainToClient(job: BrainJob) {
           const r = await fetch(`${job.brainURL}/api/agents/${job.slug}/chat`, {
             method: "POST",
             headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
-            body: JSON.stringify({ message: job.prompt, stream: true }),
+            body: JSON.stringify({
+              message: job.prompt,
+              stream: true,
+              disabledProviders: DISABLED_PROVIDER_IDS,
+              excludeProviderIds: DISABLED_PROVIDER_IDS,
+              skipProviderIds: DISABLED_PROVIDER_IDS,
+            }),
             signal: ctrl.signal,
           });
           if (!r.ok) {
@@ -237,6 +401,18 @@ function streamBrainToClient(job: BrainJob) {
             : err instanceof Error ? err.message : String(err);
         } finally {
           clearTimeout(timer);
+        }
+
+        if (hasProviderKeyFailure(rustError ?? assistantText)) {
+          const direct = await runDirectFallback(job.slug, job.prompt);
+          if (direct && "text" in direct && direct.text) {
+            assistantText = direct.text;
+            rustError = null;
+            send("token", { delta: direct.text });
+          } else if (direct && "error" in direct && direct.error) {
+            rustError = `Direct fallback failed: ${direct.error}`;
+            assistantText = "";
+          }
         }
 
         if (rustError && !assistantText) {
