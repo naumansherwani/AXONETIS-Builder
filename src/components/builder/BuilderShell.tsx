@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BuilderCtx, type AgentState, type BottomTabId, type PreviewMode } from "@/lib/builder-state";
+import { BuilderCtx, type AgentState, type BottomTabId, type PreviewMode, type VisualEditPick } from "@/lib/builder-state";
 import { DEFAULT_PROJECT, type Branch, type Environment, type ProjectId } from "@/lib/projects";
 import TopBar from "./TopBar";
 import WorkspaceTabs from "./workspace/WorkspaceTabs";
@@ -33,6 +33,8 @@ export default function BuilderShell() {
   const [bridgeStatus, setBridgeStatus] = useState<BridgeStatus>("standby");
   const [lastBridgeEvent, setLastBridgeEvent] = useState<PreviewBridgeEvent | null>(null);
   const [lastPreviewChange, setLastPreviewChange] = useState<PreviewFileChange | null>(null);
+  const [visualEditMode, setVisualEditMode] = useState(false);
+  const [lastVisualEditPick, setLastVisualEditPick] = useState<VisualEditPick | null>(null);
 
   // Phase 7 — when project switches, hydrate isolated state from its workspace.
   useEffect(() => {
@@ -66,11 +68,12 @@ export default function BuilderShell() {
   const value = useMemo(
     () => ({
       project, branch, environment, bottomTab, previewMode, paletteOpen, agentState, bridgeStatus, lastBridgeEvent,
-      previewEnv, lastPreviewChange,
+      previewEnv, lastPreviewChange, visualEditMode, lastVisualEditPick,
       setProject, setBranch, setEnvironment, setBottomTab, setPreviewMode, setPaletteOpen, setAgentState,
       setBridgeStatus, setLastBridgeEvent, setPreviewEnv, setLastPreviewChange,
+      setVisualEditMode, setLastVisualEditPick,
     }),
-    [project, branch, environment, bottomTab, previewMode, paletteOpen, agentState, bridgeStatus, lastBridgeEvent, previewEnv, lastPreviewChange],
+    [project, branch, environment, bottomTab, previewMode, paletteOpen, agentState, bridgeStatus, lastBridgeEvent, previewEnv, lastPreviewChange, visualEditMode, lastVisualEditPick],
   );
 
   return (
