@@ -117,13 +117,36 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
         } else {
           const { readFounderSession, resolveFounderUserId } = await import("@/lib/founder-session.server");
           const founderSession = readFounderSession(request);
-          if (!founderSession) {
-            return Response.json(
-              { error: "Founder GitHub session required. Login at /auth first." },
-              { status: 401 },
-            );
+          if (founderSession) {
+            userId = await resolveFounderUserId(supabase, founderSession);
+          } else {
+            // Preview-host bypass — mirrors _authenticated/route.tsx.
+            // Prod (aiaxonetis.nexatect.com) still enforces GitHub session.
+            const host = new URL(request.url).hostname;
+            const isPreview =
+              host === "localhost" ||
+              host === "127.0.0.1" ||
+              host.endsWith(".lovableproject.com") ||
+              host.endsWith(".lovable.dev") ||
+              host.endsWith(".lovable.app") ||
+              host.includes("id-preview--") ||
+              host.startsWith("preview--");
+            if (!isPreview) {
+              return Response.json(
+                { error: "Founder GitHub session required. Login at /auth first." },
+                { status: 401 },
+              );
+            }
+            // Synthesize a preview-only founder session (allowlist-free, host-gated).
+            userId = await resolveFounderUserId(supabase, {
+              sub: "preview",
+              login: "preview",
+              githubId: 0,
+              name: "Preview Founder",
+              iat: 0,
+              exp: 0,
+            });
           }
-          userId = await resolveFounderUserId(supabase, founderSession);
         }
 
         // 1. Ensure thread
