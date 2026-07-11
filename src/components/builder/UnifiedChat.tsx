@@ -400,15 +400,23 @@ export default function UnifiedChat() {
   const submit = useCallback(() => {
     const prompt = draft.trim();
     if (!prompt || overLimit) return;
+    // Phase 3.9.5 — prepend Visual Edit context if founder picked an element.
+    let final = prompt;
+    if (lastVisualEditPick) {
+      const p = lastVisualEditPick;
+      const ctx = `[Visual Edit] <${p.tag}> selector=\`${p.selector}\`${p.path ? ` at ${p.path}` : ""}${p.text ? ` — "${p.text.slice(0, 80)}"` : ""}`;
+      final = `${ctx}\n${prompt}`;
+      setLastVisualEditPick(null);
+    }
     setDraft("");
     if (busy) {
-      setQueue((prev) => [...prev, prompt]);
+      setQueue((prev) => [...prev, final]);
       setComposerNotice("Prompt queued — current response pehle complete hogi.");
       return;
     }
     setStatus("submitted");
-    executePrompt(prompt);
-  }, [busy, draft, executePrompt, overLimit]);
+    executePrompt(final);
+  }, [busy, draft, executePrompt, overLimit, lastVisualEditPick, setLastVisualEditPick]);
 
   useEffect(() => {
     if (busy || queue.length === 0) return;
