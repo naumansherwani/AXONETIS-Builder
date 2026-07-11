@@ -136,11 +136,11 @@ create index if not exists idx_agent_thread_messages_parent on public.agent_thre
 -- ─────────────────────────────────────────────────────────────
 insert into public.marketplace_agents (slug, name, tagline, description, category, author, version, icon, tools, featured, official)
 values
-  ('seo-scout',     'SEO Scout',     'Audits pages, ranks keywords, patches meta.',      'review',  'NEXATECT', '1.0.0', '🔎', '["fetch_url","run_lighthouse","write_file"]', true, true),
-  ('outreach-hawk', 'Outreach Hawk', 'Cold-email drafter with Trojan CRM hooks.',        'outreach','NEXATECT', '0.9.0', '🦅', '["send_email","query_crm"]',                 true, true),
-  ('data-bee',      'Data Bee',      'Schema drift detector + migration proposer.',      'data',    'NEXATECT', '0.7.0', '🐝', '["run_sql","diff_schema"]',                  false,true),
-  ('brand-lens',    'Brand Lens',    'Generates cinematic cover images from prompt.',    'creative','NEXATECT', '0.5.0', '🎬', '["generate_image"]',                          false,true),
-  ('rollback-medic','Rollback Medic','Auto-restores last green build on error spike.',   'ops',     'NEXATECT', '0.8.0', '🩺', '["git_checkout","deploy"]',                  false,true)
+  ('seo-scout',     'SEO Scout',     'Audits pages, ranks keywords, patches meta.',      'Full on-page SEO audit with automatic meta patching.',      'review',  'NEXATECT', '1.0.0', '🔎', '["fetch_url","run_lighthouse","write_file"]'::jsonb, true, true),
+  ('outreach-hawk', 'Outreach Hawk', 'Cold-email drafter with Trojan CRM hooks.',        'Drafts personalized cold emails and syncs replies to CRM.', 'outreach','NEXATECT', '0.9.0', '🦅', '["send_email","query_crm"]'::jsonb,                 true, true),
+  ('data-bee',      'Data Bee',      'Schema drift detector + migration proposer.',      'Detects schema drift and proposes safe migrations.',        'data',    'NEXATECT', '0.7.0', '🐝', '["run_sql","diff_schema"]'::jsonb,                  false,true),
+  ('brand-lens',    'Brand Lens',    'Generates cinematic cover images from prompt.',    'Generates cinematic cover images tuned to brand tokens.',   'creative','NEXATECT', '0.5.0', '🎬', '["generate_image"]'::jsonb,                          false,true),
+  ('rollback-medic','Rollback Medic','Auto-restores last green build on error spike.',   'Auto-rolls back deploys when error rates spike.',           'ops',     'NEXATECT', '0.8.0', '🩺', '["git_checkout","deploy"]'::jsonb,                  false,true)
 on conflict (slug) do nothing;
 
 create or replace function public.increment_marketplace_installs(p_slug text)
