@@ -800,7 +800,7 @@ export default function UnifiedChat() {
           </div>
         )}
         <div className="mt-2 flex items-center justify-between px-1 text-[10px] uppercase tracking-widest text-muted-foreground/45">
-          <span className="font-mono">Phase 3.9 · {busy ? (messages.slice().reverse().find((m) => m.thinking)?.agent === "sherlock" ? "auditing" : "thinking") : "ready"}</span>
+          <span className="font-mono">Phase 3.9 · {busy ? (messages.slice().reverse().find((m) => m.thinking)?.agent === "sherlock" ? "auditing" : "streaming") : "ready"}</span>
           <span className={`font-mono ${overLimit ? "text-red-400" : charCount > MAX_CHARS * 0.9 ? "text-amber-400" : "text-muted-foreground/50"}`}>
             {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()}
           </span>
@@ -819,6 +819,7 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
   const modelShort = msg.meta?.model
     ? msg.meta.model.split("/").slice(-1)[0].replace(/-instruct$|:free$/gi, "")
     : null;
+  const connectPlaceholder = msg.text === "Live stream connect…" || msg.text === "Audit stream connect…";
 
   const copy = async () => {
     try {
@@ -848,7 +849,7 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
             </span>
           )}
         </div>
-        {msg.thinking ? <Shimmer className="text-[14px]" duration={2}>{msg.text}</Shimmer> : <MessageResponse>{msg.text}</MessageResponse>}
+        {msg.thinking && connectPlaceholder ? <Shimmer className="text-[14px]" duration={2}>{msg.text}</Shimmer> : <MessageResponse>{msg.text}</MessageResponse>}
 
         {/* meta chips + hover actions */}
         {isAssistant && !msg.thinking && (
