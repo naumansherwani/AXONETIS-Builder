@@ -855,6 +855,12 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
         </div>
         {msg.thinking && connectPlaceholder ? <Shimmer className="text-[14px]" duration={2}>{msg.text}</Shimmer> : <MessageResponse>{msg.text}</MessageResponse>}
 
+        {/* 3.9.1 — tool_call cards (Rust runtime parts) */}
+        {msg.toolCalls?.map((tc) => <ToolCallBubble key={tc.id} tool={tc} />)}
+
+        {/* 3.9.1 — diff previews with approve/reject */}
+        {msg.diffs?.map((d, i) => <DiffPreview key={d.diff_id ?? `${d.path}-${i}`} diff={d} />)}
+
         {/* meta chips + hover actions */}
         {isAssistant && !msg.thinking && (
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
