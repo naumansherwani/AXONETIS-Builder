@@ -480,7 +480,7 @@ export default function UnifiedChat() {
             ) : (
               messages.map((msg) => (
                 <div key={msg.id} className="px-4 py-2.5">
-                  <MessageRow msg={msg} />
+                  <MessageRow msg={msg} onRetry={retry} />
                 </div>
               ))
             )}
