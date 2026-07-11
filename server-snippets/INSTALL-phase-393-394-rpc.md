@@ -29,8 +29,8 @@ AXONETIS_DB_NAME='postgres' AXONETIS_DB_USER='postgres' AXONETIS_DB_PASSWORD='YO
 cd /var/www/axonetis
 nano hetzner-migrations/20260711000001_phase_393_394_publish_power_tools.sql
 # Lovable repo se same file ka full content paste karo
-AXONETIS_DB_URL='postgresql://USER:PASS@127.0.0.1:5432/DB' \
-  psql "$AXONETIS_DB_URL" -f hetzner-migrations/20260711000001_phase_393_394_publish_power_tools.sql
+psql 'postgresql://USER:PASS@127.0.0.1:5432/DB' \
+  -f hetzner-migrations/20260711000001_phase_393_394_publish_power_tools.sql
 ```
 
 ## 2) RPC router paste
