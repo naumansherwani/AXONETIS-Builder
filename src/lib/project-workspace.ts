@@ -11,6 +11,8 @@
  */
 import type { Branch, Environment, ProjectId } from "./projects";
 import type { PreviewEnv } from "./preview-engine";
+import type { ToolCallPart } from "@/components/builder/ToolCallBubble";
+import type { DiffPart } from "@/components/builder/DiffPreview";
 
 export type ChatAgent = "founder" | "jimmy" | "sherlock";
 
@@ -32,6 +34,10 @@ export interface ChatMsg {
   meta?: ChatMsgMeta;
   /** 3.9.1 — original user prompt for /retry on assistant messages. */
   sourcePrompt?: string;
+  /** 3.9.1 — tool invocations emitted by the Rust agent runtime. */
+  toolCalls?: ToolCallPart[];
+  /** 3.9.1 — file diffs proposed by Jimmy for founder approval. */
+  diffs?: DiffPart[];
 }
 
 export interface ProjectWorkspace {

@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Copy, DollarSign, Mic, Paperclip, Radio, RefreshCw, Send, ShieldCheck, Zap } from "lucide-react";
 import ChatScrollRail from "./ChatScrollRail";
 import VoiceWaveform from "./VoiceWaveform";
+import ToolCallBubble from "./ToolCallBubble";
+import DiffPreview from "./DiffPreview";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
@@ -25,6 +27,7 @@ import {
   subscribeThread,
   fetchThreadMessages,
   extractText,
+  extractStructured,
   cleanAgentText,
   UNIFIED_CHAT_SLUGS,
   type AgentMessageRow,
@@ -187,6 +190,7 @@ export default function UnifiedChat() {
     const slug = (row.agent_slug ?? "jimmy") as AgentSlug;
     if (!UNIFIED_CHAT_SLUGS.has(slug)) return;
     const text = extractText(row) || "(empty reply)";
+    const { toolCalls, diffs } = extractStructured(row);
     const agent: Agent = slug === "sherlock" ? "sherlock" : "jimmy";
     const meta = {
       model: row.model ?? null,
@@ -200,11 +204,11 @@ export default function UnifiedChat() {
       const placeholderId = pendingPlaceholderRef.current;
       const idx = placeholderId ? next.findIndex((m) => m.id === placeholderId) : -1;
       if (idx >= 0) {
-        next[idx] = { ...next[idx], id: row.id, agent, text, thinking: false, meta };
+        next[idx] = { ...next[idx], id: row.id, agent, text, thinking: false, meta, toolCalls, diffs };
         pendingPlaceholderRef.current = null;
         pendingUserMessageIdRef.current = null;
       } else {
-        next.push({ id: row.id, agent, text, meta });
+        next.push({ id: row.id, agent, text, meta, toolCalls, diffs });
       }
       return next;
     });
@@ -850,6 +854,12 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
           )}
         </div>
         {msg.thinking && connectPlaceholder ? <Shimmer className="text-[14px]" duration={2}>{msg.text}</Shimmer> : <MessageResponse>{msg.text}</MessageResponse>}
+
+        {/* 3.9.1 — tool_call cards (Rust runtime parts) */}
+        {msg.toolCalls?.map((tc) => <ToolCallBubble key={tc.id} tool={tc} />)}
+
+        {/* 3.9.1 — diff previews with approve/reject */}
+        {msg.diffs?.map((d, i) => <DiffPreview key={d.diff_id ?? `${d.path}-${i}`} diff={d} />)}
 
         {/* meta chips + hover actions */}
         {isAssistant && !msg.thinking && (
