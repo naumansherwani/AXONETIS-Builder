@@ -8,7 +8,8 @@
  */
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Check, ChevronDown, ChevronRight, FileDiff, X } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, FileDiff, Maximize2, X } from "lucide-react";
+import MonacoDiffModal from "./MonacoDiffModal";
 
 export interface DiffPart {
   /** Optional server-side identifier used to POST the founder decision. */
@@ -61,6 +62,7 @@ async function postDecision(diffId: string, decision: "approve" | "reject") {
 export default function DiffPreview({ diff }: { diff: DiffPart }) {
   const [open, setOpen] = useState(true);
   const [decision, setDecision] = useState<"approve" | "reject" | null>(null);
+  const [monacoOpen, setMonacoOpen] = useState(false);
   const rows = useMemo(() => computeDiff(diff.old ?? "", diff.new ?? ""), [diff.old, diff.new]);
   const adds = rows.filter((r) => r.kind === "add").length;
   const dels = rows.filter((r) => r.kind === "del").length;
