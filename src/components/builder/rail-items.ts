@@ -5,7 +5,7 @@
 import {
   Activity, BookOpen, Boxes, Brain, Code2, Coins, Compass, Database, FileCode2, FileText, Files,
   Folder, GitBranch, History, Key, Layers, LineChart, Rocket, ScrollText, Shield,
-  ShieldCheck, Terminal, Users, Wrench,
+  ShieldCheck, Sparkles, Terminal, Users, Wrench,
 } from "lucide-react";
 
 import type { BottomTabId } from "@/lib/builder-state";
@@ -45,6 +45,7 @@ export const RIGHT_RAIL_ITEMS: RailItem[] = [
   { id: "security",   label: "Security",   icon: Shield,     hint: "Sherlock scan: GDPR, RLS, secret leaks, findings." },
   { id: "secrets",    label: "Secrets",    icon: Key,        hint: "Encrypted vault — masked keys, rotate in place." },
   { id: "tools",      label: "Tools",      icon: Wrench,     hint: "Tool Registry — what Jimmy & Sherlock can call." },
+  { id: "marketplace",label: "Marketplace",icon: Sparkles,   hint: "Install specialist agents — SEO Scout, Outreach Hawk, Data Bee." },
 ];
 
 export const ALL_RAIL_ITEMS: RailItemFull[] = [
