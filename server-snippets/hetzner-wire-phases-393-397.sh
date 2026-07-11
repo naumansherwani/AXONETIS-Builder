@@ -287,7 +287,10 @@ select_db_url() {
   if [ -n "$value" ]; then
     warn "No usable DB URL found; using local Supabase-compatible peer DB (${value#local-peer:}) on this Hetzner box."
     printf '%s' "$value"
+    return 0
   fi
+
+  die "AXONETIS Supabase-3/Auth database nahi mila. Local plain postgres pe auth.users missing hota hai, isliye migrations wahan nahi chal sakti. Sahi DB do: AXONETIS_DB_URL='postgresql://postgres:<SUPABASE3_DB_PASSWORD>@127.0.0.1:5432/postgres' agar Supabase DB local hai, ya Supabase-3 direct DB URL (pooler nahi) do."
 }
 
 ensure_supabase3_client() {
