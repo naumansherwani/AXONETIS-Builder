@@ -478,8 +478,15 @@ async function applyPatchOperations(job: BrainJob, projectUuid: string, ops: Pat
 }
 
 async function insertAgentRun(job: BrainJob, fields: Record<string, unknown>) {
+  let projectUuid: string;
+  try {
+    projectUuid = await resolveProjectUuid(job.supabase, job.projectId);
+  } catch (err) {
+    console.warn("[agent-loop] agent_runs skipped:", err instanceof Error ? err.message : String(err));
+    return;
+  }
   await job.supabase.from("agent_runs").insert({
-    project_id: await resolveProjectUuid(job.supabase, job.projectId),
+    project_id: projectUuid,
     user_id: job.userId,
     agent: job.slug,
     model: String(fields.model ?? "router"),
