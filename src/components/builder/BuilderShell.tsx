@@ -13,6 +13,7 @@ import HorizontalSplit from "./HorizontalSplit";
 import type { BridgeStatus, PreviewBridgeEvent } from "@/lib/preview-bridge";
 import type { PreviewEnv, PreviewFileChange } from "@/lib/preview-engine";
 import { loadWorkspace, patchWorkspace } from "@/lib/project-workspace";
+import { useRrwebRecorder } from "@/lib/rrweb-recorder";
 
 const ACTIVE_PROJECT_KEY = "axonetis.phase7.activeProject.v1";
 
