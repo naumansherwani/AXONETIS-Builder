@@ -44,16 +44,24 @@ export default function VersionsPanel() {
   const [deps, setDeps] = useState<Deployment[]>(SEED_DEPS);
   const [history, setHistory] = useState<RollbackEntry[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  const [domains, setDomains] = useState<CaddyDomain[]>([]);
+  const [newDomain, setNewDomain] = useState("");
+  const [attaching, setAttaching] = useState(false);
+  const [domainErr, setDomainErr] = useState<string | null>(null);
+  const [checkoutBusy, setCheckoutBusy] = useState<string | null>(null);
+  const [checkoutNote, setCheckoutNote] = useState<string | null>(null);
 
   const refresh = async () => {
-    const [s, d, h] = await Promise.all([
+    const [s, d, h, dom] = await Promise.all([
       fetchSnapshots(project, 50),
       fetchDeployments(project),
       fetchRollbackHistory(project),
+      listCaddyDomains(project),
     ]);
     if (s.length) setSnaps(s);
     if (d.length) setDeps(d);
     if (h.length) setHistory(h);
+    if (dom) setDomains(dom);
   };
 
   useEffect(() => { void refresh(); }, [project]);
@@ -63,6 +71,37 @@ export default function VersionsPanel() {
     await rollback({ projectId: project, scope, targetId: id, triggeredBy: "founder" });
     await refresh();
     setBusy(null);
+  };
+
+  const onAttachDomain = async () => {
+    const d = newDomain.trim().toLowerCase();
+    if (!d || attaching) return;
+    setAttaching(true);
+    setDomainErr(null);
+    const res = await attachCaddyDomain(project, d);
+    if (res?.ok) {
+      setNewDomain("");
+      await refresh();
+    } else {
+      setDomainErr(res?.error ?? "Server endpoint pending — Caddy not reached.");
+    }
+    setAttaching(false);
+  };
+
+  const onRevokeDomain = async (id: string) => {
+    setBusy(id);
+    await revokeCaddyDomain(id);
+    await refresh();
+    setBusy(null);
+  };
+
+  const onCheckout = async (sha: string) => {
+    setCheckoutBusy(sha);
+    setCheckoutNote(null);
+    const r = await checkoutIntoPreview(project, sha);
+    if (r?.ok) setCheckoutNote(`Preview updated → ${r.previewUrl ?? sha.slice(0, 8)}`);
+    else setCheckoutNote(r?.error ?? "Server endpoint pending — time-travel offline.");
+    setCheckoutBusy(null);
   };
 
   return (
