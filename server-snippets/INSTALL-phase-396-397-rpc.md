@@ -17,10 +17,17 @@ Yeh single script migration, RPC wiring, Visual Edit bridge copy, Stop-button ab
 cd /var/www/axonetis && git pull && bash server-snippets/hetzner-wire-phases-393-397.sh
 ```
 
-Script self-hosted DB URL khud PM2/env files se detect karega. Old cloud `*.supabase.co` URL intentionally reject hota hai. Agar phir bhi na mile:
+Script self-hosted DB khud detect karega. Agar purana `SUPABASE3_DB_URL=db.*.supabase.co` env mein ho, script usko ignore karega. Agar local Postgres peer access available ho to password ke bina migration chal jayegi. Agar phir bhi DB na mile, **real URL** do — `postgresql://...` placeholder mat dena:
 
 ```bash
 AXONETIS_DB_URL='postgresql://USER:PASS@127.0.0.1:5432/DB' bash server-snippets/hetzner-wire-phases-393-397.sh
+```
+
+Password alag env mein hai to yeh bhi chalega:
+
+```bash
+AXONETIS_DB_NAME='postgres' AXONETIS_DB_USER='postgres' AXONETIS_DB_PASSWORD='YOUR_REAL_PASSWORD' \
+  bash server-snippets/hetzner-wire-phases-393-397.sh
 ```
 
 Verifies:

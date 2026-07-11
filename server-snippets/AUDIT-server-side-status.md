@@ -67,13 +67,10 @@ const result = streamText({ ..., abortSignal: controller.signal });
 ## 📋 Deployment Checklist (Hetzner)
 
 ```bash
-cd /var/www/axonetis && \
-git pull && \
-psql "$SUPABASE_DB_URL" -f hetzner-migrations/20260711000001_phase_393_394_publish_power_tools.sql && \
-bun install && bun run build && \
-pm2 restart axonetis-builder && \
-pm2 logs axonetis-builder --lines 30 --nostream
+cd /var/www/axonetis && git pull && bash server-snippets/hetzner-wire-phases-393-397.sh
 ```
+
+Note: old cloud `*.supabase.co` DB URL is rejected/ignored. Script uses AXONETIS self-hosted DB URL or local Postgres peer access only.
 
 Verify each endpoint:
 ```bash

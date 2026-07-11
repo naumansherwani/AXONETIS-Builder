@@ -151,8 +151,23 @@ function usable(v) {
   return true;
 }
 
+function buildFromParts(env) {
+  const password = env.AXONETIS_DB_PASSWORD || env.POSTGRES_PASSWORD || env.POSTGRESQL_PASSWORD || env.DB_PASSWORD;
+  if (!password || password.includes("...") || /placeholder/i.test(password)) return "";
+  const user = env.AXONETIS_DB_USER || env.POSTGRES_USER || env.POSTGRESQL_USER || env.DB_USER || "postgres";
+  const db = env.AXONETIS_DB_NAME || env.POSTGRES_DB || env.POSTGRESQL_DATABASE || env.DB_NAME || "postgres";
+  const host = env.AXONETIS_DB_HOST || env.POSTGRES_HOST || env.POSTGRESQL_HOST || env.DB_HOST || "127.0.0.1";
+  const port = env.AXONETIS_DB_PORT || env.POSTGRES_PORT || env.POSTGRESQL_PORT || env.DB_PORT || "5432";
+  return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${encodeURIComponent(db)}`;
+}
+
 for (const env of envs) {
   for (const key of exact) if (usable(env[key])) { process.stdout.write(env[key]); process.exit(0); }
+}
+
+for (const env of envs) {
+  const built = buildFromParts(env);
+  if (usable(built)) { process.stdout.write(built); process.exit(0); }
 }
 
 for (const env of envs) {
@@ -169,14 +184,127 @@ validate_db_url() {
   case "$value" in
     *...*|*placeholder*) die "AXONETIS_DB_URL placeholder hai. Actual self-hosted Postgres URL paste karo, 'postgresql://...' nahi." ;;
     *supabase.co*) die "Old cloud DB URL detect hua (*.supabase.co). AXONETIS self-hosted Hetzner Postgres URL do: AXONETIS_DB_URL='postgresql://USER:PASS@HOST:5432/DB'" ;;
+    local-peer:*) return 0 ;;
+    postgres://*|postgresql://*) return 0 ;;
+    *) die "DB URL invalid hai. It must start with postgresql://USER:PASS@HOST:5432/DB" ;;
   esac
-  return 0
+}
+
+db_url_problem() {
+  local value="$1"
+  [ -n "$value" ] || { printf 'empty'; return 0; }
+  case "$value" in
+    *...*|*placeholder*) printf "placeholder value ('postgresql://...' real URL nahi hota)" ;;
+    *supabase.co*) printf "old cloud URL (*.supabase.co), self-hosted Hetzner DB URL chahiye" ;;
+    local-peer:*) ;;
+    postgres://*|postgresql://*) ;;
+    *) printf "not a postgresql:// URL" ;;
+  esac
+}
+
+detect_local_peer_db() {
+  command -v sudo >/dev/null 2>&1 || return 0
+  command -v psql >/dev/null 2>&1 || return 0
+
+  local candidates="${AXONETIS_DB_NAME:-} ${POSTGRES_DB:-} ${DB_NAME:-} axonetis_builder axonetis postgres"
+  local db
+  for db in $candidates; do
+    [ -n "$db" ] || continue
+    if sudo -n -u postgres psql -d "$db" -v ON_ERROR_STOP=1 -tAc 'select 1' >/dev/null 2>&1; then
+      printf 'local-peer:%s' "$db"
+      return 0
+    fi
+  done
+
+  db="$(sudo -n -u postgres psql -d postgres -tAc "select datname from pg_database where datistemplate=false and datallowconn=true order by case when datname='postgres' then 0 when datname ilike '%axonetis%' then 1 else 2 end, datname limit 1" 2>/dev/null | tr -d '[:space:]' || true)"
+  if [ -n "$db" ] && sudo -n -u postgres psql -d "$db" -v ON_ERROR_STOP=1 -tAc 'select 1' >/dev/null 2>&1; then
+    printf 'local-peer:%s' "$db"
+  fi
+}
+
+select_db_url() {
+  local key value reason
+
+  # Founder-provided AXONETIS_* override always wins. This fixes old PM2 SUPABASE3_DB_URL shadowing.
+  for key in AXONETIS_DB_URL BUILDER_DB_URL AXONETIS_POSTGRES_URL AXONETIS_DATABASE_URL HOSTFLOW_DB_URL HOSTFLOW_POSTGRES_URL LOCAL_DB_URL POSTGRES_URL POSTGRESQL_URL DATABASE_URL DIRECT_URL; do
+    value="${!key:-}"
+    [ -n "$value" ] || continue
+    validate_db_url "$value"
+    printf '%s' "$value"
+    return 0
+  done
+
+  # Legacy names are accepted only if they are not the old cloud URL/placeholder.
+  for key in SUPABASE3_DB_URL SUPABASE_DB_URL; do
+    value="${!key:-}"
+    [ -n "$value" ] || continue
+    reason="$(db_url_problem "$value")"
+    if [ -z "$reason" ]; then
+      printf '%s' "$value"
+      return 0
+    fi
+    warn "Ignoring $key: $reason"
+  done
+
+  value="$(detect_db_url || true)"
+  if [ -n "$value" ]; then
+    validate_db_url "$value"
+    printf '%s' "$value"
+    return 0
+  fi
+
+  value="$(detect_local_peer_db || true)"
+  if [ -n "$value" ]; then
+    warn "No usable DB URL found; using local postgres peer access on this Hetzner box."
+    printf '%s' "$value"
+  fi
+}
+
+ensure_supabase3_client() {
+  local root="$1" route_dir="$2" target=""
+  if grep -q 'integrations/supabase3/client' "$route_dir/rpc.routes.ts" 2>/dev/null; then
+    local try_paths=(
+      "$root/server/integrations/supabase3/client.ts"
+      "$root/src/integrations/supabase3/client.ts"
+      "$root/integrations/supabase3/client.ts"
+    )
+    for p in "${try_paths[@]}"; do [ -f "$p" ] && return 0; done
+    case "$route_dir" in
+      */server/routes) target="${route_dir%/routes}/integrations/supabase3/client.ts" ;;
+      */src/routes) target="${route_dir%/routes}/integrations/supabase3/client.ts" ;;
+      */routes) target="$root/integrations/supabase3/client.ts" ;;
+      *) target="$root/server/integrations/supabase3/client.ts" ;;
+    esac
+    mkdir -p "$(dirname "$target")"
+    cat > "$target" <<'TS'
+import { createClient } from "@supabase/supabase-js";
+
+const url = process.env.SUPABASE3_URL ?? process.env.AXONETIS_SUPABASE_URL ?? process.env.SUPABASE_URL;
+const key = process.env.SUPABASE3_SERVICE_ROLE_KEY ?? process.env.AXONETIS_SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY;
+
+if (!url || !key) {
+  throw new Error("supabase3 env missing: set SUPABASE3_URL + SUPABASE3_SERVICE_ROLE_KEY or AXONETIS_SUPABASE_URL + AXONETIS_SUPABASE_SERVICE_ROLE_KEY");
+}
+
+export const supabase3 = createClient(url, key, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
+TS
+    ok "Created missing supabase3 client at $target"
+  fi
 }
 
 run_psql() {
   local sql_arg="$1" mode="$2"
   set +e
-  if [ "$mode" = "file" ]; then
+  if [[ "$DB_URL" == local-peer:* ]]; then
+    local peer_db="${DB_URL#local-peer:}"
+    if [ "$mode" = "file" ]; then
+      PSQL_OUT="$(sudo -n -u postgres psql -d "$peer_db" -v ON_ERROR_STOP=1 -f "$sql_arg" 2>&1)"
+    else
+      PSQL_OUT="$(sudo -n -u postgres psql -d "$peer_db" -v ON_ERROR_STOP=1 -c "$sql_arg" 2>&1)"
+    fi
+  elif [ "$mode" = "file" ]; then
     PSQL_OUT="$(psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$sql_arg" 2>&1)"
   else
     PSQL_OUT="$(psql "$DB_URL" -v ON_ERROR_STOP=1 -c "$sql_arg" 2>&1)"
@@ -226,39 +354,6 @@ if (imports.length) {
   src = importLine + src;
 }
 
-ensure_supabase3_client() {
-  local root="$1" route_dir="$2" target=""
-  if grep -q 'integrations/supabase3/client' "$route_dir/rpc.routes.ts" 2>/dev/null; then
-    local try_paths=(
-      "$root/server/integrations/supabase3/client.ts"
-      "$root/src/integrations/supabase3/client.ts"
-      "$root/integrations/supabase3/client.ts"
-    )
-    for p in "${try_paths[@]}"; do [ -f "$p" ] && return 0; done
-    case "$route_dir" in
-      */server/routes) target="${route_dir%/routes}/integrations/supabase3/client.ts" ;;
-      */src/routes) target="${route_dir%/routes}/integrations/supabase3/client.ts" ;;
-      */routes) target="$root/integrations/supabase3/client.ts" ;;
-      *) target="$root/server/integrations/supabase3/client.ts" ;;
-    esac
-    mkdir -p "$(dirname "$target")"
-    cat > "$target" <<'TS'
-import { createClient } from "@supabase/supabase-js";
-
-const url = process.env.SUPABASE3_URL ?? process.env.AXONETIS_SUPABASE_URL ?? process.env.SUPABASE_URL;
-const key = process.env.SUPABASE3_SERVICE_ROLE_KEY ?? process.env.AXONETIS_SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY;
-
-if (!url || !key) {
-  throw new Error("supabase3 env missing: set SUPABASE3_URL + SUPABASE3_SERVICE_ROLE_KEY or AXONETIS_SUPABASE_URL + AXONETIS_SUPABASE_SERVICE_ROLE_KEY");
-}
-
-export const supabase3 = createClient(url, key, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
-TS
-    ok "Created missing supabase3 client at $target"
-  fi
-}
 const appMatch = src.match(/(?:const|let|var)\s+(\w+)\s*=\s*express\s*\(/);
 const app = appMatch?.[1] || "app";
 const mount = `\n// AXONETIS phases 3.9.3 → 3.9.7 RPC endpoints (auto-wired, no duplicate)\n${app}.use("/rpc", rpcRouter);\n`;
@@ -308,8 +403,7 @@ cd "$BUILDER_DIR"
 git pull --ff-only || warn "git pull failed/dirty tree — continuing with current files"
 
 log "2) DB migrations apply on AXONETIS self-hosted DB"
-DB_URL="${SUPABASE3_DB_URL:-${AXONETIS_DB_URL:-}}"
-if [ -z "$DB_URL" ]; then DB_URL="$(detect_db_url || true)"; fi
+DB_URL="$(select_db_url || true)"
 [ -n "$DB_URL" ] || die "DB URL auto-detect failed. Export AXONETIS_DB_URL with the real self-hosted Postgres URL, then rerun. Script will not print secrets."
 validate_db_url "$DB_URL"
 ok "DB URL detected (hidden)"
