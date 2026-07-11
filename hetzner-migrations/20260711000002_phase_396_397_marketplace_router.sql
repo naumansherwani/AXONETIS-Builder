@@ -121,4 +121,18 @@ values
   ('rollback-medic','Rollback Medic','Auto-restores last green build on error spike.',   'ops',     'NEXATECT', '0.8.0', '🩺', '["git_checkout","deploy"]',                  false,true)
 on conflict (slug) do nothing;
 
+create or replace function public.increment_marketplace_installs(p_slug text)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update public.marketplace_agents
+     set installs = installs + 1,
+         updated_at = now()
+   where slug = p_slug;
+$$;
+
+grant execute on function public.increment_marketplace_installs(text) to authenticated, service_role;
+
 commit;
