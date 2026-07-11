@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ChangeEvent } from "react";
-import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp, Mic, Paperclip, Radio, Send, ShieldCheck } from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, ChevronUp, Copy, Mic, Paperclip, Radio, RefreshCw, Send, ShieldCheck, Zap } from "lucide-react";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
@@ -38,9 +38,26 @@ const BOTTOM_THRESHOLD = 24;
 
 const SEED: Msg[] = [];
 
+/** 3.9.1 slash commands — quick actions parsed from draft. */
+const SLASH_COMMANDS: Array<{ cmd: string; label: string; hint: string; agent: UnifiedAgentSlug }> = [
+  { cmd: "/scan",     label: "/scan",     hint: "Sherlock full audit",         agent: "sherlock" },
+  { cmd: "/fix",      label: "/fix",      hint: "Auto-fix last error",         agent: "sherlock" },
+  { cmd: "/review",   label: "/review",   hint: "Review current diff",         agent: "sherlock" },
+  { cmd: "/rollback", label: "/rollback", hint: "Roll back last change",       agent: "jimmy"    },
+  { cmd: "/versions", label: "/versions", hint: "Show version history",        agent: "jimmy"    },
+  { cmd: "/publish",  label: "/publish",  hint: "Promote sandbox → prod",      agent: "jimmy"    },
+  { cmd: "/help",     label: "/help",     hint: "Show commands",               agent: "jimmy"    },
+];
+
+const MENTIONS: Array<{ tag: string; agent: UnifiedAgentSlug; hint: string }> = [
+  { tag: "@jimmy",    agent: "jimmy",    hint: "Build agent"  },
+  { tag: "@sherlock", agent: "sherlock", hint: "Review agent" },
+];
 
 const resolveAgent = (prompt: string): UnifiedAgentSlug => {
   const p = prompt.toLowerCase();
+  if (p.includes("@sherlock")) return "sherlock";
+  if (p.includes("@jimmy")) return "jimmy";
   return p.includes("sherlock") || p.includes("/scan") || p.includes("/fix") || p.includes("/review") ? "sherlock" : "jimmy";
 };
 
@@ -49,6 +66,18 @@ const AGENT_META: Record<Agent, { name: string; subtitle: string; rail: string; 
   jimmy: { name: "Jimmy", subtitle: "Build Agent", rail: "bg-[#E50914] shadow-[0_0_18px_#E50914]", chip: "bg-[#E50914]/15 text-[#ff7480] border-[#E50914]/40", ring: "ring-[#E50914]/50", initial: "J" },
   sherlock: { name: "Sherlock", subtitle: "Review · Audit", rail: "bg-[#7c3aed] shadow-[0_0_18px_#7c3aed]", chip: "bg-[#7c3aed]/15 text-[#c4a8ff] border-[#7c3aed]/40", ring: "ring-[#7c3aed]/50", initial: "S" },
 };
+
+function relTime(iso?: string): string {
+  if (!iso) return "";
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return "";
+  const diff = (Date.now() - t) / 1000;
+  if (diff < 5) return "just now";
+  if (diff < 60) return `${Math.floor(diff)}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return new Date(iso).toLocaleDateString();
+}
 
 export default function UnifiedChat() {
   const { project, branch, environment, bridgeStatus } = useBuilder();
