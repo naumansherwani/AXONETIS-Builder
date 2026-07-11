@@ -163,12 +163,12 @@ function buildFromParts(env) {
 }
 
 for (const env of envs) {
-  for (const key of exact) if (usable(env[key])) { process.stdout.write(env[key]); process.exit(0); }
+  const built = buildFromParts(env);
+  if (usable(built)) { process.stdout.write(built); process.exit(0); }
 }
 
 for (const env of envs) {
-  const built = buildFromParts(env);
-  if (usable(built)) { process.stdout.write(built); process.exit(0); }
+  for (const key of exact) if (usable(env[key])) { process.stdout.write(env[key]); process.exit(0); }
 }
 
 for (const env of envs) {
@@ -205,6 +205,19 @@ db_url_problem() {
   esac
 }
 
+build_db_url_from_env_parts() {
+  node_available || return 0
+  node <<'NODE'
+const password = process.env.AXONETIS_DB_PASSWORD || process.env.POSTGRES_PASSWORD || process.env.POSTGRESQL_PASSWORD || process.env.DB_PASSWORD;
+if (!password || password.includes("...") || /placeholder|REAL_PASSWORD|YOUR_REAL_PASSWORD|YOUR_PASSWORD|APNA_ACTUAL_PASSWORD/i.test(password)) process.exit(0);
+const user = process.env.AXONETIS_DB_USER || process.env.POSTGRES_USER || process.env.POSTGRESQL_USER || process.env.DB_USER || "postgres";
+const db = process.env.AXONETIS_DB_NAME || process.env.POSTGRES_DB || process.env.POSTGRESQL_DATABASE || process.env.DB_NAME || "postgres";
+const host = process.env.AXONETIS_DB_HOST || process.env.POSTGRES_HOST || process.env.POSTGRESQL_HOST || process.env.DB_HOST || "127.0.0.1";
+const port = process.env.AXONETIS_DB_PORT || process.env.POSTGRES_PORT || process.env.POSTGRESQL_PORT || process.env.DB_PORT || "5432";
+process.stdout.write(`postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${encodeURIComponent(db)}`);
+NODE
+}
+
 detect_local_peer_db() {
   command -v sudo >/dev/null 2>&1 || return 0
   command -v psql >/dev/null 2>&1 || return 0
@@ -227,6 +240,14 @@ detect_local_peer_db() {
 
 select_db_url() {
   local key value reason
+
+  # Explicit component vars from the current command win over stale cloud DATABASE_URL/SUPABASE_* envs.
+  value="$(build_db_url_from_env_parts || true)"
+  if [ -n "$value" ]; then
+    validate_db_url "$value"
+    printf '%s' "$value"
+    return 0
+  fi
 
   # Founder-provided AXONETIS_* override always wins. Invalid legacy envs are ignored instead of blocking local peer fallback.
   for key in AXONETIS_DB_URL BUILDER_DB_URL AXONETIS_POSTGRES_URL AXONETIS_DATABASE_URL HOSTFLOW_DB_URL HOSTFLOW_POSTGRES_URL LOCAL_DB_URL POSTGRES_URL POSTGRESQL_URL DATABASE_URL DIRECT_URL; do
