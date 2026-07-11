@@ -3,7 +3,7 @@
  * Endpoint: GET /api/agents/founder/security
  * Graceful offline fallback.
  */
-import { HOSTFLOW_BASE } from "./hostflow-api";
+const BASE = (import.meta.env.VITE_HOSTFLOW_SERVER_URL as string | undefined)?.replace(/\/$/, "") ?? "";
 
 export type Severity = "critical" | "high" | "medium" | "low" | "info";
 

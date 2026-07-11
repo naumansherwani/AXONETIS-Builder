@@ -3,7 +3,7 @@
  * Endpoint: GET /api/agents/founder/costs?window=24h
  * Falls back to zeroed totals if server unreachable (never throws to UI).
  */
-import { HOSTFLOW_BASE } from "./hostflow-api";
+const BASE = (import.meta.env.VITE_HOSTFLOW_SERVER_URL as string | undefined)?.replace(/\/$/, "") ?? "";
 
 export interface CostModelRow {
   model: string;
@@ -35,7 +35,8 @@ const EMPTY: CostsSnapshot = {
 
 export async function fetchCosts(window: CostsSnapshot["window"] = "24h"): Promise<CostsSnapshot> {
   try {
-    const res = await fetch(`${HOSTFLOW_BASE}/api/agents/founder/costs?window=${window}`, {
+    if (!BASE) return { ...EMPTY, window };
+    const res = await fetch(`${BASE}/api/agents/founder/costs?window=${window}`, {
       signal: AbortSignal.timeout(5000),
       headers: { accept: "application/json" },
     });
