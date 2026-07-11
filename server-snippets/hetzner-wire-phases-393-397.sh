@@ -147,8 +147,8 @@ function usable(v) {
   if (/REAL_USER|REAL_PASSWORD|REAL_DB|USER:PASS|YOUR_REAL_PASSWORD|YOUR_PASSWORD/i.test(v)) return false;
   if (v.includes("...")) return false;
   if (/placeholder/i.test(v)) return false;
-  // This builder is locked to founder self-hosted DB on Hetzner. Do not auto-pick old cloud pooler URLs.
-  if (/\.supabase\.co/i.test(v)) return false;
+  // If local S3/Auth DB is not present on this Hetzner box, an explicit remote S3 DB URL is valid.
+  // Runtime API keys are checked separately; DB URL is only for migrations.
   return true;
 }
 
@@ -185,7 +185,7 @@ validate_db_url() {
   case "$value" in
     *REAL_USER*|*REAL_PASSWORD*|*REAL_DB*|*USER:PASS*|*YOUR_REAL_PASSWORD*|*YOUR_PASSWORD*) die "AXONETIS_DB_URL example placeholder hai. REAL_USER/REAL_PASSWORD/REAL_DB ko apne actual Postgres user/password/db se replace karo." ;;
     *...*|*placeholder*) die "AXONETIS_DB_URL placeholder hai. Actual self-hosted Postgres URL paste karo, 'postgresql://...' nahi." ;;
-    *supabase.co*) die "Old cloud DB URL detect hua (*.supabase.co). AXONETIS self-hosted Hetzner Postgres URL do: AXONETIS_DB_URL='postgresql://USER:PASS@HOST:5432/DB'" ;;
+    *supabase.co*) return 0 ;;
     local-peer:*) return 0 ;;
     postgres://*|postgresql://*) return 0 ;;
     *) die "DB URL invalid hai. It must start with postgresql://USER:PASS@HOST:5432/DB" ;;
@@ -198,7 +198,7 @@ db_url_problem() {
   case "$value" in
     *REAL_USER*|*REAL_PASSWORD*|*REAL_DB*|*USER:PASS*|*YOUR_REAL_PASSWORD*|*YOUR_PASSWORD*) printf "example placeholder value, real DB credentials required" ;;
     *...*|*placeholder*) printf "placeholder value ('postgresql://...' real URL nahi hota)" ;;
-    *supabase.co*) printf "old cloud URL (*.supabase.co), self-hosted Hetzner DB URL chahiye" ;;
+    *supabase.co*) ;;
     local-peer:*) ;;
     postgres://*|postgresql://*) ;;
     *) printf "not a postgresql:// URL" ;;
