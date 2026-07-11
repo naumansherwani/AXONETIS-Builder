@@ -122,15 +122,58 @@ export default function DatabasePanel() {
             <ShieldAlert className="h-3 w-3 text-amber-400/80" />
             {dryRun ? "EXPLAIN only — no writes" : "LIVE — writes will commit"}
           </span>
-          <button
-            onClick={doRun}
-            disabled={running || !sql.trim()}
-            className="flex items-center gap-1.5 rounded-md border border-[#E50914]/30 bg-[#E50914]/10 px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider text-[#ff7480] transition hover:bg-[#E50914]/20 disabled:opacity-40"
-          >
-            {running ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
-            Run
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={doValidate}
+              disabled={validating || !sql.trim()}
+              title="Sherlock validates safety before commit"
+              className="flex items-center gap-1.5 rounded-md border border-[#7c3aed]/30 bg-[#7c3aed]/10 px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider text-[#c4a3ff] transition hover:bg-[#7c3aed]/20 disabled:opacity-40"
+            >
+              {validating ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldCheck className="h-3 w-3" />}
+              Sherlock
+            </button>
+            <button
+              onClick={doRun}
+              disabled={running || !sql.trim()}
+              className="flex items-center gap-1.5 rounded-md border border-[#E50914]/30 bg-[#E50914]/10 px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider text-[#ff7480] transition hover:bg-[#E50914]/20 disabled:opacity-40"
+            >
+              {running ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
+              Run
+            </button>
+          </div>
         </div>
+
+        {validation && (
+          <div className={`mt-2 rounded-md border p-2 ${
+            validation.verdict === "safe"  ? "border-emerald-500/30 bg-emerald-500/[0.06]" :
+            validation.verdict === "warn"  ? "border-amber-500/30 bg-amber-500/[0.06]" :
+                                             "border-red-500/30 bg-red-500/[0.06]"
+          }`}>
+            <div className="flex items-center justify-between text-[10px] uppercase tracking-wider">
+              <span className={`flex items-center gap-1.5 font-semibold ${
+                validation.verdict === "safe" ? "text-emerald-300" :
+                validation.verdict === "warn" ? "text-amber-300" : "text-red-300"
+              }`}>
+                {validation.verdict === "block" ? <ShieldX className="h-3 w-3" /> : <ShieldCheck className="h-3 w-3" />}
+                Sherlock · {validation.verdict}
+              </span>
+              <span className="text-muted-foreground/60">
+                {validation.affectedTables.length} table{validation.affectedTables.length === 1 ? "" : "s"}
+                {validation.estimatedRows != null && ` · ~${validation.estimatedRows} rows`}
+              </span>
+            </div>
+            {validation.issues.length > 0 && (
+              <ul className="mt-1.5 space-y-0.5 text-[11px]">
+                {validation.issues.map((i, k) => (
+                  <li key={k} className={
+                    i.level === "error" ? "text-red-300" :
+                    i.level === "warn"  ? "text-amber-300" : "text-muted-foreground"
+                  }>· {i.message}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         {result && (
           <div className="mt-2 rounded-md border border-white/[0.06] bg-black/30 p-2">
