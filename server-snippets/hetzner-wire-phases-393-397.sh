@@ -208,12 +208,12 @@ db_url_problem() {
 build_db_url_from_env_parts() {
   node_available || return 0
   node <<'NODE'
-const password = process.env.AXONETIS_DB_PASSWORD || process.env.POSTGRES_PASSWORD || process.env.POSTGRESQL_PASSWORD || process.env.DB_PASSWORD;
+const password = process.env.AXONETIS_DB_PASSWORD || process.env.BUILDER_DB_PASSWORD || process.env.HOSTFLOW_DB_PASSWORD;
 if (!password || password.includes("...") || /placeholder|REAL_PASSWORD|YOUR_REAL_PASSWORD|YOUR_PASSWORD|APNA_ACTUAL_PASSWORD/i.test(password)) process.exit(0);
-const user = process.env.AXONETIS_DB_USER || process.env.POSTGRES_USER || process.env.POSTGRESQL_USER || process.env.DB_USER || "postgres";
-const db = process.env.AXONETIS_DB_NAME || process.env.POSTGRES_DB || process.env.POSTGRESQL_DATABASE || process.env.DB_NAME || "postgres";
-const host = process.env.AXONETIS_DB_HOST || process.env.POSTGRES_HOST || process.env.POSTGRESQL_HOST || process.env.DB_HOST || "127.0.0.1";
-const port = process.env.AXONETIS_DB_PORT || process.env.POSTGRES_PORT || process.env.POSTGRESQL_PORT || process.env.DB_PORT || "5432";
+const user = process.env.AXONETIS_DB_USER || process.env.BUILDER_DB_USER || process.env.HOSTFLOW_DB_USER || "postgres";
+const db = process.env.AXONETIS_DB_NAME || process.env.BUILDER_DB_NAME || process.env.HOSTFLOW_DB_NAME || "postgres";
+const host = process.env.AXONETIS_DB_HOST || process.env.BUILDER_DB_HOST || process.env.HOSTFLOW_DB_HOST || "127.0.0.1";
+const port = process.env.AXONETIS_DB_PORT || process.env.BUILDER_DB_PORT || process.env.HOSTFLOW_DB_PORT || "5432";
 process.stdout.write(`postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${encodeURIComponent(db)}`);
 NODE
 }
