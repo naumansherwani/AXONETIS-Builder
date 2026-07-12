@@ -372,3 +372,6 @@ create policy "agent_memory: admin full" on public.agent_memory
   for all to authenticated
   using (public.has_role(auth.uid(), 'admin'))
   with check (public.has_role(auth.uid(), 'admin'));
+
+-- Self-hosted PostgREST schema cache reload; harmless when no listener exists.
+notify pgrst, 'reload schema';
