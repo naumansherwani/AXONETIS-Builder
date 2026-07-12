@@ -533,6 +533,12 @@ if [ -f "$AGENTS_ROUTE" ]; then
   grep -q "signal: request.signal" "$AGENTS_ROUTE" || die "Builder agents chat route missing request.signal wiring. Pull latest axonetis repo and rerun."
   ok "Builder TanStack chat route has request.signal wired"
 fi
+BAD_BUILDER_EXPRESS_ROUTE="$BUILDER_DIR/src/routes/agents.routes.ts"
+if [ -f "$BAD_BUILDER_EXPRESS_ROUTE" ] && grep -qE 'from ["'"'"']express["'"'"']|agentsRouter = Router|export const agentsRouter' "$BAD_BUILDER_EXPRESS_ROUTE"; then
+  backup "$BAD_BUILDER_EXPRESS_ROUTE"
+  rm -f "$BAD_BUILDER_EXPRESS_ROUTE"
+  ok "Removed wrong Express agents.routes.ts from Builder TanStack routes"
+fi
 for worker_root in "$BUILDER_DIR" /root/axonetis-builder /opt/axonetis-builder /opt/AXONETIS-Builder; do
   [ -d "$worker_root" ] || continue
   if [ -d "$worker_root/src/workers" ]; then
@@ -544,7 +550,11 @@ for worker_root in "$BUILDER_DIR" /root/axonetis-builder /opt/axonetis-builder /
     cp "$BUILDER_DIR/server-snippets/agents.cancel.ts" "$worker_root/src/workers/agents.cancel.ts"
     ok "Installed cancel registry at $worker_root/src/workers/agents.cancel.ts"
   fi
-  if [ -d "$worker_root/src/routes" ]; then
+  if [ "$worker_root" = "$BUILDER_DIR" ]; then
+    ok "Builder TanStack routes untouched — Express agents.routes.ts is not copied into src/routes"
+    continue
+  fi
+  if [ -d "$worker_root/src/routes" ] && grep -Rqs 'express *(' "$worker_root/src" "$worker_root/server" "$worker_root/routes" 2>/dev/null; then
     # Phase 3.9.5 — Express agents router carries the /stop endpoint that flips the AbortController.
     if [ -f "$worker_root/src/routes/agents.routes.ts" ]; then
       if ! grep -q "messages/:messageId/stop" "$worker_root/src/routes/agents.routes.ts"; then
@@ -558,6 +568,8 @@ for worker_root in "$BUILDER_DIR" /root/axonetis-builder /opt/axonetis-builder /
       cp "$BUILDER_DIR/server-snippets/agents.routes.ts" "$worker_root/src/routes/agents.routes.ts"
       ok "Installed agents.routes.ts (with /stop endpoint)"
     fi
+  elif [ -d "$worker_root/src/routes" ]; then
+    warn "Skipping $worker_root/src/routes/agents.routes.ts — no Express app detected here"
   fi
 done
 STREAM_FILES="$(grep -Rsl 'streamText' "$ENGINE_DIR/src" "$ENGINE_DIR/server" "$ENGINE_DIR/routes" 2>/dev/null | grep -Ev 'node_modules|dist|build|\.bak-' || true)"
