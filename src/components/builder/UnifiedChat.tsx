@@ -50,9 +50,11 @@ const SEED: Msg[] = [];
 const SLASH_COMMANDS: Array<{ cmd: string; label: string; hint: string; agent: UnifiedAgentSlug }> = [
   { cmd: "/scan",     label: "/scan",     hint: "Sherlock full audit",         agent: "sherlock" },
   { cmd: "/fix",      label: "/fix",      hint: "Auto-fix last error",         agent: "sherlock" },
+  { cmd: "/explain",  label: "/explain",  hint: "Explain code / last error",   agent: "sherlock" },
   { cmd: "/review",   label: "/review",   hint: "Review current diff",         agent: "sherlock" },
   { cmd: "/rollback", label: "/rollback", hint: "Roll back last change",       agent: "jimmy"    },
   { cmd: "/versions", label: "/versions", hint: "Show version history",        agent: "jimmy"    },
+  { cmd: "/deploy",   label: "/deploy",   hint: "Ship sandbox → production",   agent: "jimmy"    },
   { cmd: "/publish",  label: "/publish",  hint: "Promote sandbox → prod",      agent: "jimmy"    },
   { cmd: "/help",     label: "/help",     hint: "Show commands",               agent: "jimmy"    },
 ];
