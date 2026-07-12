@@ -50,9 +50,11 @@ const SEED: Msg[] = [];
 const SLASH_COMMANDS: Array<{ cmd: string; label: string; hint: string; agent: UnifiedAgentSlug }> = [
   { cmd: "/scan",     label: "/scan",     hint: "Sherlock full audit",         agent: "sherlock" },
   { cmd: "/fix",      label: "/fix",      hint: "Auto-fix last error",         agent: "sherlock" },
+  { cmd: "/explain",  label: "/explain",  hint: "Explain code / last error",   agent: "sherlock" },
   { cmd: "/review",   label: "/review",   hint: "Review current diff",         agent: "sherlock" },
   { cmd: "/rollback", label: "/rollback", hint: "Roll back last change",       agent: "jimmy"    },
   { cmd: "/versions", label: "/versions", hint: "Show version history",        agent: "jimmy"    },
+  { cmd: "/deploy",   label: "/deploy",   hint: "Ship sandbox → production",   agent: "jimmy"    },
   { cmd: "/publish",  label: "/publish",  hint: "Promote sandbox → prod",      agent: "jimmy"    },
   { cmd: "/help",     label: "/help",     hint: "Show commands",               agent: "jimmy"    },
 ];
@@ -71,13 +73,15 @@ const MENTIONS: Array<{ tag: string; agent: UnifiedAgentSlug; hint: string }> = 
 function detectVoiceIntent(text: string): { slash: string; prompt: string } | null {
   const t = text.toLowerCase();
   if (/\b(deploy|publish|ship|live\s*karo|deploy\s*karo|publish\s*karo)\b/.test(t))
-    return { slash: "/publish", prompt: `/publish (voice) — ${text}` };
+    return { slash: "/deploy", prompt: `/deploy (voice) — ${text}` };
   if (/\b(rollback|revert|undo|wapas|rollback\s*karo)\b/.test(t))
     return { slash: "/rollback", prompt: `/rollback (voice) — ${text}` };
   if (/\b(scan|audit|sherlock\s*scan|scan\s*karo|audit\s*karo)\b/.test(t))
     return { slash: "/scan", prompt: `/scan (voice) — ${text}` };
   if (/\b(fix|fix\s*karo|repair)\b/.test(t))
     return { slash: "/fix", prompt: `/fix (voice) — ${text}` };
+  if (/\b(explain|samjhao|samjha\s*do|bata\s*do)\b/.test(t))
+    return { slash: "/explain", prompt: `/explain (voice) — ${text}` };
   if (/\b(review|review\s*karo|check\s*diff)\b/.test(t))
     return { slash: "/review", prompt: `/review (voice) — ${text}` };
   return null;
