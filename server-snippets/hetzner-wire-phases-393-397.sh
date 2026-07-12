@@ -533,6 +533,12 @@ if [ -f "$AGENTS_ROUTE" ]; then
   grep -q "signal: request.signal" "$AGENTS_ROUTE" || die "Builder agents chat route missing request.signal wiring. Pull latest axonetis repo and rerun."
   ok "Builder TanStack chat route has request.signal wired"
 fi
+BAD_BUILDER_EXPRESS_ROUTE="$BUILDER_DIR/src/routes/agents.routes.ts"
+if [ -f "$BAD_BUILDER_EXPRESS_ROUTE" ] && grep -qE 'from ["'"'"']express["'"'"']|agentsRouter = Router|export const agentsRouter' "$BAD_BUILDER_EXPRESS_ROUTE"; then
+  backup "$BAD_BUILDER_EXPRESS_ROUTE"
+  rm -f "$BAD_BUILDER_EXPRESS_ROUTE"
+  ok "Removed wrong Express agents.routes.ts from Builder TanStack routes"
+fi
 for worker_root in "$BUILDER_DIR" /root/axonetis-builder /opt/axonetis-builder /opt/AXONETIS-Builder; do
   [ -d "$worker_root" ] || continue
   if [ -d "$worker_root/src/workers" ]; then
