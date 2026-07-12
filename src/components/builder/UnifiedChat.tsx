@@ -73,13 +73,15 @@ const MENTIONS: Array<{ tag: string; agent: UnifiedAgentSlug; hint: string }> = 
 function detectVoiceIntent(text: string): { slash: string; prompt: string } | null {
   const t = text.toLowerCase();
   if (/\b(deploy|publish|ship|live\s*karo|deploy\s*karo|publish\s*karo)\b/.test(t))
-    return { slash: "/publish", prompt: `/publish (voice) — ${text}` };
+    return { slash: "/deploy", prompt: `/deploy (voice) — ${text}` };
   if (/\b(rollback|revert|undo|wapas|rollback\s*karo)\b/.test(t))
     return { slash: "/rollback", prompt: `/rollback (voice) — ${text}` };
   if (/\b(scan|audit|sherlock\s*scan|scan\s*karo|audit\s*karo)\b/.test(t))
     return { slash: "/scan", prompt: `/scan (voice) — ${text}` };
   if (/\b(fix|fix\s*karo|repair)\b/.test(t))
     return { slash: "/fix", prompt: `/fix (voice) — ${text}` };
+  if (/\b(explain|samjhao|samjha\s*do|bata\s*do)\b/.test(t))
+    return { slash: "/explain", prompt: `/explain (voice) — ${text}` };
   if (/\b(review|review\s*karo|check\s*diff)\b/.test(t))
     return { slash: "/review", prompt: `/review (voice) — ${text}` };
   return null;
