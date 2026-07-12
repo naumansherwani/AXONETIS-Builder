@@ -277,6 +277,19 @@ create table if not exists public.agent_thread_messages (
   audit_status text,
   created_at timestamptz not null default now()
 );
+-- Existing self-hosted DBs may already have this table from older Phase A.1.
+-- CREATE TABLE IF NOT EXISTS does not backfill missing columns, so repair it
+-- here before the app writes parent/cost/router fields.
+alter table public.agent_thread_messages
+  add column if not exists parent_message_id uuid references public.agent_thread_messages(id) on delete set null,
+  add column if not exists tokens_in integer not null default 0,
+  add column if not exists tokens_out integer not null default 0,
+  add column if not exists model text,
+  add column if not exists cost_usd numeric(12,6),
+  add column if not exists saved_vs_default_usd numeric(12,6),
+  add column if not exists default_model text,
+  add column if not exists loop_iteration integer,
+  add column if not exists audit_status text;
 create index if not exists idx_agent_thread_messages_thread on public.agent_thread_messages(thread_id, created_at);
 create index if not exists idx_agent_thread_messages_parent on public.agent_thread_messages(parent_message_id);
 grant select, insert, update, delete on public.agent_thread_messages to authenticated;
@@ -323,6 +336,10 @@ create table if not exists public.agent_activity (
   status text not null default 'online' check (status in ('online','thinking','idle','offline','error')),
   created_at timestamptz not null default now()
 );
+alter table public.agent_activity drop constraint if exists agent_activity_status_check;
+alter table public.agent_activity
+  add constraint agent_activity_status_check
+  check (status in ('online','thinking','idle','offline','error','cancelled'));
 create index if not exists idx_agent_activity_project on public.agent_activity(project_id, created_at desc);
 create index if not exists idx_agent_activity_agent on public.agent_activity(agent_slug, created_at desc);
 grant select, insert, update, delete on public.agent_activity to authenticated;
