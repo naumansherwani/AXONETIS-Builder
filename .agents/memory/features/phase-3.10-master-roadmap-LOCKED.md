@@ -11,6 +11,35 @@ Zero dummy. Zero duplicate. Extend existing files, never rebuild.
 
 ---
 
+## PART 0 — PENDING WIRE ITEMS (from Jul 14 audit — merge into 3.10)
+
+Only items still UNWIRED. Already-wired stuff ignored.
+
+### 0.1 — Lovable "More" pill visual parity (currently 60%)
+- Build floating **glass pill dropdown** above composer (Lovable-style), replacing current icon-rail+drawer visually.
+- Items: Analytics ✅, Cloud ✅, Agents ✅, Security ✅ (rewire visual), **Payments ❌ (Phase 11 stub)**, **Connectors ❌ (Phase 9 stub)**, **SEO ❌ (skip unless founder asks)**.
+- File: EXTEND `SideRail.tsx` + `rail-items.ts` — NO duplicate component. Add `MorePill` variant.
+
+### 0.2 — Domains standalone page (currently 70%)
+- Missing: **"Buy new domain" button** (placeholder, wired to Namecheap API later).
+- Missing: **standalone `/settings/domains` route** — currently only inside `PublishModal.tsx`.
+- File: NEW `src/routes/_authenticated/settings.domains.tsx` — reuses existing publish-api client. NO duplicate logic.
+- Layout: Lovable-style settings page (Edit URL row + Buy new domain btn + Connect existing btn + DNS table + Verify badge + Primary toggle) — all backed by live `/rpc/publish.*`.
+
+### 0.3 — Payments menu stub (Phase 11 scope, but pill entry now)
+- Add pill entry that opens "Coming in Phase 11" glass card (NO fake data, just roadmap note visible to founder).
+
+### 0.4 — Connectors menu stub (Phase 9 scope, but pill entry now)
+- Same pattern — pill entry, glass card, Phase 9 note.
+
+### 0.5 — SEO
+- Skip. Not in blueprint. Add only if founder requests.
+
+**Insert order:** 0.1 + 0.2 pehle (visual parity), phir 3.10.1 onwards. 0.3/0.4 as pill placeholders only — real wire in Phase 9/11.
+
+---
+
+
 ## PART A — Complete Audit Snapshot (Phase 3.9.x baseline)
 
 ### Panels shipped (22 total, 8 mandatory ✅)
