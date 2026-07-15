@@ -119,6 +119,7 @@ export default function BuilderShell() {
                 initial={0.4}
               />
               <MorePill />
+            </main>
 
             <SidePanelDrawer side="right" />
             <SideRail side="right" items={RIGHT_RAIL_ITEMS} label="Workspace" />
