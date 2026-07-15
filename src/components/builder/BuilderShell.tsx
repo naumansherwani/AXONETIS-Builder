@@ -8,6 +8,7 @@ import StatusBar from "./StatusBar";
 import CommandPalette from "./CommandPalette";
 import SideRail from "./SideRail";
 import SidePanelDrawer from "./SidePanelDrawer";
+import MorePill from "./MorePill";
 import { LEFT_RAIL_ITEMS, RIGHT_RAIL_ITEMS } from "./rail-items";
 import HorizontalSplit from "./HorizontalSplit";
 import type { BridgeStatus, PreviewBridgeEvent } from "@/lib/preview-bridge";
@@ -117,6 +118,7 @@ export default function BuilderShell() {
                 right={<WorkspaceTabs />}
                 initial={0.4}
               />
+              <MorePill />
             </main>
 
             <SidePanelDrawer side="right" />

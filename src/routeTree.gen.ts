@@ -16,6 +16,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ApiFounderSessionRouteImport } from './routes/api/founder.session'
 import { Route as ApiFounderGithubLoginRouteImport } from './routes/api/founder.github-login'
+import { Route as AuthenticatedSettingsDomainsRouteImport } from './routes/_authenticated/settings.domains'
 import { Route as ApiAgentsSlugChatRouteImport } from './routes/api/agents.$slug.chat'
 
 const LogoLabRoute = LogoLabRouteImport.update({
@@ -52,6 +53,12 @@ const ApiFounderGithubLoginRoute = ApiFounderGithubLoginRouteImport.update({
   path: '/api/founder/github-login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSettingsDomainsRoute =
+  AuthenticatedSettingsDomainsRouteImport.update({
+    id: '/settings/domains',
+    path: '/settings/domains',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiAgentsSlugChatRoute = ApiAgentsSlugChatRouteImport.update({
   id: '/api/agents/$slug/chat',
   path: '/api/agents/$slug/chat',
@@ -63,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRouteWithChildren
   '/logo-lab': typeof LogoLabRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/settings/domains': typeof AuthenticatedSettingsDomainsRoute
   '/api/founder/github-login': typeof ApiFounderGithubLoginRoute
   '/api/founder/session': typeof ApiFounderSessionRoute
   '/api/agents/$slug/chat': typeof ApiAgentsSlugChatRoute
@@ -72,6 +80,7 @@ export interface FileRoutesByTo {
   '/logo-lab': typeof LogoLabRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/': typeof AuthenticatedIndexRoute
+  '/settings/domains': typeof AuthenticatedSettingsDomainsRoute
   '/api/founder/github-login': typeof ApiFounderGithubLoginRoute
   '/api/founder/session': typeof ApiFounderSessionRoute
   '/api/agents/$slug/chat': typeof ApiAgentsSlugChatRoute
@@ -83,6 +92,7 @@ export interface FileRoutesById {
   '/logo-lab': typeof LogoLabRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/settings/domains': typeof AuthenticatedSettingsDomainsRoute
   '/api/founder/github-login': typeof ApiFounderGithubLoginRoute
   '/api/founder/session': typeof ApiFounderSessionRoute
   '/api/agents/$slug/chat': typeof ApiAgentsSlugChatRoute
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/logo-lab'
     | '/auth/callback'
+    | '/settings/domains'
     | '/api/founder/github-login'
     | '/api/founder/session'
     | '/api/agents/$slug/chat'
@@ -103,6 +114,7 @@ export interface FileRouteTypes {
     | '/logo-lab'
     | '/auth/callback'
     | '/'
+    | '/settings/domains'
     | '/api/founder/github-login'
     | '/api/founder/session'
     | '/api/agents/$slug/chat'
@@ -113,6 +125,7 @@ export interface FileRouteTypes {
     | '/logo-lab'
     | '/auth/callback'
     | '/_authenticated/'
+    | '/_authenticated/settings/domains'
     | '/api/founder/github-login'
     | '/api/founder/session'
     | '/api/agents/$slug/chat'
@@ -178,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiFounderGithubLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/settings/domains': {
+      id: '/_authenticated/settings/domains'
+      path: '/settings/domains'
+      fullPath: '/settings/domains'
+      preLoaderRoute: typeof AuthenticatedSettingsDomainsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/agents/$slug/chat': {
       id: '/api/agents/$slug/chat'
       path: '/api/agents/$slug/chat'
@@ -190,10 +210,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedSettingsDomainsRoute: typeof AuthenticatedSettingsDomainsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedSettingsDomainsRoute: AuthenticatedSettingsDomainsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
