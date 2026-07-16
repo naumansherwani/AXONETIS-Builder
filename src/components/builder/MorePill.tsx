@@ -10,7 +10,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "@tanstack/react-router";
 import {
-  MoreHorizontal, LineChart, Cloud, Users, Shield, Globe, CreditCard, Plug, X,
+  MoreHorizontal, LineChart, Cloud, Users, Shield, Globe, CreditCard, Plug, Search, X,
 } from "lucide-react";
 import { useBuilder, type BottomTabId } from "@/lib/builder-state";
 
@@ -37,6 +37,8 @@ const ITEMS: Item[] = [
     stubTitle: "Payments · Phase 11", stubBody: "Stripe + Paddle + ANEXVOT AI Pay wiring is scheduled for Phase 11 (Cash Register). No stub data shown — the pill entry is a placeholder only." },
   { id: "connectors",label: "Connectors",hint: "External APIs · OAuth clients",    icon: Plug,      kind: "stub",
     stubTitle: "Connectors · Phase 9", stubBody: "External API + OAuth connector shelf ships in Phase 9. Real wire-up will surface here once the server registry is live." },
+  { id: "seo",       label: "SEO",       hint: "Meta · sitemap · AI-search scan",  icon: Search,    kind: "stub",
+    stubTitle: "SEO & AI Search · Phase 3.10", stubBody: "Meta audit, sitemap generator, and AI-search scanner will land inside the 12-Tool Registry (seo.scan tool). No dummy findings shown — real scanner wires up in 3.10.6." },
 ];
 
 export default function MorePill() {
