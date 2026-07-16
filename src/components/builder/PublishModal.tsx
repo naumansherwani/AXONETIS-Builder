@@ -216,34 +216,24 @@ export default function PublishModal({ open, onClose }: { open: boolean; onClose
               </div>
             </div>
 
-            {/* Visibility */}
+            {/* Visibility — Founder builder: Private only (locked) */}
             <div className="space-y-2 border-t border-white/[0.06] bg-white/[0.02] px-5 py-4">
-              <div className="text-[11px] uppercase tracking-wider text-muted-foreground/60">Visibility</div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="flex items-center justify-between">
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground/60">Visibility</div>
+                <span className="text-[10px] uppercase tracking-wider text-[#ff7480]/80">Founder-locked</span>
+              </div>
+              <div className="grid grid-cols-1 gap-2">
                 <VisTile
-                  active={visibility === "public"}
-                  busy={visBusy === "public"}
-                  onClick={() => handleVisibility("public")}
-                  icon={Eye}
-                  label="Public"
-                  desc="Anyone can find & view"
-                />
-                <VisTile
-                  active={visibility === "unlisted"}
-                  busy={visBusy === "unlisted"}
-                  onClick={() => handleVisibility("unlisted")}
-                  icon={EyeOff}
-                  label="Unlisted"
-                  desc="Anyone with URL"
-                />
-                <VisTile
-                  active={visibility === "private"}
+                  active={true}
                   busy={visBusy === "private"}
                   onClick={() => handleVisibility("private")}
                   icon={Lock}
                   label="Private"
-                  desc="Founder-only"
+                  desc="Founder-only · sirf tum access kar sakte ho"
                 />
+              </div>
+              <div className="text-[10px] text-muted-foreground/50">
+                Public / Unlisted disabled — yeh founder ka builder hai, kabhi expose nahi hoga.
               </div>
             </div>
 
