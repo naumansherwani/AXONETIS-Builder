@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Rocket, ShieldCheck, X, CheckCircle2, AlertCircle, Loader2,
-  Copy, Check, Globe, Link2, Users, Power, ExternalLink, Lock, Eye, EyeOff,
+  Copy, Check, Globe, Link2, Users, Power, ExternalLink, Lock,
 } from "lucide-react";
 import { useBuilder } from "@/lib/builder-state";
 import { PROJECTS } from "@/lib/projects";
