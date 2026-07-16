@@ -10,7 +10,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "@tanstack/react-router";
 import {
-  MoreHorizontal, LineChart, Cloud, Users, Shield, Globe, CreditCard, Plug, X,
+  MoreHorizontal, LineChart, Cloud, Users, Shield, Globe, CreditCard, Plug, Search, X,
 } from "lucide-react";
 import { useBuilder, type BottomTabId } from "@/lib/builder-state";
 
