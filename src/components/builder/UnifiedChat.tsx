@@ -33,6 +33,7 @@ import {
   type AgentMessageRow,
 } from "@/lib/agent-stream";
 import { previewRoute, shortModelTag, formatUsd, type RouterPreview } from "@/lib/router-api";
+import { abortToolCall } from "@/lib/tools-api";
 
 type Agent = "founder" | "jimmy" | "sherlock";
 type Msg = ChatMsg;
