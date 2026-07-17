@@ -252,3 +252,13 @@ textarea.fb-no-scrollbar::-webkit-scrollbar { display: none; width: 0; height: 0
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
+
+/* Phase 3.10.1 — ToolCallBubble indeterminate progress shimmer */
+.tc-shimmer {
+  animation: tc-shimmer-slide 1.4s linear infinite;
+  will-change: transform;
+}
+@keyframes tc-shimmer-slide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
