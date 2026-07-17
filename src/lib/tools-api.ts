@@ -35,3 +35,22 @@ export async function fetchTools(): Promise<ToolsSnapshot> {
     return { live: false, tools: [], fetchedAt };
   }
 }
+
+/**
+ * Phase 3.10.1 — POST /rpc/tools.abort
+ * Fired from the ToolCallBubble cancel button. Server SIGTERMs the Rust
+ * worker child bound to this tool_call and marks the row aborted. UI
+ * updates via Supabase 3 Realtime.
+ */
+export async function abortToolCall(toolCallId: string, abortToken?: string): Promise<void> {
+  if (!BASE) throw new Error("VITE_HOSTFLOW_SERVER_URL not configured");
+  const res = await fetch(`${BASE}/api/rpc/tools.abort`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tool_call_id: toolCallId, abort_token: abortToken }),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`tools.abort failed (${res.status}): ${text.slice(0, 200)}`);
+  }
+}

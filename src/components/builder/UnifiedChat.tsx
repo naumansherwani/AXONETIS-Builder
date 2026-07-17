@@ -33,6 +33,7 @@ import {
   type AgentMessageRow,
 } from "@/lib/agent-stream";
 import { previewRoute, shortModelTag, formatUsd, type RouterPreview } from "@/lib/router-api";
+import { abortToolCall } from "@/lib/tools-api";
 
 type Agent = "founder" | "jimmy" | "sherlock";
 type Msg = ChatMsg;
@@ -954,7 +955,9 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
         {msg.thinking && connectPlaceholder ? <Shimmer className="text-[14px]" duration={2}>{msg.text}</Shimmer> : <MessageResponse>{msg.text}</MessageResponse>}
 
         {/* 3.9.1 — tool_call cards (Rust runtime parts) */}
-        {msg.toolCalls?.map((tc) => <ToolCallBubble key={tc.id} tool={tc} />)}
+        {msg.toolCalls?.map((tc) => (
+          <ToolCallBubble key={tc.id} tool={tc} onAbort={abortToolCall} />
+        ))}
 
         {/* 3.9.1 — diff previews with approve/reject */}
         {msg.diffs?.map((d, i) => <DiffPreview key={d.diff_id ?? `${d.path}-${i}`} diff={d} />)}
