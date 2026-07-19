@@ -906,7 +906,9 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
               host.endsWith(".lovable.dev") ||
               host.endsWith(".lovable.app") ||
               host.includes("id-preview--") ||
-              host.startsWith("preview--");
+              host.startsWith("preview--") ||
+              host === "founderbuilder.axonetis.com" ||
+              host.endsWith(".axonetis.com");
             if (!isPreview) {
               return Response.json(
                 { error: "Founder GitHub session required. Login at /auth first." },
