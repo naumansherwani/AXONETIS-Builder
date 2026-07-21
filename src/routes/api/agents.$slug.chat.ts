@@ -65,7 +65,7 @@ type BrainJob = {
   threadId: string;
   userMessageId: string;
   userId: string;
-  brainURL: string;
+  brainURLs: string[];
   signal?: AbortSignal;
 };
 
@@ -355,15 +355,45 @@ function sha256(text: string) {
   return createHash("sha256").update(text).digest("hex");
 }
 
+function unique(values: string[]) {
+  return [...new Set(values.filter(Boolean))];
+}
+
+function resolveBrainURLs() {
+  const configured = [
+    process.env.RUST_BRAIN_URL,
+    process.env.AXONETIS_RUST_BRAIN_URL,
+    process.env.HOSTFLOWAI_BRAIN_URL,
+    process.env.HOSTFLOW_BRAIN_URL,
+  ].flatMap((value) => (value ?? "").split(","));
+
+  return unique([
+    ...configured.map((value) => value.trim().replace(/\/$/, "")),
+    "http://127.0.0.1:8088",
+    "http://127.0.0.1:8080",
+  ]);
+}
+
+function projectSlugCandidates(projectId: string) {
+  const aliases: Record<string, string[]> = {
+    hostflowai: ["hostflowai", "nexatect", "founderbuilder", "axonetis"],
+    nexatect: ["nexatect", "hostflowai", "founderbuilder", "axonetis"],
+    axonetis: ["axonetis", "founderbuilder", "nexatect", "hostflowai"],
+    founderbuilder: ["founderbuilder", "axonetis", "nexatect", "hostflowai"],
+  };
+  return unique([projectId, ...(aliases[projectId] ?? [])]);
+}
+
 async function resolveProjectUuid(supabase: SupabaseClient, projectId: string) {
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(projectId)) return projectId;
+  const slugs = projectSlugCandidates(projectId);
   const { data, error } = await supabase
     .from("projects")
-    .select("id")
-    .eq("slug", projectId)
-    .maybeSingle();
+    .select("id, slug")
+    .in("slug", slugs)
+    .limit(1);
   if (error) throw error;
-  const id = data?.id as string | undefined;
+  const id = data?.[0]?.id as string | undefined;
   if (!id) throw new Error(`Project not found for agent loop: ${projectId}`);
   return id;
 }
