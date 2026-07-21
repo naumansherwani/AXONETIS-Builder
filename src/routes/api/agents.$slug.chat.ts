@@ -26,6 +26,7 @@ import { createHash } from "crypto";
 
 const ALLOWED_SLUGS = new Set(["jimmy", "sherlock"]);
 const RUST_TIMEOUT_MS = 45_000;
+const BRAIN_ATTEMPT_TIMEOUT_MS = 15_000;
 const DIRECT_FALLBACK_TIMEOUT_MS = 30_000;
 const MAX_SHERLOCK_LOOPS = 3;
 const DISABLED_PROVIDER_IDS = ["J-bk-deepseek-v31-fr", "S-bk-llama-70b-fr"];
@@ -65,7 +66,7 @@ type BrainJob = {
   threadId: string;
   userMessageId: string;
   userId: string;
-  brainURL: string;
+  brainURLs: string[];
   signal?: AbortSignal;
 };
 
@@ -355,15 +356,45 @@ function sha256(text: string) {
   return createHash("sha256").update(text).digest("hex");
 }
 
+function unique(values: string[]) {
+  return [...new Set(values.filter(Boolean))];
+}
+
+function resolveBrainURLs() {
+  const configured = [
+    process.env.RUST_BRAIN_URL,
+    process.env.AXONETIS_RUST_BRAIN_URL,
+    process.env.HOSTFLOWAI_BRAIN_URL,
+    process.env.HOSTFLOW_BRAIN_URL,
+  ].flatMap((value) => (value ?? "").split(","));
+
+  return unique([
+    ...configured.map((value) => value.trim().replace(/\/$/, "")),
+    "http://127.0.0.1:8088",
+    "http://127.0.0.1:8080",
+  ]);
+}
+
+function projectSlugCandidates(projectId: string) {
+  const aliases: Record<string, string[]> = {
+    hostflowai: ["hostflowai", "nexatect", "founderbuilder", "axonetis"],
+    nexatect: ["nexatect", "hostflowai", "founderbuilder", "axonetis"],
+    axonetis: ["axonetis", "founderbuilder", "nexatect", "hostflowai"],
+    founderbuilder: ["founderbuilder", "axonetis", "nexatect", "hostflowai"],
+  };
+  return unique([projectId, ...(aliases[projectId] ?? [])]);
+}
+
 async function resolveProjectUuid(supabase: SupabaseClient, projectId: string) {
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(projectId)) return projectId;
+  const slugs = projectSlugCandidates(projectId);
   const { data, error } = await supabase
     .from("projects")
-    .select("id")
-    .eq("slug", projectId)
-    .maybeSingle();
+    .select("id, slug")
+    .in("slug", slugs)
+    .limit(1);
   if (error) throw error;
-  const id = data?.id as string | undefined;
+  const id = data?.[0]?.id as string | undefined;
   if (!id) throw new Error(`Project not found for agent loop: ${projectId}`);
   return id;
 }
@@ -620,43 +651,49 @@ async function insertAssistantMessage(job: BrainJob, assistantText: string, meta
 }
 
 async function runBrainAndInsert(job: BrainJob) {
-  const { supabase, slug, prompt, threadId, userMessageId, brainURL, signal } = job;
+  const { supabase, slug, prompt, threadId, userMessageId, brainURLs, signal } = job;
   let assistantText = "";
   let rustPayload: unknown = null;
   let rustError: string | null = null;
   let meta: CompletionMeta | undefined;
 
-  const ctrl = new AbortController();
-  const abort = () => ctrl.abort(signal?.reason);
-  if (signal?.aborted) ctrl.abort(signal.reason);
-  else signal?.addEventListener("abort", abort, { once: true });
-  const timer = setTimeout(() => ctrl.abort(), RUST_TIMEOUT_MS);
-  try {
-    const r = await fetch(`${brainURL}/api/agents/${slug}/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: prompt,
-        disabledProviders: DISABLED_PROVIDER_IDS,
-        excludeProviderIds: DISABLED_PROVIDER_IDS,
-        skipProviderIds: DISABLED_PROVIDER_IDS,
-      }),
-      signal: ctrl.signal,
-    });
-    if (!r.ok) {
-      rustError = `Rust ${r.status}: ${await r.text().catch(() => "")}`.slice(0, 500);
-    } else {
-      rustPayload = await r.json().catch(() => null);
-      assistantText = extractText(rustPayload);
-      meta = { model: extractModel(rustPayload), ...extractUsage(rustPayload) };
+  for (const brainURL of brainURLs) {
+    const ctrl = new AbortController();
+    const abort = () => ctrl.abort(signal?.reason);
+    if (signal?.aborted) ctrl.abort(signal.reason);
+    else signal?.addEventListener("abort", abort, { once: true });
+    const timer = setTimeout(() => ctrl.abort(), BRAIN_ATTEMPT_TIMEOUT_MS);
+    try {
+      const r = await fetch(`${brainURL}/api/agents/${slug}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: prompt,
+          disabledProviders: DISABLED_PROVIDER_IDS,
+          excludeProviderIds: DISABLED_PROVIDER_IDS,
+          skipProviderIds: DISABLED_PROVIDER_IDS,
+        }),
+        signal: ctrl.signal,
+      });
+      if (!r.ok) {
+        rustError = `Brain ${brainURL} ${r.status}: ${await r.text().catch(() => "")}`.slice(0, 500);
+      } else {
+        rustPayload = await r.json().catch(() => null);
+        assistantText = extractText(rustPayload);
+        meta = { model: extractModel(rustPayload), ...extractUsage(rustPayload) };
+        rustError = null;
+        break;
+      }
+    } catch (err) {
+      rustError = err instanceof Error && err.name === "AbortError"
+        ? `Brain response timeout: ${brainURL}`
+        : err instanceof Error ? `${brainURL}: ${err.message}` : `${brainURL}: ${String(err)}`;
+    } finally {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", abort);
     }
-  } catch (err) {
-    rustError = err instanceof Error && err.name === "AbortError"
-      ? "Brain response timeout"
-      : err instanceof Error ? err.message : String(err);
-  } finally {
-    clearTimeout(timer);
-    signal?.removeEventListener("abort", abort);
+
+    if (signal?.aborted || assistantText) break;
   }
 
   if (signal?.aborted) return;
@@ -706,7 +743,38 @@ function streamBrainToClient(job: BrainJob) {
         let meta: CompletionMeta | undefined;
 
         try {
-          const r = await fetch(`${job.brainURL}/api/agents/${job.slug}/chat`, {
+          let r: Response | null = null;
+          for (const brainURL of job.brainURLs) {
+            try {
+              r = await fetch(`${brainURL}/api/agents/${job.slug}/chat`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+                body: JSON.stringify({
+                  message: job.prompt,
+                  stream: true,
+                  disabledProviders: DISABLED_PROVIDER_IDS,
+                  excludeProviderIds: DISABLED_PROVIDER_IDS,
+                  skipProviderIds: DISABLED_PROVIDER_IDS,
+                }),
+                signal: ctrl.signal,
+              });
+              if (r.ok) break;
+              rustError = `Brain ${brainURL} ${r.status}: ${await r.text().catch(() => "")}`.slice(0, 500);
+              r = null;
+            } catch (err) {
+              rustError = err instanceof Error && err.name === "AbortError"
+                ? `Brain response timeout: ${brainURL}`
+                : err instanceof Error ? `${brainURL}: ${err.message}` : `${brainURL}: ${String(err)}`;
+              r = null;
+            }
+            if (job.signal?.aborted) break;
+          }
+
+          if (!r) {
+            throw new Error(rustError ?? "Brain unavailable");
+          }
+
+          /* const r = await fetch(`${job.brainURL}/api/agents/${job.slug}/chat`, {
             method: "POST",
             headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
             body: JSON.stringify({
@@ -717,7 +785,7 @@ function streamBrainToClient(job: BrainJob) {
               skipProviderIds: DISABLED_PROVIDER_IDS,
             }),
             signal: ctrl.signal,
-          });
+          }); */
           if (!r.ok) {
             rustError = `Rust ${r.status}: ${await r.text().catch(() => "")}`.slice(0, 500);
           } else if (r.headers.get("content-type")?.includes("text/event-stream") && r.body) {
@@ -968,7 +1036,7 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
         }
 
         // 3. Kick Rust ensemble in background. Do NOT hold the UI hostage.
-        const brainURL = (process.env.RUST_BRAIN_URL ?? "http://127.0.0.1:8088").replace(/\/$/, "");
+        const brainURLs = resolveBrainURLs();
         const wantsSse = body.stream === true || request.headers.get("accept")?.includes("text/event-stream");
         if (wantsSse) {
           return streamBrainToClient({
@@ -979,7 +1047,7 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
             threadId,
             userMessageId: userMsg.id as string,
             userId,
-            brainURL,
+            brainURLs,
             signal: request.signal,
           });
         }
@@ -991,7 +1059,7 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
           threadId,
           userMessageId: userMsg.id as string,
           userId,
-          brainURL,
+          brainURLs,
         });
         job.catch((err) => console.warn("[agents.chat] Brain job failed:", err));
 
