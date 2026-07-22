@@ -44,7 +44,7 @@ export async function fetchTools(): Promise<ToolsSnapshot> {
  */
 export async function abortToolCall(toolCallId: string, abortToken?: string): Promise<void> {
   if (!BASE) throw new Error("VITE_HOSTFLOW_SERVER_URL not configured");
-  const res = await fetch(`${BASE}/api/rpc/tools.abort`, {
+  const res = await fetch(`${BASE}/rpc/tools.abort`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ tool_call_id: toolCallId, abort_token: abortToken }),
