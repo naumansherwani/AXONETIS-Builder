@@ -112,7 +112,7 @@ export function useAgentStream(threadId: string | null | undefined): UseAgentStr
 
   const abort = useCallback(async (toolCallId: string, abortToken?: string) => {
     if (!HOSTFLOW_API_BASE) throw new Error("VITE_HOSTFLOW_SERVER_URL not configured");
-    const res = await fetch(`${HOSTFLOW_API_BASE.replace(/\/$/, "")}/api/rpc/tools.abort`, {
+    const res = await fetch(`${HOSTFLOW_API_BASE.replace(/\/$/, "")}/rpc/tools.abort`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tool_call_id: toolCallId, abort_token: abortToken }),
