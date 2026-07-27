@@ -24,8 +24,7 @@ import {
   type AgentMessageRow,
 } from "@/lib/agent-stream";
 import type { ToolCallPart } from "@/components/builder/ToolCallBubble";
-
-const HOSTFLOW_API_BASE = import.meta.env.VITE_HOSTFLOW_SERVER_URL as string | undefined;
+import { abortToolCall } from "@/lib/tools-api";
 
 export interface UseAgentStreamResult {
   messages: AgentMessageRow[];
@@ -111,16 +110,7 @@ export function useAgentStream(threadId: string | null | undefined): UseAgentStr
   }, [messages]);
 
   const abort = useCallback(async (toolCallId: string, abortToken?: string) => {
-    if (!HOSTFLOW_API_BASE) throw new Error("VITE_HOSTFLOW_SERVER_URL not configured");
-    const res = await fetch(`${HOSTFLOW_API_BASE.replace(/\/$/, "")}/rpc/tools.abort`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tool_call_id: toolCallId, abort_token: abortToken }),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(`tools.abort failed (${res.status}): ${text.slice(0, 200)}`);
-    }
+    await abortToolCall(toolCallId, abortToken);
   }, []);
 
   const abortAll = useCallback(async () => {
