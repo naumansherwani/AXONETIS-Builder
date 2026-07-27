@@ -24,8 +24,7 @@ import {
   type AgentMessageRow,
 } from "@/lib/agent-stream";
 import type { ToolCallPart } from "@/components/builder/ToolCallBubble";
-
-const HOSTFLOW_API_BASE = import.meta.env.VITE_HOSTFLOW_SERVER_URL as string | undefined;
+import { abortToolCall } from "@/lib/tools-api";
 
 export interface UseAgentStreamResult {
   messages: AgentMessageRow[];
