@@ -17,6 +17,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiSystemHealthRouteImport } from './routes/api/system.health'
+import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiFounderSessionRouteImport } from './routes/api/founder.session'
 import { Route as ApiFounderGithubLoginRouteImport } from './routes/api/founder.github-login'
 import { Route as AuthenticatedSettingsDomainsRouteImport } from './routes/_authenticated/settings.domains'
@@ -61,6 +62,11 @@ const ApiSystemHealthRoute = ApiSystemHealthRouteImport.update({
   path: '/api/system/health',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
+  id: '/api/public/health',
+  path: '/api/public/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiFounderSessionRoute = ApiFounderSessionRouteImport.update({
   id: '/api/founder/session',
   path: '/api/founder/session',
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/settings/domains': typeof AuthenticatedSettingsDomainsRoute
   '/api/founder/github-login': typeof ApiFounderGithubLoginRoute
   '/api/founder/session': typeof ApiFounderSessionRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/system/health': typeof ApiSystemHealthRoute
   '/api/agents/$slug/chat': typeof ApiAgentsSlugChatRoute
 }
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/settings/domains': typeof AuthenticatedSettingsDomainsRoute
   '/api/founder/github-login': typeof ApiFounderGithubLoginRoute
   '/api/founder/session': typeof ApiFounderSessionRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/system/health': typeof ApiSystemHealthRoute
   '/api/agents/$slug/chat': typeof ApiAgentsSlugChatRoute
 }
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/domains': typeof AuthenticatedSettingsDomainsRoute
   '/api/founder/github-login': typeof ApiFounderGithubLoginRoute
   '/api/founder/session': typeof ApiFounderSessionRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/system/health': typeof ApiSystemHealthRoute
   '/api/agents/$slug/chat': typeof ApiAgentsSlugChatRoute
 }
@@ -136,6 +145,7 @@ export interface FileRouteTypes {
     | '/settings/domains'
     | '/api/founder/github-login'
     | '/api/founder/session'
+    | '/api/public/health'
     | '/api/system/health'
     | '/api/agents/$slug/chat'
   fileRoutesByTo: FileRoutesByTo
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/settings/domains'
     | '/api/founder/github-login'
     | '/api/founder/session'
+    | '/api/public/health'
     | '/api/system/health'
     | '/api/agents/$slug/chat'
   id:
@@ -163,6 +174,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/domains'
     | '/api/founder/github-login'
     | '/api/founder/session'
+    | '/api/public/health'
     | '/api/system/health'
     | '/api/agents/$slug/chat'
   fileRoutesById: FileRoutesById
@@ -175,6 +187,7 @@ export interface RootRouteChildren {
   ApiHealthRoute: typeof ApiHealthRoute
   ApiFounderGithubLoginRoute: typeof ApiFounderGithubLoginRoute
   ApiFounderSessionRoute: typeof ApiFounderSessionRoute
+  ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiSystemHealthRoute: typeof ApiSystemHealthRoute
   ApiAgentsSlugChatRoute: typeof ApiAgentsSlugChatRoute
 }
@@ -235,6 +248,13 @@ declare module '@tanstack/react-router' {
       path: '/api/system/health'
       fullPath: '/api/system/health'
       preLoaderRoute: typeof ApiSystemHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/health': {
+      id: '/api/public/health'
+      path: '/api/public/health'
+      fullPath: '/api/public/health'
+      preLoaderRoute: typeof ApiPublicHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/founder/session': {
@@ -299,9 +319,20 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHealthRoute: ApiHealthRoute,
   ApiFounderGithubLoginRoute: ApiFounderGithubLoginRoute,
   ApiFounderSessionRoute: ApiFounderSessionRoute,
+  ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiSystemHealthRoute: ApiSystemHealthRoute,
   ApiAgentsSlugChatRoute: ApiAgentsSlugChatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
