@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LogoLabRouteImport } from './routes/logo-lab'
+import { Route as HealthRouteImport } from './routes/health'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
@@ -22,6 +23,11 @@ import { Route as ApiAgentsSlugChatRouteImport } from './routes/api/agents.$slug
 const LogoLabRoute = LogoLabRouteImport.update({
   id: '/logo-lab',
   path: '/logo-lab',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HealthRoute = HealthRouteImport.update({
+  id: '/health',
+  path: '/health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -68,6 +74,7 @@ const ApiAgentsSlugChatRoute = ApiAgentsSlugChatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/health': typeof HealthRoute
   '/logo-lab': typeof LogoLabRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/settings/domains': typeof AuthenticatedSettingsDomainsRoute
@@ -77,6 +84,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRouteWithChildren
+  '/health': typeof HealthRoute
   '/logo-lab': typeof LogoLabRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/': typeof AuthenticatedIndexRoute
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
+  '/health': typeof HealthRoute
   '/logo-lab': typeof LogoLabRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -102,6 +111,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/health'
     | '/logo-lab'
     | '/auth/callback'
     | '/settings/domains'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
+    | '/health'
     | '/logo-lab'
     | '/auth/callback'
     | '/'
@@ -122,6 +133,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authenticated'
     | '/auth'
+    | '/health'
     | '/logo-lab'
     | '/auth/callback'
     | '/_authenticated/'
@@ -134,6 +146,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
+  HealthRoute: typeof HealthRoute
   LogoLabRoute: typeof LogoLabRoute
   ApiFounderGithubLoginRoute: typeof ApiFounderGithubLoginRoute
   ApiFounderSessionRoute: typeof ApiFounderSessionRoute
@@ -147,6 +160,13 @@ declare module '@tanstack/react-router' {
       path: '/logo-lab'
       fullPath: '/logo-lab'
       preLoaderRoute: typeof LogoLabRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/health': {
+      id: '/health'
+      path: '/health'
+      fullPath: '/health'
+      preLoaderRoute: typeof HealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -234,6 +254,7 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
+  HealthRoute: HealthRoute,
   LogoLabRoute: LogoLabRoute,
   ApiFounderGithubLoginRoute: ApiFounderGithubLoginRoute,
   ApiFounderSessionRoute: ApiFounderSessionRoute,
