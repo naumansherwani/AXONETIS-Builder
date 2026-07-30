@@ -1273,6 +1273,10 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
           <DiffPreview key={d.diff_id ?? `${d.path}-${i}`} diff={d} />
         ))}
 
+        {/* 3.10.3 — batch diff approval (Monaco side-by-side + Sherlock verdict) */}
+        {msg.diffs && msg.diffs.length > 1 && <DiffBatchReview diffs={msg.diffs} />}
+
+
         {/* meta chips + hover actions */}
         {isAssistant && !msg.thinking && (
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
