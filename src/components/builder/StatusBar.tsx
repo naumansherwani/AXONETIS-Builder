@@ -18,7 +18,13 @@ export default function StatusBar() {
         <StatusItem
           label="Bridge"
           value={bridgeStatus}
-          tone={bridgeStatus === "connected" ? "emerald" : bridgeStatus === "no-signal" ? "amber" : "gray"}
+          tone={
+            bridgeStatus === "connected"
+              ? "emerald"
+              : bridgeStatus === "no-signal"
+                ? "amber"
+                : "gray"
+          }
           pulse={bridgeStatus === "handshaking"}
         />
       </div>
@@ -34,16 +40,30 @@ export default function StatusBar() {
 }
 
 function StatusItem({
-  label, value, tone, pulse,
-}: { label: string; value: string; tone: "red" | "emerald" | "amber" | "gray"; pulse?: boolean }) {
+  label,
+  value,
+  tone,
+  pulse,
+}: {
+  label: string;
+  value: string;
+  tone: "red" | "emerald" | "amber" | "gray";
+  pulse?: boolean;
+}) {
   const color =
-    tone === "red" ? "bg-red-500" :
-    tone === "emerald" ? "bg-emerald-400" :
-    tone === "amber" ? "bg-amber-400" : "bg-muted-foreground";
+    tone === "red"
+      ? "bg-red-500"
+      : tone === "emerald"
+        ? "bg-emerald-400"
+        : tone === "amber"
+          ? "bg-amber-400"
+          : "bg-muted-foreground";
   return (
     <span className="flex items-center gap-1.5">
       <span className={`h-1.5 w-1.5 rounded-full ${color} ${pulse ? "fb-blink" : ""}`} />
-      <span>{label}: <span className="text-foreground/90">{value}</span></span>
+      <span>
+        {label}: <span className="text-foreground/90">{value}</span>
+      </span>
     </span>
   );
 }

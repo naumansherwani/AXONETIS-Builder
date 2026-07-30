@@ -21,9 +21,7 @@ export function PanelSection({
         </h4>
         {action}
       </div>
-      <div className="rounded-lg border border-white/[0.06] bg-white/[0.015] p-2">
-        {children}
-      </div>
+      <div className="rounded-lg border border-white/[0.06] bg-white/[0.015] p-2">{children}</div>
     </section>
   );
 }

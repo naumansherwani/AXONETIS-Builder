@@ -37,11 +37,12 @@ export default function ProjectsPanel() {
         .then((r) => {
           if (!alive) return;
           const s = (r?.status ?? "").toLowerCase();
-          const state: Health = s === "ok" || s === "online" || s === "healthy"
-            ? "online"
-            : s === "degraded" || s === "warn"
-              ? "degraded"
-              : "offline";
+          const state: Health =
+            s === "ok" || s === "online" || s === "healthy"
+              ? "online"
+              : s === "degraded" || s === "warn"
+                ? "degraded"
+                : "offline";
           setHealth((h) => ({ ...h, [p.id]: state }));
         })
         .catch(() => alive && setHealth((h) => ({ ...h, [p.id]: "offline" })));
@@ -54,17 +55,21 @@ export default function ProjectsPanel() {
             const s = (r?.status ?? "").toLowerCase();
             setHealth((h) => ({
               ...h,
-              [p.id]: s === "ok" || s === "online" || s === "healthy"
-                ? "online"
-                : s === "degraded" || s === "warn"
-                  ? "degraded"
-                  : "offline",
+              [p.id]:
+                s === "ok" || s === "online" || s === "healthy"
+                  ? "online"
+                  : s === "degraded" || s === "warn"
+                    ? "degraded"
+                    : "offline",
             }));
           })
           .catch(() => alive && setHealth((h) => ({ ...h, [p.id]: "offline" })));
       });
     }, 15000);
-    return () => { alive = false; clearInterval(iv); };
+    return () => {
+      alive = false;
+      clearInterval(iv);
+    };
   }, []);
 
   return (
@@ -88,19 +93,29 @@ export default function ProjectsPanel() {
             >
               <span
                 className="grid h-8 w-8 place-items-center rounded-md border border-white/10 text-[11px] font-bold uppercase"
-                style={{ background: `${p.accent}26`, color: "#fff", boxShadow: `0 0 14px ${p.accent}55` }}
+                style={{
+                  background: `${p.accent}26`,
+                  color: "#fff",
+                  boxShadow: `0 0 14px ${p.accent}55`,
+                }}
               >
                 {p.shortName.slice(0, 2)}
               </span>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-[13px] font-semibold text-foreground/95">{p.name}</div>
-                <div className="truncate font-mono text-[10px] text-muted-foreground/70">{p.previewUrl}</div>
+                <div className="truncate text-[13px] font-semibold text-foreground/95">
+                  {p.name}
+                </div>
+                <div className="truncate font-mono text-[10px] text-muted-foreground/70">
+                  {p.previewUrl}
+                </div>
                 <div className="mt-0.5 flex items-center gap-1.5">
                   <span className={`h-1.5 w-1.5 rounded-full ${DOT[state]}`} />
                   <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60">
                     bridge · {LABEL[state]}
                   </span>
-                  {state === "loading" && <Loader2 className="h-2.5 w-2.5 animate-spin text-muted-foreground/50" />}
+                  {state === "loading" && (
+                    <Loader2 className="h-2.5 w-2.5 animate-spin text-muted-foreground/50" />
+                  )}
                 </div>
               </div>
               {active && <Check className="h-4 w-4 text-[#ff7480]" />}

@@ -10,8 +10,6 @@ import type { PreviewEnv, PreviewFileChange } from "./preview-engine";
 
 export type AgentState = "standby" | "jimmy" | "sherlock";
 
-
-
 export type BottomTabId =
   | "command"
   | "files"
@@ -78,7 +76,6 @@ export interface BuilderState {
   setVisualEditMode: (v: boolean) => void;
   setLastVisualEditPick: (p: VisualEditPick | null) => void;
 }
-
 
 export const BuilderCtx = createContext<BuilderState | null>(null);
 

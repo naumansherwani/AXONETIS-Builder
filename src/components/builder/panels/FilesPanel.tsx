@@ -7,8 +7,12 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronRight, FileCode, FileText, FolderOpen, Folder, Loader2 } from "lucide-react";
 import { useBuilder } from "@/lib/builder-state";
 import {
-  fetchProjectFiles, buildTree, subscribeProjectFiles, formatBytes,
-  type FileTreeNode, type ProjectFileRow,
+  fetchProjectFiles,
+  buildTree,
+  subscribeProjectFiles,
+  formatBytes,
+  type FileTreeNode,
+  type ProjectFileRow,
 } from "@/lib/files-api";
 import { SUPABASE3_READY } from "@/integrations/supabase3/client";
 
@@ -26,19 +30,32 @@ export default function FilesPanel() {
     setLoading(true);
     setError(null);
     fetchProjectFiles(project)
-      .then((data) => { if (alive) setRows(data); })
-      .catch((e: unknown) => { if (alive) setError(e instanceof Error ? e.message : String(e)); })
-      .finally(() => { if (alive) setLoading(false); });
+      .then((data) => {
+        if (alive) setRows(data);
+      })
+      .catch((e: unknown) => {
+        if (alive) setError(e instanceof Error ? e.message : String(e));
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
     const unsub = subscribeProjectFiles(project, () => {
-      fetchProjectFiles(project).then((data) => alive && setRows(data)).catch(() => {});
+      fetchProjectFiles(project)
+        .then((data) => alive && setRows(data))
+        .catch(() => {});
     });
-    return () => { alive = false; unsub(); };
+    return () => {
+      alive = false;
+      unsub();
+    };
   }, [project]);
 
   return (
     <div className="text-[12px]">
       <div className="mb-3 flex items-center justify-between">
-        <div className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground/80">Project Files</div>
+        <div className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground/80">
+          Project Files
+        </div>
         <div className="flex items-center gap-2">
           {loading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground/70" />}
           <span className="rounded bg-white/[0.04] px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
@@ -48,7 +65,10 @@ export default function FilesPanel() {
       </div>
 
       {!SUPABASE3_READY && (
-        <EmptyState title="Supabase 3 offline" hint="Set VITE_SUPABASE3_URL + VITE_SUPABASE3_ANON_KEY to load real project_files." />
+        <EmptyState
+          title="Supabase 3 offline"
+          hint="Set VITE_SUPABASE3_URL + VITE_SUPABASE3_ANON_KEY to load real project_files."
+        />
       )}
       {SUPABASE3_READY && !loading && rows.length === 0 && !error && (
         <EmptyState title="No files yet" hint={`project_files table is empty for "${project}".`} />
@@ -61,12 +81,18 @@ export default function FilesPanel() {
 
 function EmptyState({ title, hint, tone }: { title: string; hint: string; tone?: "error" }) {
   return (
-    <div className={`rounded-md border px-3 py-4 text-center ${
-      tone === "error"
-        ? "border-red-500/20 bg-red-500/[0.03]"
-        : "border-white/[0.05] bg-white/[0.01]"
-    }`}>
-      <div className={`text-[11px] font-semibold ${tone === "error" ? "text-red-300" : "text-foreground/80"}`}>{title}</div>
+    <div
+      className={`rounded-md border px-3 py-4 text-center ${
+        tone === "error"
+          ? "border-red-500/20 bg-red-500/[0.03]"
+          : "border-white/[0.05] bg-white/[0.01]"
+      }`}
+    >
+      <div
+        className={`text-[11px] font-semibold ${tone === "error" ? "text-red-300" : "text-foreground/80"}`}
+      >
+        {title}
+      </div>
       <div className="mt-1 text-[10px] text-muted-foreground/70">{hint}</div>
     </div>
   );
@@ -122,7 +148,9 @@ function FileRow({ node, depth }: { node: FileTreeNode; depth: number }) {
         <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         <span className="truncate text-[12px]">{node.name}</span>
       </span>
-      <span className="shrink-0 font-mono text-[10px] text-muted-foreground/60">{formatBytes(node.size)}</span>
+      <span className="shrink-0 font-mono text-[10px] text-muted-foreground/60">
+        {formatBytes(node.size)}
+      </span>
     </button>
   );
 }

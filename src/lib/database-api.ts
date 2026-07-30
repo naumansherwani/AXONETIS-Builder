@@ -32,14 +32,16 @@ const MIRROR_TABLES = [
 ] as const;
 
 async function countOne(table: string): Promise<number | null> {
-  const { count, error } = await supabase3
-    .from(table)
-    .select("*", { count: "exact", head: true });
+  const { count, error } = await supabase3.from(table).select("*", { count: "exact", head: true });
   if (error) return null;
   return count ?? 0;
 }
 
-export async function fetchTableCounts(): Promise<{ core: TableCount[]; mirror: TableCount[]; live: boolean }> {
+export async function fetchTableCounts(): Promise<{
+  core: TableCount[];
+  mirror: TableCount[];
+  live: boolean;
+}> {
   if (!SUPABASE3_READY) {
     return {
       core: CORE_TABLES.map((name) => ({ name, rows: null })),
@@ -55,7 +57,8 @@ export async function fetchTableCounts(): Promise<{ core: TableCount[]; mirror: 
 }
 
 // ─────────── SQL runner (Hetzner brain, dry-run by default) ───────────
-const BRAIN = (import.meta.env.VITE_HOSTFLOW_SERVER_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+const BRAIN =
+  (import.meta.env.VITE_HOSTFLOW_SERVER_URL as string | undefined)?.replace(/\/$/, "") ?? "";
 
 export interface SqlResult {
   ok: boolean;
@@ -68,7 +71,15 @@ export interface SqlResult {
 }
 
 export async function runSql(query: string, dryRun = true): Promise<SqlResult> {
-  const empty: SqlResult = { ok: false, columns: [], rows: [], rowCount: 0, durationMs: 0, dryRun, error: "" };
+  const empty: SqlResult = {
+    ok: false,
+    columns: [],
+    rows: [],
+    rowCount: 0,
+    durationMs: 0,
+    dryRun,
+    error: "",
+  };
   if (!BRAIN) return { ...empty, error: "Server offline" };
   const t0 = performance.now();
   try {
@@ -79,7 +90,12 @@ export async function runSql(query: string, dryRun = true): Promise<SqlResult> {
       body: JSON.stringify({ query, dryRun }),
     });
     const j = await res.json().catch(() => ({}));
-    if (!res.ok) return { ...empty, error: j.error ?? `HTTP ${res.status}`, durationMs: performance.now() - t0 };
+    if (!res.ok)
+      return {
+        ...empty,
+        error: j.error ?? `HTTP ${res.status}`,
+        durationMs: performance.now() - t0,
+      };
     return {
       ok: true,
       columns: Array.isArray(j.columns) ? j.columns : [],

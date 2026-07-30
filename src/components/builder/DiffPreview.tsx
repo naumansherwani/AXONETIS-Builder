@@ -36,11 +36,20 @@ function computeDiff(oldStr: string, newStr: string): Row[] {
     }
   }
   const rows: Row[] = [];
-  let i = 0, j = 0;
+  let i = 0,
+    j = 0;
   while (i < n && j < m) {
-    if (a[i] === b[j]) { rows.push({ kind: "same", text: a[i] }); i++; j++; }
-    else if (dp[i + 1][j] >= dp[i][j + 1]) { rows.push({ kind: "del", text: a[i] }); i++; }
-    else { rows.push({ kind: "add", text: b[j] }); j++; }
+    if (a[i] === b[j]) {
+      rows.push({ kind: "same", text: a[i] });
+      i++;
+      j++;
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      rows.push({ kind: "del", text: a[i] });
+      i++;
+    } else {
+      rows.push({ kind: "add", text: b[j] });
+      j++;
+    }
   }
   while (i < n) rows.push({ kind: "del", text: a[i++] });
   while (j < m) rows.push({ kind: "add", text: b[j++] });
@@ -85,9 +94,15 @@ export default function DiffPreview({ diff }: { diff: DiffPart }) {
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-white/[0.03]"
       >
-        {open ? <ChevronDown className="h-3 w-3 text-muted-foreground/60" /> : <ChevronRight className="h-3 w-3 text-muted-foreground/60" />}
+        {open ? (
+          <ChevronDown className="h-3 w-3 text-muted-foreground/60" />
+        ) : (
+          <ChevronRight className="h-3 w-3 text-muted-foreground/60" />
+        )}
         <FileDiff className="h-3 w-3 text-[#c4a8ff]" />
-        <span className="truncate font-mono text-[11px] font-medium text-foreground/85">{diff.path}</span>
+        <span className="truncate font-mono text-[11px] font-medium text-foreground/85">
+          {diff.path}
+        </span>
         <span className="ml-auto flex items-center gap-2 font-mono text-[9px] uppercase tracking-wider">
           <span className="text-emerald-400">+{adds}</span>
           <span className="text-red-400">-{dels}</span>
@@ -99,13 +114,27 @@ export default function DiffPreview({ diff }: { diff: DiffPart }) {
         <div className="border-t border-white/[0.04] bg-black/25">
           <div className="max-h-72 overflow-auto font-mono text-[10.5px] leading-relaxed">
             {rows.map((r, idx) => {
-              const bg = r.kind === "add" ? "bg-emerald-500/[0.08]" : r.kind === "del" ? "bg-red-500/[0.08]" : "";
-              const fg = r.kind === "add" ? "text-emerald-200/90" : r.kind === "del" ? "text-red-200/90" : "text-foreground/70";
+              const bg =
+                r.kind === "add"
+                  ? "bg-emerald-500/[0.08]"
+                  : r.kind === "del"
+                    ? "bg-red-500/[0.08]"
+                    : "";
+              const fg =
+                r.kind === "add"
+                  ? "text-emerald-200/90"
+                  : r.kind === "del"
+                    ? "text-red-200/90"
+                    : "text-foreground/70";
               const gutter = r.kind === "add" ? "+" : r.kind === "del" ? "-" : " ";
               return (
                 <div key={idx} className={`flex gap-2 px-2 py-[1px] ${bg}`}>
-                  <span className="w-3 shrink-0 select-none text-muted-foreground/40">{gutter}</span>
-                  <span className={`whitespace-pre-wrap break-all ${fg}`}>{r.text || "\u00A0"}</span>
+                  <span className="w-3 shrink-0 select-none text-muted-foreground/40">
+                    {gutter}
+                  </span>
+                  <span className={`whitespace-pre-wrap break-all ${fg}`}>
+                    {r.text || "\u00A0"}
+                  </span>
                 </div>
               );
             })}

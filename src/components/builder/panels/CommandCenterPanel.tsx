@@ -39,7 +39,11 @@ interface ProjectHealth {
 
 export default function CommandCenterPanel() {
   const [healthByProject, setHealth] = useState<Record<ProjectId, ProjectHealth>>(
-    () => Object.fromEntries(PROJECTS.map((p) => [p.id, emptyHealth(p.id)])) as Record<ProjectId, ProjectHealth>,
+    () =>
+      Object.fromEntries(PROJECTS.map((p) => [p.id, emptyHealth(p.id)])) as Record<
+        ProjectId,
+        ProjectHealth
+      >,
   );
   const [online, setOnline] = useState(false);
 
@@ -78,7 +82,9 @@ export default function CommandCenterPanel() {
       setHealth(next);
       setOnline(anyOnline);
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -107,7 +113,11 @@ export default function CommandCenterPanel() {
         <div className="grid grid-cols-3 gap-2">
           <Metric label="24h spend" value={`$${totals.spend.toFixed(4)}`} tone="emerald" />
           <Metric label="Tokens" value={fmt(totals.tokens)} tone="sky" />
-          <Metric label="Errors" value={String(totals.errors)} tone={totals.errors > 0 ? "red" : "emerald"} />
+          <Metric
+            label="Errors"
+            value={String(totals.errors)}
+            tone={totals.errors > 0 ? "red" : "emerald"}
+          />
           <Metric label="Jimmy ops" value={String(totals.jimmy)} tone="violet" />
           <Metric label="Sherlock" value={String(totals.sherlock)} tone="amber" />
           <Metric label="Loop cap" value="3×" tone="gray" />
@@ -129,7 +139,9 @@ export default function CommandCenterPanel() {
                       className="h-2 w-2 rounded-full shadow-[0_0_8px_currentColor]"
                       style={{ color: p.accent, background: p.accent }}
                     />
-                    <span className="text-[12px] font-semibold text-foreground/95">{p.shortName}</span>
+                    <span className="text-[12px] font-semibold text-foreground/95">
+                      {p.shortName}
+                    </span>
                     <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60">
                       {supabaseLabelFor(p.id)}
                     </span>
@@ -142,7 +154,12 @@ export default function CommandCenterPanel() {
                 {/* Pipeline strip */}
                 <div className="mb-2 flex items-center gap-1.5">
                   {STAGES.map((stage, i) => {
-                    const session = stage === "sandbox" ? h.sandbox : stage === "production" ? h.production : null;
+                    const session =
+                      stage === "sandbox"
+                        ? h.sandbox
+                        : stage === "production"
+                          ? h.production
+                          : null;
                     const state: "done" | "active" | "queued" =
                       session?.status === "ready" ? "done" : session ? "active" : "queued";
                     return (
@@ -160,8 +177,12 @@ export default function CommandCenterPanel() {
                         ) : (
                           <Circle className="h-3.5 w-3.5 text-muted-foreground/40" />
                         )}
-                        <span className="text-[10px] uppercase tracking-wider text-foreground/85">{stage}</span>
-                        {i < STAGES.length - 1 && <span className="text-muted-foreground/30">→</span>}
+                        <span className="text-[10px] uppercase tracking-wider text-foreground/85">
+                          {stage}
+                        </span>
+                        {i < STAGES.length - 1 && (
+                          <span className="text-muted-foreground/30">→</span>
+                        )}
                       </div>
                     );
                   })}
@@ -169,9 +190,16 @@ export default function CommandCenterPanel() {
 
                 <div className="flex items-center justify-between text-[10px] text-muted-foreground/75">
                   <span className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1"><Zap className="h-3 w-3 text-violet-300" />J {h.jimmyCount}</span>
-                    <span className="inline-flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-amber-300" />S {h.sherlockCount}</span>
-                    <span className="inline-flex items-center gap-1"><Activity className="h-3 w-3 text-sky-300" />{h.recentActivity.length}</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Zap className="h-3 w-3 text-violet-300" />J {h.jimmyCount}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <ShieldCheck className="h-3 w-3 text-amber-300" />S {h.sherlockCount}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Activity className="h-3 w-3 text-sky-300" />
+                      {h.recentActivity.length}
+                    </span>
                   </span>
                   <span className={h.errorCount > 0 ? "text-red-300" : "text-emerald-300/80"}>
                     {h.errorCount > 0 ? `${h.errorCount} err` : "healthy"}
@@ -193,10 +221,22 @@ export default function CommandCenterPanel() {
   );
 }
 
-function Metric({ label, value, tone }: { label: string; value: string; tone: "emerald" | "sky" | "red" | "violet" | "amber" | "gray" }) {
+function Metric({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: "emerald" | "sky" | "red" | "violet" | "amber" | "gray";
+}) {
   const toneCls = {
-    emerald: "text-emerald-300", sky: "text-sky-300", red: "text-red-300",
-    violet: "text-violet-300", amber: "text-amber-300", gray: "text-foreground/90",
+    emerald: "text-emerald-300",
+    sky: "text-sky-300",
+    red: "text-red-300",
+    violet: "text-violet-300",
+    amber: "text-amber-300",
+    gray: "text-foreground/90",
   }[tone];
   return (
     <div className="rounded-md border border-white/[0.06] bg-white/[0.015] p-2">
@@ -213,5 +253,13 @@ function fmt(n: number): string {
 }
 
 function emptyHealth(projectId: ProjectId): ProjectHealth {
-  return { projectId, recentActivity: [], jimmyCount: 0, sherlockCount: 0, errorCount: 0, spend: 0, tokens: 0 };
+  return {
+    projectId,
+    recentActivity: [],
+    jimmyCount: 0,
+    sherlockCount: 0,
+    errorCount: 0,
+    spend: 0,
+    tokens: 0,
+  };
 }

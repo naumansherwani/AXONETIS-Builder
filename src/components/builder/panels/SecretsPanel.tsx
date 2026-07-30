@@ -22,15 +22,21 @@ export default function SecretsPanel() {
   const load = () => {
     setLoading(true);
     return fetchSecrets()
-      .then((s) => { setSecrets(s.secrets); setLive(s.live); })
+      .then((s) => {
+        setSecrets(s.secrets);
+        setLive(s.live);
+      })
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
     let alive = true;
-    void load().then(() => { if (!alive) return; });
-    return () => { alive = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    void load().then(() => {
+      if (!alive) return;
+    });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const groups: SecretRow["scope"][] = ["runtime", "build", "provider"];
@@ -81,7 +87,9 @@ export default function SecretsPanel() {
                     <span className="flex min-w-0 items-center gap-2 truncate">
                       <Key className="h-3.5 w-3.5 text-[#a855f7]" />
                       <span className="font-mono truncate">{s.name}</span>
-                      <span className="font-mono text-[10px] text-muted-foreground/60">{s.maskedPreview}</span>
+                      <span className="font-mono text-[10px] text-muted-foreground/60">
+                        {s.maskedPreview}
+                      </span>
                     </span>
                     <button
                       onClick={() => doRotate(s.name)}
@@ -91,7 +99,10 @@ export default function SecretsPanel() {
                       {rotating === s.name ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
                       ) : (
-                        <span className="flex items-center gap-1"><RotateCw className="h-3 w-3" />rotate</span>
+                        <span className="flex items-center gap-1">
+                          <RotateCw className="h-3 w-3" />
+                          rotate
+                        </span>
                       )}
                     </button>
                   </div>

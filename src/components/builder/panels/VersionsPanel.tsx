@@ -5,27 +5,106 @@
  */
 import { useEffect, useState } from "react";
 import { PanelSection, Row } from "./PanelChrome";
-import { RotateCcw, Rocket, Globe, Plus, ShieldCheck, ShieldAlert, Loader2, GitCommitHorizontal, Play, Trash2 } from "lucide-react";
+import {
+  RotateCcw,
+  Rocket,
+  Globe,
+  Plus,
+  ShieldCheck,
+  ShieldAlert,
+  Loader2,
+  GitCommitHorizontal,
+  Play,
+  Trash2,
+} from "lucide-react";
 import { useBuilder } from "@/lib/builder-state";
 import {
-  fetchDeployments, fetchRollbackHistory, fetchSnapshots, rollback,
-  type Deployment, type RollbackEntry, type Snapshot,
+  fetchDeployments,
+  fetchRollbackHistory,
+  fetchSnapshots,
+  rollback,
+  type Deployment,
+  type RollbackEntry,
+  type Snapshot,
 } from "@/lib/versions-api";
 import {
-  attachCaddyDomain, listCaddyDomains, revokeCaddyDomain, checkoutIntoPreview,
+  attachCaddyDomain,
+  listCaddyDomains,
+  revokeCaddyDomain,
+  checkoutIntoPreview,
   type CaddyDomain,
 } from "@/lib/power-tools-api";
 
 const SEED_SNAP: Snapshot[] = [
-  { id: "v17", path: "db/migrations/2026_06_14_phase6_versions.sql", change: "create", author: "jimmy",    message: "phase 6 sql",        created_at: new Date(Date.now() - 2 * 3600_000).toISOString(),  env: "sandbox", branch: "main" },
-  { id: "v16", path: "src/components/builder/UnifiedChat.tsx",       change: "update", author: "jimmy",    message: "virtual scroll",     created_at: new Date(Date.now() - 9 * 3600_000).toISOString(),  env: "sandbox", branch: "main" },
-  { id: "v15", path: "src/components/builder/TopBar.tsx",            change: "update", author: "sherlock", message: "cinematic redesign", created_at: new Date(Date.now() - 11 * 3600_000).toISOString(), env: "sandbox", branch: "main" },
+  {
+    id: "v17",
+    path: "db/migrations/2026_06_14_phase6_versions.sql",
+    change: "create",
+    author: "jimmy",
+    message: "phase 6 sql",
+    created_at: new Date(Date.now() - 2 * 3600_000).toISOString(),
+    env: "sandbox",
+    branch: "main",
+  },
+  {
+    id: "v16",
+    path: "src/components/builder/UnifiedChat.tsx",
+    change: "update",
+    author: "jimmy",
+    message: "virtual scroll",
+    created_at: new Date(Date.now() - 9 * 3600_000).toISOString(),
+    env: "sandbox",
+    branch: "main",
+  },
+  {
+    id: "v15",
+    path: "src/components/builder/TopBar.tsx",
+    change: "update",
+    author: "sherlock",
+    message: "cinematic redesign",
+    created_at: new Date(Date.now() - 11 * 3600_000).toISOString(),
+    env: "sandbox",
+    branch: "main",
+  },
 ];
 
 const SEED_DEPS: Deployment[] = [
-  { id: "d3", project_id: "founderbuilder", label: "phase 6 lock",       summary: "+3 files",  status: "live",        files_changed: 3, started_at: new Date(Date.now() - 1800_000).toISOString(),    finished_at: new Date().toISOString(),                     current: true,  target_env: "production" },
-  { id: "d2", project_id: "founderbuilder", label: "phase 5 preview",    summary: "+12 files", status: "rolled_back", files_changed: 12, started_at: new Date(Date.now() - 86400_000).toISOString(),  finished_at: new Date(Date.now() - 86000_000).toISOString(), current: false, target_env: "production" },
-  { id: "d1", project_id: "founderbuilder", label: "phase 4 dual-brain", summary: "+8 files",  status: "live",        files_changed: 8, started_at: new Date(Date.now() - 2 * 86400_000).toISOString(), finished_at: new Date(Date.now() - 2 * 86000_000).toISOString(), current: false, target_env: "production" },
+  {
+    id: "d3",
+    project_id: "founderbuilder",
+    label: "phase 6 lock",
+    summary: "+3 files",
+    status: "live",
+    files_changed: 3,
+    started_at: new Date(Date.now() - 1800_000).toISOString(),
+    finished_at: new Date().toISOString(),
+    current: true,
+    target_env: "production",
+  },
+  {
+    id: "d2",
+    project_id: "founderbuilder",
+    label: "phase 5 preview",
+    summary: "+12 files",
+    status: "rolled_back",
+    files_changed: 12,
+    started_at: new Date(Date.now() - 86400_000).toISOString(),
+    finished_at: new Date(Date.now() - 86000_000).toISOString(),
+    current: false,
+    target_env: "production",
+  },
+  {
+    id: "d1",
+    project_id: "founderbuilder",
+    label: "phase 4 dual-brain",
+    summary: "+8 files",
+    status: "live",
+    files_changed: 8,
+    started_at: new Date(Date.now() - 2 * 86400_000).toISOString(),
+    finished_at: new Date(Date.now() - 2 * 86000_000).toISOString(),
+    current: false,
+    target_env: "production",
+  },
 ];
 
 const rel = (iso: string) => {
@@ -64,7 +143,9 @@ export default function VersionsPanel() {
     if (dom) setDomains(dom);
   };
 
-  useEffect(() => { void refresh(); }, [project]);
+  useEffect(() => {
+    void refresh();
+  }, [project]);
 
   const onRollback = async (scope: "file" | "deployment", id: string) => {
     setBusy(id);
@@ -114,7 +195,9 @@ export default function VersionsPanel() {
               active={d.current}
               left={
                 <>
-                  <Rocket className={`h-3 w-3 ${d.current ? "text-emerald-400" : "text-muted-foreground/60"}`} />
+                  <Rocket
+                    className={`h-3 w-3 ${d.current ? "text-emerald-400" : "text-muted-foreground/60"}`}
+                  />
                   <span className="truncate">{d.label ?? d.id.slice(0, 8)}</span>
                   <span className="rounded bg-white/[0.04] px-1 py-px text-[9px] uppercase tracking-wider text-muted-foreground/70">
                     {d.status}
@@ -132,9 +215,11 @@ export default function VersionsPanel() {
                         title="Checkout this commit into preview (time-travel)"
                         className="grid h-5 w-5 place-items-center rounded hover:bg-white/[0.06] disabled:opacity-40"
                       >
-                        {checkoutBusy === d.id
-                          ? <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-                          : <Play className="h-3 w-3 text-muted-foreground hover:text-sky-300" />}
+                        {checkoutBusy === d.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                        ) : (
+                          <Play className="h-3 w-3 text-muted-foreground hover:text-sky-300" />
+                        )}
                       </button>
                       <button
                         onClick={() => onRollback("deployment", d.id)}
@@ -167,7 +252,9 @@ export default function VersionsPanel() {
           <input
             value={newDomain}
             onChange={(e) => setNewDomain(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") void onAttachDomain(); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void onAttachDomain();
+            }}
             placeholder="app.yourdomain.com"
             className="flex-1 rounded-md border border-white/[0.08] bg-black/40 px-2 py-1 font-mono text-[11px] text-foreground/90 outline-none focus:border-[#E50914]/40"
           />
@@ -176,7 +263,11 @@ export default function VersionsPanel() {
             disabled={attaching || !newDomain.trim()}
             className="flex items-center gap-1 rounded-md border border-[#E50914]/30 bg-[#E50914]/10 px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wider text-[#ff7480] disabled:opacity-40"
           >
-            {attaching ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+            {attaching ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Plus className="h-3 w-3" />
+            )}
             Attach
           </button>
         </div>
@@ -198,13 +289,22 @@ export default function VersionsPanel() {
                 <>
                   <Globe className="h-3 w-3 text-[#ff7480]" />
                   <span className="font-mono truncate">{dom.domain}</span>
-                  <span className={`rounded px-1 py-px text-[9px] uppercase tracking-wider ${
-                    dom.ssl === "active"  ? "bg-emerald-500/15 text-emerald-300" :
-                    dom.ssl === "issuing" ? "bg-sky-500/15 text-sky-300"        :
-                    dom.ssl === "failed"  ? "bg-red-500/15 text-red-300"        :
-                                            "bg-white/[0.06] text-muted-foreground/70"
-                  }`}>
-                    {dom.ssl === "active" ? <ShieldCheck className="mr-0.5 inline h-2.5 w-2.5" /> : <ShieldAlert className="mr-0.5 inline h-2.5 w-2.5" />}
+                  <span
+                    className={`rounded px-1 py-px text-[9px] uppercase tracking-wider ${
+                      dom.ssl === "active"
+                        ? "bg-emerald-500/15 text-emerald-300"
+                        : dom.ssl === "issuing"
+                          ? "bg-sky-500/15 text-sky-300"
+                          : dom.ssl === "failed"
+                            ? "bg-red-500/15 text-red-300"
+                            : "bg-white/[0.06] text-muted-foreground/70"
+                    }`}
+                  >
+                    {dom.ssl === "active" ? (
+                      <ShieldCheck className="mr-0.5 inline h-2.5 w-2.5" />
+                    ) : (
+                      <ShieldAlert className="mr-0.5 inline h-2.5 w-2.5" />
+                    )}
                     {dom.ssl}
                   </span>
                 </>
@@ -224,7 +324,6 @@ export default function VersionsPanel() {
         </div>
       </PanelSection>
 
-
       <PanelSection title="Snapshots — time travel">
         <div className="flex flex-col gap-1">
           {snaps.map((s, i) => (
@@ -233,11 +332,17 @@ export default function VersionsPanel() {
               active={i === 0}
               left={
                 <>
-                  <span className={`rounded px-1.5 py-0.5 font-mono text-[10px] ${
-                    s.change === "create" ? "bg-emerald-500/15 text-emerald-300"
-                      : s.change === "delete" ? "bg-red-500/15 text-red-300"
-                      : "bg-white/[0.06] text-foreground/80"
-                  }`}>{s.change[0].toUpperCase()}</span>
+                  <span
+                    className={`rounded px-1.5 py-0.5 font-mono text-[10px] ${
+                      s.change === "create"
+                        ? "bg-emerald-500/15 text-emerald-300"
+                        : s.change === "delete"
+                          ? "bg-red-500/15 text-red-300"
+                          : "bg-white/[0.06] text-foreground/80"
+                    }`}
+                  >
+                    {s.change[0].toUpperCase()}
+                  </span>
                   <span className="truncate">{s.path}</span>
                 </>
               }
@@ -269,13 +374,17 @@ export default function VersionsPanel() {
                 key={h.id}
                 left={
                   <>
-                    <span className={`h-1.5 w-1.5 rounded-full ${h.succeeded ? "bg-emerald-400" : "bg-red-400"}`} />
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${h.succeeded ? "bg-emerald-400" : "bg-red-400"}`}
+                    />
                     <span className="truncate text-muted-foreground">
                       {h.scope} · {h.triggered_by ?? "system"} {h.reason ? `· ${h.reason}` : ""}
                     </span>
                   </>
                 }
-                right={<span className="text-[10px] text-muted-foreground/70">{rel(h.created_at)}</span>}
+                right={
+                  <span className="text-[10px] text-muted-foreground/70">{rel(h.created_at)}</span>
+                }
               />
             ))}
           </div>

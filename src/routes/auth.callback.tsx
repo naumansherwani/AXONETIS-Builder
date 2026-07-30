@@ -4,7 +4,9 @@ import { Loader2 } from "lucide-react";
 import { supabase3 } from "@/integrations/supabase3/client";
 
 export const Route = createFileRoute("/auth/callback")({
-  head: () => ({ meta: [{ title: "Signing in…" }, { name: "robots", content: "noindex, nofollow" }] }),
+  head: () => ({
+    meta: [{ title: "Signing in…" }, { name: "robots", content: "noindex, nofollow" }],
+  }),
   component: AuthCallback,
 });
 

@@ -37,7 +37,9 @@ export const PromptInputTextarea = React.forwardRef<
 PromptInputTextarea.displayName = "PromptInputTextarea";
 
 export function PromptInputFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex min-h-9 items-center justify-between gap-2", className)} {...props} />;
+  return (
+    <div className={cn("flex min-h-9 items-center justify-between gap-2", className)} {...props} />
+  );
 }
 
 type PromptInputSubmitProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -45,7 +47,13 @@ type PromptInputSubmitProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   onStop?: () => void;
 };
 
-export function PromptInputSubmit({ status = "ready", onStop, disabled, className, ...props }: PromptInputSubmitProps) {
+export function PromptInputSubmit({
+  status = "ready",
+  onStop,
+  disabled,
+  className,
+  ...props
+}: PromptInputSubmitProps) {
   const busy = status === "submitted" || status === "streaming";
   return (
     <Button

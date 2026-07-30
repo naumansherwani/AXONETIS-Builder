@@ -38,18 +38,30 @@ export default function CodePanel() {
     setListLoading(true);
     load();
     const unsub = subscribeProjectFiles(project, () => load());
-    return () => { alive = false; unsub(); };
+    return () => {
+      alive = false;
+      unsub();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project]);
 
   useEffect(() => {
-    if (!selected) { setContent(null); return; }
+    if (!selected) {
+      setContent(null);
+      return;
+    }
     let alive = true;
     setContentLoading(true);
     fetchFileContent(project, selected)
-      .then((r) => { if (alive) setContent(r.content); })
-      .finally(() => { if (alive) setContentLoading(false); });
-    return () => { alive = false; };
+      .then((r) => {
+        if (alive) setContent(r.content);
+      })
+      .finally(() => {
+        if (alive) setContentLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
   }, [project, selected]);
 
   const currentFile = rows.find((r) => r.path === selected);
@@ -62,12 +74,17 @@ export default function CodePanel() {
       title={selected ? selected.split("/").pop()! : "Code"}
       action={
         <span className="font-mono text-[10px] text-muted-foreground/60">
-          {currentFile ? `${formatBytes(currentFile.size_bytes ?? undefined)} · read-only` : "read-only"}
+          {currentFile
+            ? `${formatBytes(currentFile.size_bytes ?? undefined)} · read-only`
+            : "read-only"}
         </span>
       }
     >
       {!SUPABASE3_READY ? (
-        <Empty title="Supabase 3 offline" hint="Set VITE_SUPABASE3_URL + VITE_SUPABASE3_ANON_KEY to load files." />
+        <Empty
+          title="Supabase 3 offline"
+          hint="Set VITE_SUPABASE3_URL + VITE_SUPABASE3_ANON_KEY to load files."
+        />
       ) : listLoading ? (
         <div className="flex items-center gap-2 px-2 py-6 text-[11px] text-muted-foreground/70">
           <Loader2 className="h-3 w-3 animate-spin" /> Loading files…
@@ -110,7 +127,9 @@ export default function CodePanel() {
               <pre className="fb-no-scrollbar max-h-[55vh] overflow-auto font-mono text-[11px] leading-relaxed">
                 {lines.map((l, i) => (
                   <div key={i} className="flex gap-3 hover:bg-white/[0.03]">
-                    <span className="w-6 select-none text-right text-muted-foreground/40">{i + 1}</span>
+                    <span className="w-6 select-none text-right text-muted-foreground/40">
+                      {i + 1}
+                    </span>
                     <code className="text-foreground/85 whitespace-pre">{l || " "}</code>
                   </div>
                 ))}

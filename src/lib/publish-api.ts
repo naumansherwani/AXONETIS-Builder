@@ -52,10 +52,7 @@ export async function setVisibility(
   });
 }
 
-export async function createShareLink(
-  projectId: string,
-  ttlDays = 7,
-): Promise<ShareLink | null> {
+export async function createShareLink(projectId: string, ttlDays = 7): Promise<ShareLink | null> {
   return rpc<ShareLink>(`/rpc/publish.share`, {
     method: "POST",
     body: JSON.stringify({ projectId, ttlDays }),
@@ -96,6 +93,10 @@ export function subscribeDeployStatus(
     // ignore
   }
   return () => {
-    try { es?.close(); } catch { /* ignore */ }
+    try {
+      es?.close();
+    } catch {
+      /* ignore */
+    }
   };
 }

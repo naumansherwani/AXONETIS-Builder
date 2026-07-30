@@ -72,34 +72,50 @@ export default function SidePanelDrawer({ side }: { side: "left" | "right" }) {
   );
 }
 
-function renderPanel(
-  id: string,
-  Icon: typeof X,
-  label: string,
-  hint: string,
-) {
+function renderPanel(id: string, Icon: typeof X, label: string, hint: string) {
   switch (id) {
-    case "files":     return <FilesPanel />;
-    case "agents":    return <AgentsPanel />;
-    case "logs":      return <LogsPanel />;
-    case "database":  return <DatabasePanel />;
-    case "deploy":    return <DeployPanel />;
-    case "projects":  return <ProjectsPanel />;
-    case "code":      return <CodePanel />;
-    case "versions":  return <VersionsPanel />;
-    case "analytics": return <AnalyticsPanel />;
-    case "runtime":   return <RuntimePanel />;
-    case "activity":  return <ActivityFeedPanel />;
-    case "memory":    return <MemoryPanel />;
-    case "dualbrain": return <DualBrainPanel />;
-    case "command":   return <CommandCenterPanel />;
-    case "costs":     return <CostsPanel />;
-    case "security":  return <SecurityPanel />;
-    case "storage":   return <StoragePanel />;
-    case "secrets":   return <SecretsPanel />;
-    case "tools":     return <ToolsPanel />;
-    case "marketplace": return <MarketplacePanel />;
-    case "terminal":  return <TerminalRailPanel />;
+    case "files":
+      return <FilesPanel />;
+    case "agents":
+      return <AgentsPanel />;
+    case "logs":
+      return <LogsPanel />;
+    case "database":
+      return <DatabasePanel />;
+    case "deploy":
+      return <DeployPanel />;
+    case "projects":
+      return <ProjectsPanel />;
+    case "code":
+      return <CodePanel />;
+    case "versions":
+      return <VersionsPanel />;
+    case "analytics":
+      return <AnalyticsPanel />;
+    case "runtime":
+      return <RuntimePanel />;
+    case "activity":
+      return <ActivityFeedPanel />;
+    case "memory":
+      return <MemoryPanel />;
+    case "dualbrain":
+      return <DualBrainPanel />;
+    case "command":
+      return <CommandCenterPanel />;
+    case "costs":
+      return <CostsPanel />;
+    case "security":
+      return <SecurityPanel />;
+    case "storage":
+      return <StoragePanel />;
+    case "secrets":
+      return <SecretsPanel />;
+    case "tools":
+      return <ToolsPanel />;
+    case "marketplace":
+      return <MarketplacePanel />;
+    case "terminal":
+      return <TerminalRailPanel />;
     default:
       return <GenericPanel icon={Icon as never} title={label} hint={hint} />;
   }

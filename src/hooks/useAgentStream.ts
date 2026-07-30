@@ -49,12 +49,18 @@ export function useAgentStream(threadId: string | null | undefined): UseAgentStr
 
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; };
+    return () => {
+      mounted.current = false;
+    };
   }, []);
 
   // Historic load + live subscription, scoped to threadId.
   useEffect(() => {
-    if (!threadId) { setMessages([]); setConnected(false); return; }
+    if (!threadId) {
+      setMessages([]);
+      setConnected(false);
+      return;
+    }
     let unsub: (() => void) | null = null;
     setConnected(false);
     setError(null);

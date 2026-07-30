@@ -14,15 +14,20 @@ import { motion } from "framer-motion";
 export type AgentState = "standby" | "jimmy" | "sherlock";
 
 const PALETTE: Record<AgentState, { stroke: string; fill: string; glow: string; label: string }> = {
-  standby:  { stroke: "#3a3a44", fill: "#1a1a20", glow: "rgba(180,180,200,0.10)", label: "F-OS" },
-  jimmy:    { stroke: "#E50914", fill: "#2a0306", glow: "rgba(229,9,20,0.55)",    label: "JIMMY" },
-  sherlock: { stroke: "#a855f7", fill: "#1a0933", glow: "rgba(168,85,247,0.55)",  label: "SHERLOCK" },
+  standby: { stroke: "#3a3a44", fill: "#1a1a20", glow: "rgba(180,180,200,0.10)", label: "F-OS" },
+  jimmy: { stroke: "#E50914", fill: "#2a0306", glow: "rgba(229,9,20,0.55)", label: "JIMMY" },
+  sherlock: {
+    stroke: "#a855f7",
+    fill: "#1a0933",
+    glow: "rgba(168,85,247,0.55)",
+    label: "SHERLOCK",
+  },
 };
 
 interface Props {
   state?: AgentState;
-  size?: number;        // hexagon px
-  showLabel?: boolean;  // [ ⬢ // F-OS ] frame
+  size?: number; // hexagon px
+  showLabel?: boolean; // [ ⬢ // F-OS ] frame
 }
 
 export default function KernelLogo({ state = "standby", size = 18, showLabel = true }: Props) {
@@ -43,8 +48,20 @@ export default function KernelLogo({ state = "standby", size = 18, showLabel = t
         viewBox="0 0 24 26"
         animate={
           pulsing
-            ? { filter: [`drop-shadow(0 0 2px ${c.glow})`, `drop-shadow(0 0 8px ${c.glow})`, `drop-shadow(0 0 2px ${c.glow})`] }
-            : { filter: [`drop-shadow(0 0 1px ${c.glow})`, `drop-shadow(0 0 4px ${c.glow})`, `drop-shadow(0 0 1px ${c.glow})`] }
+            ? {
+                filter: [
+                  `drop-shadow(0 0 2px ${c.glow})`,
+                  `drop-shadow(0 0 8px ${c.glow})`,
+                  `drop-shadow(0 0 2px ${c.glow})`,
+                ],
+              }
+            : {
+                filter: [
+                  `drop-shadow(0 0 1px ${c.glow})`,
+                  `drop-shadow(0 0 4px ${c.glow})`,
+                  `drop-shadow(0 0 1px ${c.glow})`,
+                ],
+              }
         }
         transition={{ duration: pulsing ? 1.4 : 3.6, repeat: Infinity, ease: "easeInOut" }}
         aria-hidden
@@ -64,12 +81,23 @@ export default function KernelLogo({ state = "standby", size = 18, showLabel = t
           strokeOpacity={pulsing ? 0.85 : 0.5}
           strokeWidth="0.6"
         />
-        <line x1="12" y1="6" x2="12" y2="20" stroke={c.stroke} strokeOpacity="0.35" strokeWidth="0.5" />
+        <line
+          x1="12"
+          y1="6"
+          x2="12"
+          y2="20"
+          stroke={c.stroke}
+          strokeOpacity="0.35"
+          strokeWidth="0.5"
+        />
       </motion.svg>
 
       {showLabel && (
         <>
-          <span className="text-[10px] font-medium" style={{ color: c.stroke, letterSpacing: "0.2em" }}>
+          <span
+            className="text-[10px] font-medium"
+            style={{ color: c.stroke, letterSpacing: "0.2em" }}
+          >
             //
           </span>
           <span

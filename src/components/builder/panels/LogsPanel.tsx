@@ -8,7 +8,13 @@ import { useBuilder } from "@/lib/builder-state";
 import { listActivity, subscribeActivity, type AgentActivity } from "@/lib/hostflow-api";
 
 type Level = "info" | "warn" | "error" | "ok";
-interface Log { id: string; t: string; level: Level; src: string; msg: string }
+interface Log {
+  id: string;
+  t: string;
+  level: Level;
+  src: string;
+  msg: string;
+}
 
 const COLOR: Record<Level, string> = {
   info: "text-sky-300",
@@ -60,7 +66,9 @@ export default function LogsPanel() {
         setErr(e instanceof Error ? e.message : String(e));
         setStatus("offline");
       });
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [project]);
 
   // Live SSE
@@ -75,7 +83,10 @@ export default function LogsPanel() {
     );
     // If VITE_HOSTFLOW_SERVER_URL missing, subscribe returns a noop; mark offline.
     const t = setTimeout(() => setStatus((s) => (s === "connecting" ? "offline" : s)), 3000);
-    return () => { clearTimeout(t); close(); };
+    return () => {
+      clearTimeout(t);
+      close();
+    };
   }, [project]);
 
   // Bridge events → append
@@ -85,20 +96,30 @@ export default function LogsPanel() {
     const t = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
     setLogs((prev) => [
       ...prev.slice(-80),
-      { id: `bridge-${lastBridgeEvent.receivedAt}`, t, level: lastBridgeEvent.level, src: "preview", msg: lastBridgeEvent.summary },
+      {
+        id: `bridge-${lastBridgeEvent.receivedAt}`,
+        t,
+        level: lastBridgeEvent.level,
+        src: "preview",
+        msg: lastBridgeEvent.summary,
+      },
     ]);
   }, [lastBridgeEvent]);
 
   const statusPill = useMemo(() => {
-    if (status === "live") return <span className="font-mono text-[10px] text-emerald-300">● live</span>;
-    if (status === "connecting") return <span className="font-mono text-[10px] text-amber-300">○ connecting</span>;
+    if (status === "live")
+      return <span className="font-mono text-[10px] text-emerald-300">● live</span>;
+    if (status === "connecting")
+      return <span className="font-mono text-[10px] text-amber-300">○ connecting</span>;
     return <span className="font-mono text-[10px] text-red-300">○ offline</span>;
   }, [status]);
 
   return (
     <div className="rounded-lg border border-white/[0.06] bg-black/40 p-2">
       <div className="mb-1 flex items-center justify-between px-1">
-        <span className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground/80">Stream</span>
+        <span className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground/80">
+          Stream
+        </span>
         {statusPill}
       </div>
       {err && (
@@ -109,16 +130,20 @@ export default function LogsPanel() {
       <div className="fb-no-scrollbar max-h-[60vh] overflow-y-auto font-mono text-[11px] leading-relaxed">
         {logs.length === 0 ? (
           <div className="px-2 py-6 text-center text-[11px] text-muted-foreground/60">
-            {status === "offline" ? "Bridge offline — waiting for reconnection." : "Awaiting activity…"}
+            {status === "offline"
+              ? "Bridge offline — waiting for reconnection."
+              : "Awaiting activity…"}
           </div>
-        ) : logs.map((l) => (
-          <div key={l.id} className="flex gap-2 px-1 py-0.5 hover:bg-white/[0.03]">
-            <span className="text-muted-foreground/60">{l.t}</span>
-            <span className={`w-12 uppercase ${COLOR[l.level]}`}>{l.level}</span>
-            <span className="w-16 text-muted-foreground/80">{l.src}</span>
-            <span className="flex-1 text-foreground/85">{l.msg}</span>
-          </div>
-        ))}
+        ) : (
+          logs.map((l) => (
+            <div key={l.id} className="flex gap-2 px-1 py-0.5 hover:bg-white/[0.03]">
+              <span className="text-muted-foreground/60">{l.t}</span>
+              <span className={`w-12 uppercase ${COLOR[l.level]}`}>{l.level}</span>
+              <span className="w-16 text-muted-foreground/80">{l.src}</span>
+              <span className="flex-1 text-foreground/85">{l.msg}</span>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

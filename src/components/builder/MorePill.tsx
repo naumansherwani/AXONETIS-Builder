@@ -10,7 +10,16 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "@tanstack/react-router";
 import {
-  MoreHorizontal, LineChart, Cloud, Users, Shield, Globe, CreditCard, Plug, Search, X,
+  MoreHorizontal,
+  LineChart,
+  Cloud,
+  Users,
+  Shield,
+  Globe,
+  CreditCard,
+  Plug,
+  Search,
+  X,
 } from "lucide-react";
 import { useBuilder, type BottomTabId } from "@/lib/builder-state";
 
@@ -28,17 +37,76 @@ interface Item {
 }
 
 const ITEMS: Item[] = [
-  { id: "analytics", label: "Analytics", hint: "Cost, tokens, agent performance", icon: LineChart, kind: "panel", tab: "analytics" },
-  { id: "cloud",     label: "Cloud",     hint: "Database · Storage · Secrets",     icon: Cloud,     kind: "panel", tab: "database" },
-  { id: "agents",    label: "Agents",    hint: "Jimmy · Sherlock · advisors",      icon: Users,     kind: "panel", tab: "agents" },
-  { id: "security",  label: "Security",  hint: "Sherlock scan · RLS · findings",   icon: Shield,    kind: "panel", tab: "security" },
-  { id: "domains",   label: "Domains",   hint: "Edit URL · Buy · Connect · DNS",   icon: Globe,     kind: "route", to: "/settings/domains" },
-  { id: "payments",  label: "Payments",  hint: "Stripe · Paddle · ANEXVOT AI Pay", icon: CreditCard, kind: "stub",
-    stubTitle: "Payments · Phase 11", stubBody: "Stripe + Paddle + ANEXVOT AI Pay wiring is scheduled for Phase 11 (Cash Register). No stub data shown — the pill entry is a placeholder only." },
-  { id: "connectors",label: "Connectors",hint: "External APIs · OAuth clients",    icon: Plug,      kind: "stub",
-    stubTitle: "Connectors · Phase 9", stubBody: "External API + OAuth connector shelf ships in Phase 9. Real wire-up will surface here once the server registry is live." },
-  { id: "seo",       label: "SEO",       hint: "Meta · sitemap · AI-search scan",  icon: Search,    kind: "stub",
-    stubTitle: "SEO & AI Search · Phase 3.10", stubBody: "Meta audit, sitemap generator, and AI-search scanner will land inside the 12-Tool Registry (seo.scan tool). No dummy findings shown — real scanner wires up in 3.10.6." },
+  {
+    id: "analytics",
+    label: "Analytics",
+    hint: "Cost, tokens, agent performance",
+    icon: LineChart,
+    kind: "panel",
+    tab: "analytics",
+  },
+  {
+    id: "cloud",
+    label: "Cloud",
+    hint: "Database · Storage · Secrets",
+    icon: Cloud,
+    kind: "panel",
+    tab: "database",
+  },
+  {
+    id: "agents",
+    label: "Agents",
+    hint: "Jimmy · Sherlock · advisors",
+    icon: Users,
+    kind: "panel",
+    tab: "agents",
+  },
+  {
+    id: "security",
+    label: "Security",
+    hint: "Sherlock scan · RLS · findings",
+    icon: Shield,
+    kind: "panel",
+    tab: "security",
+  },
+  {
+    id: "domains",
+    label: "Domains",
+    hint: "Edit URL · Buy · Connect · DNS",
+    icon: Globe,
+    kind: "route",
+    to: "/settings/domains",
+  },
+  {
+    id: "payments",
+    label: "Payments",
+    hint: "Stripe · Paddle · ANEXVOT AI Pay",
+    icon: CreditCard,
+    kind: "stub",
+    stubTitle: "Payments · Phase 11",
+    stubBody:
+      "Stripe + Paddle + ANEXVOT AI Pay wiring is scheduled for Phase 11 (Cash Register). No stub data shown — the pill entry is a placeholder only.",
+  },
+  {
+    id: "connectors",
+    label: "Connectors",
+    hint: "External APIs · OAuth clients",
+    icon: Plug,
+    kind: "stub",
+    stubTitle: "Connectors · Phase 9",
+    stubBody:
+      "External API + OAuth connector shelf ships in Phase 9. Real wire-up will surface here once the server registry is live.",
+  },
+  {
+    id: "seo",
+    label: "SEO",
+    hint: "Meta · sitemap · AI-search scan",
+    icon: Search,
+    kind: "stub",
+    stubTitle: "SEO & AI Search · Phase 3.10",
+    stubBody:
+      "Meta audit, sitemap generator, and AI-search scanner will land inside the 12-Tool Registry (seo.scan tool). No dummy findings shown — real scanner wires up in 3.10.6.",
+  },
 ];
 
 export default function MorePill() {
@@ -87,19 +155,25 @@ export default function MorePill() {
                       onClick={() => activate(it)}
                       className="group flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition hover:bg-white/[0.05]"
                     >
-                      <span className={`grid h-8 w-8 place-items-center rounded-md border ${isStub ? "border-amber-500/20 bg-amber-500/[0.06] text-amber-300/80" : "border-white/[0.08] bg-white/[0.03] text-foreground/85 group-hover:border-[#E50914]/40 group-hover:text-[#ff7480]"}`}>
+                      <span
+                        className={`grid h-8 w-8 place-items-center rounded-md border ${isStub ? "border-amber-500/20 bg-amber-500/[0.06] text-amber-300/80" : "border-white/[0.08] bg-white/[0.03] text-foreground/85 group-hover:border-[#E50914]/40 group-hover:text-[#ff7480]"}`}
+                      >
                         <Icon className="h-3.5 w-3.5" />
                       </span>
                       <span className="flex-1 min-w-0">
                         <span className="flex items-center gap-1.5">
-                          <span className="text-[12px] font-medium text-foreground/95">{it.label}</span>
+                          <span className="text-[12px] font-medium text-foreground/95">
+                            {it.label}
+                          </span>
                           {isStub && (
                             <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-[1px] text-[9px] uppercase tracking-wider text-amber-200">
                               Soon
                             </span>
                           )}
                         </span>
-                        <span className="block truncate text-[10.5px] text-muted-foreground/70">{it.hint}</span>
+                        <span className="block truncate text-[10.5px] text-muted-foreground/70">
+                          {it.hint}
+                        </span>
                       </span>
                     </button>
                   );
@@ -113,7 +187,9 @@ export default function MorePill() {
       <AnimatePresence>
         {stub && (
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-[80] grid place-items-center bg-black/70 backdrop-blur-md"
             onClick={() => setStub(null)}
           >
@@ -126,14 +202,19 @@ export default function MorePill() {
               className="fb-glass relative w-[min(480px,92vw)] overflow-hidden rounded-2xl border border-amber-500/25 bg-[#0a0a10] p-6 shadow-[0_30px_120px_-20px_rgba(245,158,11,0.35)]"
             >
               <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/70 to-transparent" />
-              <button onClick={() => setStub(null)} className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-white/[0.05] hover:text-foreground">
+              <button
+                onClick={() => setStub(null)}
+                className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-white/[0.05] hover:text-foreground"
+              >
                 <X className="h-4 w-4" />
               </button>
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[10px] uppercase tracking-widest text-amber-200">
                 Roadmap
               </div>
               <h3 className="text-[16px] font-semibold text-foreground">{stub.stubTitle}</h3>
-              <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">{stub.stubBody}</p>
+              <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
+                {stub.stubBody}
+              </p>
             </motion.div>
           </motion.div>
         )}

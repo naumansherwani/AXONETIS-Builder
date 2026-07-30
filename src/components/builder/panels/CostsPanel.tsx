@@ -18,12 +18,21 @@ export default function CostsPanel() {
     let alive = true;
     setLoading(true);
     fetchCosts(win)
-      .then((s) => { if (alive) setSnap(s); })
-      .finally(() => { if (alive) setLoading(false); });
+      .then((s) => {
+        if (alive) setSnap(s);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
     const iv = setInterval(() => {
-      fetchCosts(win).then((s) => { if (alive) setSnap(s); });
+      fetchCosts(win).then((s) => {
+        if (alive) setSnap(s);
+      });
     }, 15_000);
-    return () => { alive = false; clearInterval(iv); };
+    return () => {
+      alive = false;
+      clearInterval(iv);
+    };
   }, [win]);
 
   return (
@@ -49,26 +58,47 @@ export default function CostsPanel() {
         }
       >
         <Row
-          left={<><Coins className="h-3.5 w-3.5 text-[#ff7480]" /><span>Total spend</span></>}
+          left={
+            <>
+              <Coins className="h-3.5 w-3.5 text-[#ff7480]" />
+              <span>Total spend</span>
+            </>
+          }
           right={
             <span className="font-mono text-foreground">
-              {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : `$${(snap?.total_usd ?? 0).toFixed(4)}`}
+              {loading ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                `$${(snap?.total_usd ?? 0).toFixed(4)}`
+              )}
             </span>
           }
         />
         <Row
-          left={<><Zap className="h-3.5 w-3.5 text-[#a855f7]" /><span>Requests</span></>}
+          left={
+            <>
+              <Zap className="h-3.5 w-3.5 text-[#a855f7]" />
+              <span>Requests</span>
+            </>
+          }
           right={<span className="font-mono">{snap?.total_requests ?? 0}</span>}
         />
         <Row
-          left={<><TrendingUp className="h-3.5 w-3.5 text-emerald-400" /><span>Tokens</span></>}
+          left={
+            <>
+              <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
+              <span>Tokens</span>
+            </>
+          }
           right={<span className="font-mono">{(snap?.total_tokens ?? 0).toLocaleString()}</span>}
         />
       </PanelSection>
 
       <PanelSection
         title="By model"
-        action={<span className="text-[10px] text-muted-foreground/60">{snap?.by_model.length ?? 0}</span>}
+        action={
+          <span className="text-[10px] text-muted-foreground/60">{snap?.by_model.length ?? 0}</span>
+        }
       >
         {!snap?.by_model.length ? (
           <div className="px-2 py-3 text-[11px] text-muted-foreground/60">

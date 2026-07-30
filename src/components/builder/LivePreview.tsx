@@ -1,9 +1,22 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { motion } from "framer-motion";
-import { Monitor, RefreshCw, Smartphone, Tablet, Columns3, FlaskConical, Rocket, MousePointerClick } from "lucide-react";
+import {
+  Monitor,
+  RefreshCw,
+  Smartphone,
+  Tablet,
+  Columns3,
+  FlaskConical,
+  Rocket,
+  MousePointerClick,
+} from "lucide-react";
 import { useBuilder } from "@/lib/builder-state";
 import { PROJECTS } from "@/lib/projects";
-import { createBridgeHandshake, getProjectOrigin, normalizePreviewBridgeEvent } from "@/lib/preview-bridge";
+import {
+  createBridgeHandshake,
+  getProjectOrigin,
+  normalizePreviewBridgeEvent,
+} from "@/lib/preview-bridge";
 import { subscribePreviewChanges } from "@/lib/preview-engine";
 
 type Device = "mobile" | "tablet" | "desktop";
@@ -11,9 +24,18 @@ const DEVICE_WIDTH: Record<Device, number> = { mobile: 375, tablet: 768, desktop
 
 export default function LivePreview() {
   const {
-    project, previewMode, setPreviewMode, bridgeStatus, setBridgeStatus, setLastBridgeEvent,
-    previewEnv, setPreviewEnv, setLastPreviewChange,
-    visualEditMode, setVisualEditMode, setLastVisualEditPick,
+    project,
+    previewMode,
+    setPreviewMode,
+    bridgeStatus,
+    setBridgeStatus,
+    setLastBridgeEvent,
+    previewEnv,
+    setPreviewEnv,
+    setLastPreviewChange,
+    visualEditMode,
+    setVisualEditMode,
+    setLastVisualEditPick,
   } = useBuilder();
   const active = PROJECTS.find((p) => p.id === project)!;
   const [device, setDevice] = useState<Device>("desktop");
@@ -41,8 +63,17 @@ export default function LivePreview() {
       setLastBridgeEvent(bridgeEvent);
       setBridgeStatus("connected");
       // Phase 3.9.5 — Visual Edit Mode pick event.
-      if (bridgeEvent.type === "visual:edit:pick" && bridgeEvent.payload && typeof bridgeEvent.payload === "object") {
-        const p = bridgeEvent.payload as { selector?: string; tag?: string; text?: string; path?: string };
+      if (
+        bridgeEvent.type === "visual:edit:pick" &&
+        bridgeEvent.payload &&
+        typeof bridgeEvent.payload === "object"
+      ) {
+        const p = bridgeEvent.payload as {
+          selector?: string;
+          tag?: string;
+          text?: string;
+          path?: string;
+        };
         if (p.selector && p.tag) {
           setLastVisualEditPick({
             selector: p.selector,
@@ -78,7 +109,10 @@ export default function LivePreview() {
   }, [project, previewEnv, setLastPreviewChange]);
 
   const sendHandshake = () => {
-    frameRef.current?.contentWindow?.postMessage(createBridgeHandshake(project), getProjectOrigin(project));
+    frameRef.current?.contentWindow?.postMessage(
+      createBridgeHandshake(project),
+      getProjectOrigin(project),
+    );
   };
 
   return (
@@ -93,7 +127,9 @@ export default function LivePreview() {
             <button
               onClick={() => setPreviewEnv("sandbox")}
               className={`flex h-6 items-center gap-1 rounded px-2 text-[10px] font-medium uppercase tracking-widest transition-colors ${
-                previewEnv === "sandbox" ? "bg-amber-400/15 text-amber-300" : "text-muted-foreground hover:text-foreground"
+                previewEnv === "sandbox"
+                  ? "bg-amber-400/15 text-amber-300"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
               title="Sandbox — AI changes land here first"
             >
@@ -102,7 +138,9 @@ export default function LivePreview() {
             <button
               onClick={() => setPreviewEnv("production")}
               className={`flex h-6 items-center gap-1 rounded px-2 text-[10px] font-medium uppercase tracking-widest transition-colors ${
-                previewEnv === "production" ? "bg-emerald-400/15 text-emerald-300" : "text-muted-foreground hover:text-foreground"
+                previewEnv === "production"
+                  ? "bg-emerald-400/15 text-emerald-300"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
               title="Production — read-only preview of live site"
             >
@@ -115,9 +153,21 @@ export default function LivePreview() {
           <BridgeChip status={bridgeStatus} />
           {previewMode === "single" && (
             <div className="mr-2 flex rounded-md border border-white/[0.08] bg-white/[0.02] p-0.5">
-              <DeviceBtn icon={Smartphone} active={device === "mobile"} onClick={() => setDevice("mobile")} />
-              <DeviceBtn icon={Tablet} active={device === "tablet"} onClick={() => setDevice("tablet")} />
-              <DeviceBtn icon={Monitor} active={device === "desktop"} onClick={() => setDevice("desktop")} />
+              <DeviceBtn
+                icon={Smartphone}
+                active={device === "mobile"}
+                onClick={() => setDevice("mobile")}
+              />
+              <DeviceBtn
+                icon={Tablet}
+                active={device === "tablet"}
+                onClick={() => setDevice("tablet")}
+              />
+              <DeviceBtn
+                icon={Monitor}
+                active={device === "desktop"}
+                onClick={() => setDevice("desktop")}
+              />
             </div>
           )}
 
@@ -136,7 +186,11 @@ export default function LivePreview() {
 
           <button
             onClick={() => setVisualEditMode(!visualEditMode)}
-            title={visualEditMode ? "Exit Visual Edit — click any element in preview" : "Enter Visual Edit — pick element to edit"}
+            title={
+              visualEditMode
+                ? "Exit Visual Edit — click any element in preview"
+                : "Enter Visual Edit — pick element to edit"
+            }
             className={`grid h-7 w-7 place-items-center rounded-md border transition-colors ${
               visualEditMode
                 ? "border-[#E50914]/50 bg-[#E50914]/[0.15] text-[#ff7480] shadow-[0_0_16px_rgba(229,9,20,0.35)]"
@@ -157,7 +211,13 @@ export default function LivePreview() {
       {/* Preview surface */}
       <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-[radial-gradient(circle_at_50%_-20%,rgba(229,9,20,0.06),transparent_60%)] p-0">
         {previewMode === "single" ? (
-          <SingleFrame refEl={frameRef} url={active.previewUrl} device={device} reloadKey={reloadKey} onLoad={sendHandshake} />
+          <SingleFrame
+            refEl={frameRef}
+            url={active.previewUrl}
+            device={device}
+            reloadKey={reloadKey}
+            onLoad={sendHandshake}
+          />
         ) : (
           <TriptychFrames url={active.previewUrl} reloadKey={reloadKey} onLoad={sendHandshake} />
         )}
@@ -167,19 +227,30 @@ export default function LivePreview() {
 }
 
 function BridgeChip({ status }: { status: string }) {
-  const cls = status === "connected"
-    ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
-    : status === "no-signal"
-      ? "border-amber-400/30 bg-amber-400/10 text-amber-300"
-      : "border-white/[0.08] bg-white/[0.02] text-muted-foreground";
+  const cls =
+    status === "connected"
+      ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+      : status === "no-signal"
+        ? "border-amber-400/30 bg-amber-400/10 text-amber-300"
+        : "border-white/[0.08] bg-white/[0.02] text-muted-foreground";
   return (
-    <span className={`mr-2 rounded-md border px-2 py-1 font-mono text-[10px] uppercase tracking-widest ${cls}`}>
+    <span
+      className={`mr-2 rounded-md border px-2 py-1 font-mono text-[10px] uppercase tracking-widest ${cls}`}
+    >
       Bridge · {status}
     </span>
   );
 }
 
-function DeviceBtn({ icon: Icon, active, onClick }: { icon: typeof Monitor; active: boolean; onClick: () => void }) {
+function DeviceBtn({
+  icon: Icon,
+  active,
+  onClick,
+}: {
+  icon: typeof Monitor;
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       onClick={onClick}
@@ -198,7 +269,13 @@ function SingleFrame({
   device,
   reloadKey,
   onLoad,
-}: { refEl: RefObject<HTMLIFrameElement | null>; url: string; device: Device; reloadKey: number; onLoad: () => void }) {
+}: {
+  refEl: RefObject<HTMLIFrameElement | null>;
+  url: string;
+  device: Device;
+  reloadKey: number;
+  onLoad: () => void;
+}) {
   const width = DEVICE_WIDTH[device];
   return (
     <motion.div
@@ -222,7 +299,15 @@ function SingleFrame({
   );
 }
 
-function TriptychFrames({ url, reloadKey, onLoad }: { url: string; reloadKey: number; onLoad: () => void }) {
+function TriptychFrames({
+  url,
+  reloadKey,
+  onLoad,
+}: {
+  url: string;
+  reloadKey: number;
+  onLoad: () => void;
+}) {
   const frames: { device: Device; label: string }[] = [
     { device: "mobile", label: "Mobile · 375" },
     { device: "tablet", label: "Tablet · 768" },
@@ -239,7 +324,9 @@ function TriptychFrames({ url, reloadKey, onLoad }: { url: string; reloadKey: nu
           className="flex flex-col items-center gap-2"
           style={{ flex: f.device === "desktop" ? 2 : 1, minWidth: 0 }}
         >
-          <div className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">{f.label}</div>
+          <div className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+            {f.label}
+          </div>
           <div className="fb-glass w-full flex-1 overflow-hidden rounded-lg">
             <iframe
               key={`${f.device}-${reloadKey}`}

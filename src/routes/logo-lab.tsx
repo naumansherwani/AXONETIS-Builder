@@ -5,19 +5,36 @@ import type { AgentState } from "@/lib/builder-state";
 import AxenMark from "@/components/builder/logo-lab/AxonMark";
 
 export const Route = createFileRoute("/logo-lab")({
-  head: () => ({ meta: [{ title: "AXONET — Identity" }, { name: "robots", content: "noindex, nofollow" }] }),
+  head: () => ({
+    meta: [{ title: "AXONET — Identity" }, { name: "robots", content: "noindex, nofollow" }],
+  }),
   component: LogoLab,
 });
 
 const STATES: AgentState[] = ["standby", "jimmy", "sherlock"];
 
 const TAGLINES = [
-  { line: "The nervous system for autonomous agents.", note: "Founder-grade. Literal. Future-proof." },
-  { line: "Every signal becomes software.",            note: "Punchy. Pure AXONET DNA — input → fire → build." },
-  { line: "Where intelligence finds its body.",        note: "Poetic. Positions AXONET as the substrate, not a tool." },
-  { line: "Think. Fire. Build.",                       note: "3-word manifesto. Tesla/Apple cadence. T-shirt ready." },
-  { line: "The synapse of the autonomous age.",        note: "Mythic, civilizational. Pair with hero films." },
-  { line: "Built by signals. Born autonomous.",        note: "Self-describing — explains the product in 4 words." },
+  {
+    line: "The nervous system for autonomous agents.",
+    note: "Founder-grade. Literal. Future-proof.",
+  },
+  {
+    line: "Every signal becomes software.",
+    note: "Punchy. Pure AXONET DNA — input → fire → build.",
+  },
+  {
+    line: "Where intelligence finds its body.",
+    note: "Poetic. Positions AXONET as the substrate, not a tool.",
+  },
+  { line: "Think. Fire. Build.", note: "3-word manifesto. Tesla/Apple cadence. T-shirt ready." },
+  {
+    line: "The synapse of the autonomous age.",
+    note: "Mythic, civilizational. Pair with hero films.",
+  },
+  {
+    line: "Built by signals. Born autonomous.",
+    note: "Self-describing — explains the product in 4 words.",
+  },
 ];
 
 function LogoLab() {
@@ -26,7 +43,10 @@ function LogoLab() {
 
   useEffect(() => {
     if (!auto) return;
-    const id = setInterval(() => setState((s) => STATES[(STATES.indexOf(s) + 1) % STATES.length]), 2600);
+    const id = setInterval(
+      () => setState((s) => STATES[(STATES.indexOf(s) + 1) % STATES.length]),
+      2600,
+    );
     return () => clearInterval(id);
   }, [auto]);
 
@@ -57,7 +77,11 @@ function LogoLab() {
       <motion.div
         aria-hidden
         className="absolute left-1/2 top-[42%] -z-10 h-[820px] w-[820px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
-        style={{ background: "conic-gradient(from 0deg, #E50914 0%, #a855f7 40%, #38bdf8 70%, #E50914 100%)", opacity: 0.10 }}
+        style={{
+          background:
+            "conic-gradient(from 0deg, #E50914 0%, #a855f7 40%, #38bdf8 70%, #E50914 100%)",
+          opacity: 0.1,
+        }}
         animate={{ rotate: 360 }}
         transition={{ duration: 80, repeat: Infinity, ease: "linear" }}
       />
@@ -69,8 +93,13 @@ function LogoLab() {
         </div>
 
         {/* HERO — the mark, monumental */}
-        <div className="mt-10 grid place-items-center rounded-3xl border border-white/[0.06] bg-white/[0.015] py-20 backdrop-blur-xl"
-             style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.02) inset, 0 60px 160px -40px rgba(229,9,20,0.25)" }}>
+        <div
+          className="mt-10 grid place-items-center rounded-3xl border border-white/[0.06] bg-white/[0.015] py-20 backdrop-blur-xl"
+          style={{
+            boxShadow:
+              "0 0 0 1px rgba(255,255,255,0.02) inset, 0 60px 160px -40px rgba(229,9,20,0.25)",
+          }}
+        >
           <AxenMark state={state} size={220} />
           <div className="mt-10 text-center">
             <div
@@ -100,7 +129,10 @@ function LogoLab() {
           {STATES.map((s) => (
             <button
               key={s}
-              onClick={() => { setAuto(false); setState(s); }}
+              onClick={() => {
+                setAuto(false);
+                setState(s);
+              }}
               className={`h-8 rounded-md border px-3 text-xs uppercase tracking-wider transition-colors ${
                 state === s
                   ? "border-[#E50914]/40 bg-[#E50914]/10 text-foreground"
@@ -116,20 +148,29 @@ function LogoLab() {
         </div>
 
         {/* SCALE TEST — favicon → top-bar → splash */}
-        <div className="mt-12 mb-3 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Scale test</div>
+        <div className="mt-12 mb-3 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+          Scale test
+        </div>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {[16, 32, 64, 120].map((sz) => (
-            <div key={sz} className="grid h-32 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.02]">
+            <div
+              key={sz}
+              className="grid h-32 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.02]"
+            >
               <div className="flex flex-col items-center gap-2">
                 <AxenMark state={state} size={sz} />
-                <span className="text-[9px] uppercase tracking-widest text-muted-foreground">{sz}px</span>
+                <span className="text-[9px] uppercase tracking-widest text-muted-foreground">
+                  {sz}px
+                </span>
               </div>
             </div>
           ))}
         </div>
 
         {/* LOCKUPS */}
-        <div className="mt-10 mb-3 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Lockups</div>
+        <div className="mt-10 mb-3 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+          Lockups
+        </div>
         <div className="grid gap-3">
           {/* Top-bar */}
           <div className="flex h-12 items-center gap-3 rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 backdrop-blur-xl">
@@ -150,10 +191,13 @@ function LogoLab() {
 
         {/* TAGLINES */}
         <div className="mt-14">
-          <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Tagline candidates</div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+            Tagline candidates
+          </div>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Mera vote: <span className="text-foreground">"The nervous system for autonomous agents."</span>{" "}
-            — literal product description, founder-grade, 2099 mein bhi sahi rahegi.
+            Mera vote:{" "}
+            <span className="text-foreground">"The nervous system for autonomous agents."</span> —
+            literal product description, founder-grade, 2099 mein bhi sahi rahegi.
           </p>
           <div className="mt-5 grid gap-3 md:grid-cols-2">
             {TAGLINES.map((t, i) => (
@@ -164,7 +208,9 @@ function LogoLab() {
                 transition={{ delay: i * 0.04, type: "spring", stiffness: 80, damping: 15 }}
                 className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-5 backdrop-blur-xl"
               >
-                <div className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground">Option {i + 1}</div>
+                <div className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground">
+                  Option {i + 1}
+                </div>
                 <div className="mt-2 text-lg font-medium text-foreground">{t.line}</div>
                 <div className="mt-1 text-xs text-muted-foreground">{t.note}</div>
               </motion.div>
@@ -173,7 +219,8 @@ function LogoLab() {
         </div>
 
         <div className="mt-12 text-center text-xs text-muted-foreground">
-          Lock karne ke liye bolo: <span className="text-foreground">"Axon lago, tagline 1"</span> (ya jo number bhi).
+          Lock karne ke liye bolo: <span className="text-foreground">"Axon lago, tagline 1"</span>{" "}
+          (ya jo number bhi).
         </div>
       </div>
     </div>

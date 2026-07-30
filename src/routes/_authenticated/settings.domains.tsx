@@ -9,27 +9,44 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowLeft, Globe, Plus, Link2, Copy, Check, Loader2, RefreshCw, ShoppingCart,
-  ShieldCheck, AlertCircle, ExternalLink, Star,
+  ArrowLeft,
+  Globe,
+  Plus,
+  Link2,
+  Copy,
+  Check,
+  Loader2,
+  RefreshCw,
+  ShoppingCart,
+  ShieldCheck,
+  AlertCircle,
+  ExternalLink,
+  Star,
 } from "lucide-react";
 import { useBuilder } from "@/lib/builder-state";
 import { PROJECTS } from "@/lib/projects";
-import {
-  fetchPublishState, subscribeDeployStatus, type PublishState,
-} from "@/lib/publish-api";
+import { fetchPublishState, subscribeDeployStatus, type PublishState } from "@/lib/publish-api";
 
 export const Route = createFileRoute("/_authenticated/settings/domains")({
   head: () => ({
     meta: [
       { title: "Domains · AXONETIS AI Builder™" },
-      { name: "description", content: "Edit URL, buy a new domain, connect an existing one, manage DNS records and primary domain." },
+      {
+        name: "description",
+        content:
+          "Edit URL, buy a new domain, connect an existing one, manage DNS records and primary domain.",
+      },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: DomainsSettingsPage,
 });
 
-interface DnsRecord { type: "A" | "CNAME" | "TXT"; name: string; value: string; }
+interface DnsRecord {
+  type: "A" | "CNAME" | "TXT";
+  name: string;
+  value: string;
+}
 
 function DomainsSettingsPage() {
   const { project } = useBuilder();
@@ -45,12 +62,18 @@ function DomainsSettingsPage() {
     let cancelled = false;
     setLoading(true);
     fetchPublishState(project).then((s) => {
-      if (!cancelled) { setState(s); setLoading(false); }
+      if (!cancelled) {
+        setState(s);
+        setLoading(false);
+      }
     });
     const unsub = subscribeDeployStatus(project, (patch) => {
       setState((prev) => (prev ? { ...prev, ...patch } : prev));
     });
-    return () => { cancelled = true; unsub(); };
+    return () => {
+      cancelled = true;
+      unsub();
+    };
   }, [project, refreshTick]);
 
   const url = state?.url ?? active.previewUrl;
@@ -60,9 +83,9 @@ function DomainsSettingsPage() {
   const dnsRecords: DnsRecord[] = useMemo(() => {
     if (!customDomain) return [];
     return [
-      { type: "A",     name: "@",        value: "185.158.133.1" },
-      { type: "A",     name: "www",      value: "185.158.133.1" },
-      { type: "TXT",   name: "_axonetis",value: `axonetis_verify=${project}` },
+      { type: "A", name: "@", value: "185.158.133.1" },
+      { type: "A", name: "www", value: "185.158.133.1" },
+      { type: "TXT", name: "_axonetis", value: `axonetis_verify=${project}` },
     ];
   }, [customDomain, project]);
 
@@ -90,7 +113,10 @@ function DomainsSettingsPage() {
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/" className="grid h-9 w-9 place-items-center rounded-lg border border-white/[0.08] bg-white/[0.02] text-muted-foreground hover:text-foreground">
+            <Link
+              to="/"
+              className="grid h-9 w-9 place-items-center rounded-lg border border-white/[0.08] bg-white/[0.02] text-muted-foreground hover:text-foreground"
+            >
               <ArrowLeft className="h-4 w-4" />
             </Link>
             <div>
@@ -112,19 +138,30 @@ function DomainsSettingsPage() {
         {bridgeMissing && (
           <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] px-3 py-2 text-[11.5px] text-amber-200">
             <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            <span>Bridge URL not configured — showing offline state. Set <code className="font-mono">VITE_HOSTFLOW_BRIDGE_URL</code> to talk to Hetzner <code className="font-mono">/rpc/publish.*</code>.</span>
+            <span>
+              Bridge URL not configured — showing offline state. Set{" "}
+              <code className="font-mono">VITE_HOSTFLOW_BRIDGE_URL</code> to talk to Hetzner{" "}
+              <code className="font-mono">/rpc/publish.*</code>.
+            </span>
           </div>
         )}
 
         {/* Default Lovable URL row */}
-        <Section title="Website URL" hint="Your project's default AXONETIS URL. Rename to change the subdomain.">
+        <Section
+          title="Website URL"
+          hint="Your project's default AXONETIS URL. Rename to change the subdomain."
+        >
           <div className="flex items-center gap-2">
             <div className="flex flex-1 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 py-2.5">
               <Globe className="h-3.5 w-3.5 text-muted-foreground/70" />
               <span className="truncate font-mono text-[12.5px] text-foreground/95">{url}</span>
             </div>
             <IconBtn onClick={() => copy(url, "url")} title="Copy URL">
-              {copied === "url" ? <Check className="h-3.5 w-3.5 text-emerald-300" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied === "url" ? (
+                <Check className="h-3.5 w-3.5 text-emerald-300" />
+              ) : (
+                <Copy className="h-3.5 w-3.5" />
+              )}
             </IconBtn>
             <IconBtn as="a" href={url} target="_blank" title="Open">
               <ExternalLink className="h-3.5 w-3.5" />
@@ -144,7 +181,9 @@ function DomainsSettingsPage() {
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-[13px] font-semibold">Buy new domain</span>
-                <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-[1px] text-[9px] uppercase tracking-wider text-amber-200">Soon</span>
+                <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-[1px] text-[9px] uppercase tracking-wider text-amber-200">
+                  Soon
+                </span>
               </div>
               <div className="mt-1 text-[11.5px] text-muted-foreground/85">
                 Search & purchase a .com/.ai/.io — auto-connects to this project.
@@ -159,7 +198,9 @@ function DomainsSettingsPage() {
               </span>
               <div>
                 <div className="text-[13px] font-semibold">Connect existing domain</div>
-                <div className="text-[11px] text-muted-foreground/80">Point your registrar at Hetzner + Caddy auto SSL.</div>
+                <div className="text-[11px] text-muted-foreground/80">
+                  Point your registrar at Hetzner + Caddy auto SSL.
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -182,7 +223,11 @@ function DomainsSettingsPage() {
         {/* DNS records */}
         <Section
           title="DNS records"
-          hint={customDomain ? `Add these at your registrar for ${customDomain}. SSL provisions automatically once DNS propagates.` : "Connect a custom domain above to reveal DNS records."}
+          hint={
+            customDomain
+              ? `Add these at your registrar for ${customDomain}. SSL provisions automatically once DNS propagates.`
+              : "Connect a custom domain above to reveal DNS records."
+          }
         >
           {customDomain ? (
             <div className="overflow-hidden rounded-lg border border-white/[0.08]">
@@ -198,15 +243,25 @@ function DomainsSettingsPage() {
                 <tbody>
                   {dnsRecords.map((r, i) => (
                     <tr key={i} className="border-t border-white/[0.05]">
-                      <td className="px-3 py-2 font-mono text-[11.5px] text-foreground/90">{r.type}</td>
-                      <td className="px-3 py-2 font-mono text-[11.5px] text-foreground/90">{r.name}</td>
-                      <td className="px-3 py-2 font-mono text-[11.5px] text-foreground/90">{r.value}</td>
+                      <td className="px-3 py-2 font-mono text-[11.5px] text-foreground/90">
+                        {r.type}
+                      </td>
+                      <td className="px-3 py-2 font-mono text-[11.5px] text-foreground/90">
+                        {r.name}
+                      </td>
+                      <td className="px-3 py-2 font-mono text-[11.5px] text-foreground/90">
+                        {r.value}
+                      </td>
                       <td className="px-3 py-2 text-right">
                         <button
                           onClick={() => copy(r.value, `dns-${i}`)}
                           className="inline-flex items-center gap-1 rounded-md border border-white/[0.08] bg-white/[0.02] px-2 py-1 text-[10.5px] text-muted-foreground hover:text-foreground"
                         >
-                          {copied === `dns-${i}` ? <Check className="h-3 w-3 text-emerald-300" /> : <Copy className="h-3 w-3" />}
+                          {copied === `dns-${i}` ? (
+                            <Check className="h-3 w-3 text-emerald-300" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}
                         </button>
                       </td>
                     </tr>
@@ -222,7 +277,10 @@ function DomainsSettingsPage() {
         </Section>
 
         {/* Verify + primary */}
-        <Section title="Verify & primary" hint="Caddy on Hetzner provisions Let's Encrypt SSL automatically within 30–60 seconds of DNS pointing correctly.">
+        <Section
+          title="Verify & primary"
+          hint="Caddy on Hetzner provisions Let's Encrypt SSL automatically within 30–60 seconds of DNS pointing correctly."
+        >
           <div className="grid gap-3 md:grid-cols-2">
             <div className="flex items-center gap-3 rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 py-3">
               {customDomain ? (
@@ -248,7 +306,8 @@ function DomainsSettingsPage() {
               disabled={!customDomain}
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 py-3 text-[12px] text-foreground/90 hover:bg-white/[0.05] disabled:opacity-40"
             >
-              <Star className="h-3.5 w-3.5 text-amber-300" /> Make {customDomain ?? "custom"} primary
+              <Star className="h-3.5 w-3.5 text-amber-300" /> Make {customDomain ?? "custom"}{" "}
+              primary
             </button>
           </div>
         </Section>
@@ -256,7 +315,10 @@ function DomainsSettingsPage() {
 
       {/* Buy modal — roadmap card (NO DUMMY) */}
       {buyOpen && (
-        <div className="fixed inset-0 z-[80] grid place-items-center bg-black/70 backdrop-blur-md" onClick={() => setBuyOpen(false)}>
+        <div
+          className="fixed inset-0 z-[80] grid place-items-center bg-black/70 backdrop-blur-md"
+          onClick={() => setBuyOpen(false)}
+        >
           <div
             onClick={(e) => e.stopPropagation()}
             className="fb-glass relative w-[min(480px,92vw)] overflow-hidden rounded-2xl border border-amber-500/25 bg-[#0a0a10] p-6 shadow-[0_30px_120px_-20px_rgba(245,158,11,0.35)]"
@@ -267,11 +329,15 @@ function DomainsSettingsPage() {
             </div>
             <h3 className="text-[16px] font-semibold">Buy a domain from AXONETIS</h3>
             <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
-              Registrar API (Namecheap / OpenSRS) wire-up is scheduled after Phase 3.10. Until then, buy your domain
-              at any registrar and use <em>Connect existing domain</em> — Caddy auto-provisions SSL in under a minute.
+              Registrar API (Namecheap / OpenSRS) wire-up is scheduled after Phase 3.10. Until then,
+              buy your domain at any registrar and use <em>Connect existing domain</em> — Caddy
+              auto-provisions SSL in under a minute.
             </p>
             <div className="mt-4 flex justify-end">
-              <button onClick={() => setBuyOpen(false)} className="rounded-md border border-white/[0.1] bg-white/[0.02] px-3 py-1.5 text-[12px] text-foreground/90 hover:bg-white/[0.05]">
+              <button
+                onClick={() => setBuyOpen(false)}
+                className="rounded-md border border-white/[0.1] bg-white/[0.02] px-3 py-1.5 text-[12px] text-foreground/90 hover:bg-white/[0.05]"
+              >
                 Got it
               </button>
             </div>
@@ -282,7 +348,15 @@ function DomainsSettingsPage() {
   );
 }
 
-function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+function Section({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="mt-6 rounded-xl border border-white/[0.06] bg-white/[0.015] p-5">
       <div className="mb-3">
@@ -295,12 +369,31 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
 }
 
 function IconBtn({
-  children, onClick, title, as, href, target,
+  children,
+  onClick,
+  title,
+  as,
+  href,
+  target,
 }: {
-  children: React.ReactNode; onClick?: () => void; title?: string;
-  as?: "a"; href?: string; target?: string;
+  children: React.ReactNode;
+  onClick?: () => void;
+  title?: string;
+  as?: "a";
+  href?: string;
+  target?: string;
 }) {
-  const cls = "grid h-10 w-10 place-items-center rounded-lg border border-white/[0.08] bg-white/[0.02] text-muted-foreground hover:text-foreground";
-  if (as === "a") return <a className={cls} href={href} target={target} rel="noreferrer" title={title}>{children}</a>;
-  return <button onClick={onClick} title={title} className={cls}>{children}</button>;
+  const cls =
+    "grid h-10 w-10 place-items-center rounded-lg border border-white/[0.08] bg-white/[0.02] text-muted-foreground hover:text-foreground";
+  if (as === "a")
+    return (
+      <a className={cls} href={href} target={target} rel="noreferrer" title={title}>
+        {children}
+      </a>
+    );
+  return (
+    <button onClick={onClick} title={title} className={cls}>
+      {children}
+    </button>
+  );
 }

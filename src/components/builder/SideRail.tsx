@@ -60,8 +60,7 @@ export default function SideRail({ side, items, label }: Props) {
                   className={`absolute ${side === "left" ? "-right-[5px]" : "-left-[5px]"} top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-full bg-[#E50914] shadow-[0_0_8px_#E50914]`}
                 />
               )}
-              <span className="mt-0.5 text-[8.5px] font-medium uppercase tracking-wider opacity-80 absolute -bottom-0.5">
-              </span>
+              <span className="mt-0.5 text-[8.5px] font-medium uppercase tracking-wider opacity-80 absolute -bottom-0.5"></span>
             </button>
           );
         })}

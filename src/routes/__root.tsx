@@ -85,8 +85,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:title", content: "AXONETIS AI Builder™" },
       { property: "og:description", content: "Founder-only AI builder workspace for AXONETIS." },
       { name: "twitter:description", content: "Founder-only AI builder workspace for AXONETIS." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fda73c5d-d987-41c2-859a-0887c423d40a/id-preview-0569fef0--23c2a607-a4fb-42b9-883d-0e635914ff35.lovable.app-1781247397835.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fda73c5d-d987-41c2-859a-0887c423d40a/id-preview-0569fef0--23c2a607-a4fb-42b9-883d-0e635914ff35.lovable.app-1781247397835.png" },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fda73c5d-d987-41c2-859a-0887c423d40a/id-preview-0569fef0--23c2a607-a4fb-42b9-883d-0e635914ff35.lovable.app-1781247397835.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fda73c5d-d987-41c2-859a-0887c423d40a/id-preview-0569fef0--23c2a607-a4fb-42b9-883d-0e635914ff35.lovable.app-1781247397835.png",
+      },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
     ],
