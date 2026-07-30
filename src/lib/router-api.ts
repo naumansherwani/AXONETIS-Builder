@@ -13,11 +13,11 @@
 const BRIDGE = (import.meta.env.VITE_HOSTFLOW_BRIDGE_URL as string | undefined) ?? "";
 
 export interface RouterPreview {
-  model: string;              // chosen model, e.g. "qwen/qwen-2.5-coder-32b"
-  default_model: string;      // what would have been used without routing
-  est_cost_usd: number;       // predicted cost for this prompt
-  est_saved_usd: number;      // default_cost - chosen_cost
-  reason: string;             // "cheapest for build-tier" / "fastest for classify" etc.
+  model: string; // chosen model, e.g. "qwen/qwen-2.5-coder-32b"
+  default_model: string; // what would have been used without routing
+  est_cost_usd: number; // predicted cost for this prompt
+  est_saved_usd: number; // default_cost - chosen_cost
+  reason: string; // "cheapest for build-tier" / "fastest for classify" etc.
 }
 
 export async function previewRoute(
@@ -43,7 +43,10 @@ export async function previewRoute(
 /** Human-readable short model tag, matching UnifiedChat rendering. */
 export function shortModelTag(model: string | null | undefined): string | null {
   if (!model) return null;
-  return model.split("/").slice(-1)[0].replace(/-instruct$|:free$/gi, "");
+  return model
+    .split("/")
+    .slice(-1)[0]
+    .replace(/-instruct$|:free$/gi, "");
 }
 
 /** Format tiny USD amounts with sensible precision. */

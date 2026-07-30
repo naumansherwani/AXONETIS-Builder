@@ -4,8 +4,15 @@
  * NO duplicate panels: re-uses existing panel components.
  */
 import {
-  Monitor, ScrollText, Database, GitBranch, Terminal as TerminalIcon, Boxes,
-  Files as FilesIcon, Compass, type LucideIcon,
+  Monitor,
+  ScrollText,
+  Database,
+  GitBranch,
+  Terminal as TerminalIcon,
+  Boxes,
+  Files as FilesIcon,
+  Compass,
+  type LucideIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import LivePreview from "../LivePreview";
@@ -18,8 +25,14 @@ import TerminalPanel from "./TerminalPanel";
 import GitHubPanel from "./GitHubPanel";
 
 export type TabKind =
-  | "preview" | "logs" | "database" | "runtime"
-  | "terminal" | "github" | "files" | "command";
+  | "preview"
+  | "logs"
+  | "database"
+  | "runtime"
+  | "terminal"
+  | "github"
+  | "files"
+  | "command";
 
 export interface TabDef {
   kind: TabKind;
@@ -30,14 +43,38 @@ export interface TabDef {
 }
 
 export const TAB_REGISTRY: Record<TabKind, TabDef> = {
-  preview:  { kind: "preview",  label: "Preview",  icon: Monitor,      render: LivePreview,         closable: false },
-  logs:     { kind: "logs",     label: "Logs",     icon: ScrollText,   render: LogsPanel,           closable: true  },
-  database: { kind: "database", label: "Database", icon: Database,     render: DatabasePanel,       closable: true  },
-  runtime:  { kind: "runtime",  label: "Runtime",  icon: Boxes,        render: RuntimePanel,        closable: true  },
-  files:    { kind: "files",    label: "Files",    icon: FilesIcon,    render: FilesPanel,          closable: true  },
-  command:  { kind: "command",  label: "Command",  icon: Compass,      render: CommandCenterPanel,  closable: true  },
-  terminal: { kind: "terminal", label: "Terminal", icon: TerminalIcon, render: TerminalPanel,       closable: true  },
-  github:   { kind: "github",   label: "GitHub",   icon: GitBranch,    render: GitHubPanel,         closable: true  },
+  preview: {
+    kind: "preview",
+    label: "Preview",
+    icon: Monitor,
+    render: LivePreview,
+    closable: false,
+  },
+  logs: { kind: "logs", label: "Logs", icon: ScrollText, render: LogsPanel, closable: true },
+  database: {
+    kind: "database",
+    label: "Database",
+    icon: Database,
+    render: DatabasePanel,
+    closable: true,
+  },
+  runtime: { kind: "runtime", label: "Runtime", icon: Boxes, render: RuntimePanel, closable: true },
+  files: { kind: "files", label: "Files", icon: FilesIcon, render: FilesPanel, closable: true },
+  command: {
+    kind: "command",
+    label: "Command",
+    icon: Compass,
+    render: CommandCenterPanel,
+    closable: true,
+  },
+  terminal: {
+    kind: "terminal",
+    label: "Terminal",
+    icon: TerminalIcon,
+    render: TerminalPanel,
+    closable: true,
+  },
+  github: { kind: "github", label: "GitHub", icon: GitBranch, render: GitHubPanel, closable: true },
 };
 
 export const TAB_KINDS = Object.keys(TAB_REGISTRY) as TabKind[];

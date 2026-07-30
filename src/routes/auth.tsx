@@ -5,7 +5,6 @@ import { GitBranch, KeyRound, Loader2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import KernelLogo from "@/components/builder/KernelLogo";
 
-
 export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
@@ -71,7 +70,6 @@ function AuthPage() {
             </div>
           </div>
 
-
           <h1 className="mb-2 text-2xl font-semibold tracking-tight">Founder access</h1>
           <p className="mb-8 text-sm text-muted-foreground">
             GitHub username aur personal access token se enter karein.
@@ -80,9 +78,7 @@ function AuthPage() {
           {status === "sent" ? (
             <div className="rounded-lg border border-[#E50914]/30 bg-[#E50914]/5 p-4 text-sm">
               <div className="font-medium text-foreground">Access verified</div>
-              <div className="mt-1 text-muted-foreground">
-                Builder workspace open ho raha hai.
-              </div>
+              <div className="mt-1 text-muted-foreground">Builder workspace open ho raha hai.</div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">

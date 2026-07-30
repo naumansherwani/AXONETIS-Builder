@@ -6,9 +6,11 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Plug, PlugZap, Loader2 } from "lucide-react";
 import "xterm/css/xterm.css";
+import type { Terminal as XtermTerminal } from "xterm";
+import type { FitAddon as XtermFitAddon } from "xterm-addon-fit";
 
 const WS_URL =
-  (typeof window !== "undefined" && window.location.hostname === "localhost")
+  typeof window !== "undefined" && window.location.hostname === "localhost"
     ? "ws://localhost:8092/ssh"
     : "wss://founderbuilder.axonetis.com/ssh";
 
@@ -16,8 +18,8 @@ type Status = "idle" | "connecting" | "open" | "closed" | "error";
 
 export default function TerminalPanel() {
   const hostRef = useRef<HTMLDivElement>(null);
-  const termRef = useRef<any>(null);
-  const fitRef = useRef<any>(null);
+  const termRef = useRef<XtermTerminal | null>(null);
+  const fitRef = useRef<XtermFitAddon | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const onDataDisposeRef = useRef<(() => void) | null>(null);
   const [status, setStatus] = useState<Status>("idle");
@@ -35,9 +37,9 @@ export default function TerminalPanel() {
     let ws: WebSocket;
     try {
       ws = new WebSocket(WS_URL);
-    } catch (e: any) {
+    } catch (e) {
       setStatus("error");
-      writeLine("\x1b[31mWebSocket error: " + (e?.message ?? e) + "\x1b[0m");
+      writeLine("\x1b[31mWebSocket error: " + ((e as Error)?.message ?? String(e)) + "\x1b[0m");
       return;
     }
     ws.binaryType = "arraybuffer";
@@ -47,9 +49,11 @@ export default function TerminalPanel() {
       setStatus("open");
       backoffRef.current = 1000;
       try {
-        const { cols, rows } = termRef.current;
+        const { cols, rows } = termRef.current!;
         ws.send(JSON.stringify({ type: "resize", cols, rows }));
-      } catch { /* noop */ }
+      } catch {
+        /* noop */
+      }
     };
     ws.onmessage = (ev) => {
       if (typeof ev.data === "string") termRef.current?.write(ev.data);
@@ -65,7 +69,9 @@ export default function TerminalPanel() {
         const delay = Math.min(backoffRef.current, 15000);
         backoffRef.current = Math.min(backoffRef.current * 1.7, 15000);
         writeLine(`\x1b[2mreconnect in ${Math.round(delay / 1000)}s ...\x1b[0m`);
-        setTimeout(() => { if (autoReconnect) connect(); }, delay);
+        setTimeout(() => {
+          if (autoReconnect) connect();
+        }, delay);
       }
     };
 
@@ -78,7 +84,11 @@ export default function TerminalPanel() {
 
   const disconnect = useCallback(() => {
     setAutoReconnect(false);
-    try { wsRef.current?.close(); } catch { /* noop */ }
+    try {
+      wsRef.current?.close();
+    } catch {
+      /* noop */
+    }
   }, []);
 
   useEffect(() => {
@@ -127,26 +137,38 @@ export default function TerminalPanel() {
           if (ws && ws.readyState === 1) {
             ws.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }));
           }
-        } catch { /* noop */ }
+        } catch {
+          /* noop */
+        }
       });
       ro.observe(hostRef.current);
 
       cleanup = () => {
         onDataDisposeRef.current?.();
-        try { wsRef.current?.close(); } catch { /* noop */ }
+        try {
+          wsRef.current?.close();
+        } catch {
+          /* noop */
+        }
         ro.disconnect();
         term.dispose();
       };
     })();
 
-    return () => { disposed = true; cleanup?.(); };
+    return () => {
+      disposed = true;
+      cleanup?.();
+    };
   }, []);
 
   const dot =
-    status === "open" ? "bg-green-400 shadow-[0_0_8px_#22c55e]" :
-    status === "connecting" ? "bg-amber-400 shadow-[0_0_8px_#f59e0b]" :
-    status === "error" ? "bg-[#E50914] shadow-[0_0_8px_#E50914]" :
-    "bg-white/30";
+    status === "open"
+      ? "bg-green-400 shadow-[0_0_8px_#22c55e]"
+      : status === "connecting"
+        ? "bg-amber-400 shadow-[0_0_8px_#f59e0b]"
+        : status === "error"
+          ? "bg-[#E50914] shadow-[0_0_8px_#E50914]"
+          : "bg-white/30";
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#040406]">
@@ -154,16 +176,26 @@ export default function TerminalPanel() {
         <div className="flex items-center gap-2 text-[11px] uppercase tracking-widest text-white/60">
           <span className={`h-2 w-2 rounded-full ${dot}`} />
           Terminal · root@88.198.208.90
-          <span className="ml-2 text-[10px] normal-case tracking-normal text-white/40">{status}</span>
+          <span className="ml-2 text-[10px] normal-case tracking-normal text-white/40">
+            {status}
+          </span>
         </div>
         <div className="flex items-center gap-1.5">
           {status !== "open" ? (
             <button
-              onClick={() => { setAutoReconnect(true); backoffRef.current = 1000; connect(); }}
+              onClick={() => {
+                setAutoReconnect(true);
+                backoffRef.current = 1000;
+                connect();
+              }}
               disabled={status === "connecting"}
               className="flex items-center gap-1.5 rounded-md border border-[#E50914]/40 bg-[#E50914]/10 px-2 py-1 text-[11px] text-white hover:bg-[#E50914]/20 disabled:opacity-50"
             >
-              {status === "connecting" ? <Loader2 className="h-3 w-3 animate-spin" /> : <PlugZap className="h-3 w-3" />}
+              {status === "connecting" ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <PlugZap className="h-3 w-3" />
+              )}
               Connect
             </button>
           ) : (

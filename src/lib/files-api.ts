@@ -68,7 +68,9 @@ export function buildTree(rows: ProjectFileRow[]): FileTreeNode[] {
     let cursor = root;
     parts.forEach((seg, i) => {
       const isLast = i === parts.length - 1;
-      const existing = cursor.find((n) => n.name === seg && (isLast ? n.kind === "file" : n.kind === "dir"));
+      const existing = cursor.find(
+        (n) => n.name === seg && (isLast ? n.kind === "file" : n.kind === "dir"),
+      );
       if (existing) {
         if (!isLast && existing.children) cursor = existing.children;
         return;
@@ -106,9 +108,16 @@ export function subscribeProjectFiles(projectId: ProjectId, onChange: () => void
     .channel(`project_files:${projectId}`)
     .on(
       "postgres_changes",
-      { event: "*", schema: "public", table: "project_files", filter: `project_id=eq.${projectId}` },
+      {
+        event: "*",
+        schema: "public",
+        table: "project_files",
+        filter: `project_id=eq.${projectId}`,
+      },
       () => onChange(),
     )
     .subscribe();
-  return () => { void supabase3.removeChannel(channel); };
+  return () => {
+    void supabase3.removeChannel(channel);
+  };
 }

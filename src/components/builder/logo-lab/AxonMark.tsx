@@ -13,9 +13,24 @@ import { motion } from "framer-motion";
 import type { AgentState } from "@/lib/builder-state";
 
 const PALETTE: Record<AgentState, { core: string; fiber: string; glow: string; halo: string }> = {
-  standby:  { core: "#ffffff", fiber: "#9aa6c4", glow: "rgba(180,200,255,0.55)", halo: "rgba(180,200,255,0.16)" },
-  jimmy:    { core: "#ffd9dc", fiber: "#E50914", glow: "rgba(229,9,20,0.75)",    halo: "rgba(229,9,20,0.20)"   },
-  sherlock: { core: "#efe0ff", fiber: "#a855f7", glow: "rgba(168,85,247,0.75)",  halo: "rgba(168,85,247,0.20)" },
+  standby: {
+    core: "#ffffff",
+    fiber: "#9aa6c4",
+    glow: "rgba(180,200,255,0.55)",
+    halo: "rgba(180,200,255,0.16)",
+  },
+  jimmy: {
+    core: "#ffd9dc",
+    fiber: "#E50914",
+    glow: "rgba(229,9,20,0.75)",
+    halo: "rgba(229,9,20,0.20)",
+  },
+  sherlock: {
+    core: "#efe0ff",
+    fiber: "#a855f7",
+    glow: "rgba(168,85,247,0.75)",
+    halo: "rgba(168,85,247,0.20)",
+  },
 };
 
 // 6 hex vertices on a circle of radius 38 around (50,50)
@@ -23,8 +38,7 @@ const VERTS = Array.from({ length: 6 }, (_, i) => {
   const a = (Math.PI / 3) * i - Math.PI / 2; // start at top
   return [50 + 38 * Math.cos(a), 50 + 38 * Math.sin(a)] as const;
 });
-const HEX_PATH =
-  "M " + VERTS.map(([x, y]) => `${x.toFixed(2)} ${y.toFixed(2)}`).join(" L ") + " Z";
+const HEX_PATH = "M " + VERTS.map(([x, y]) => `${x.toFixed(2)} ${y.toFixed(2)}`).join(" L ") + " Z";
 
 interface Props {
   state?: AgentState;
@@ -35,7 +49,12 @@ interface Props {
   textColor?: string;
 }
 
-export default function AxenMark({ state = "standby", size = 40, wordmark = false, textColor }: Props) {
+export default function AxenMark({
+  state = "standby",
+  size = 40,
+  wordmark = false,
+  textColor,
+}: Props) {
   const c = PALETTE[state];
   const active = state !== "standby";
   const pulseDur = active ? 1.6 : 3.2;
@@ -51,7 +70,7 @@ export default function AxenMark({ state = "standby", size = 40, wordmark = fals
         animate={{
           filter: [
             `drop-shadow(0 0 ${size * 0.04}px ${c.glow})`,
-            `drop-shadow(0 0 ${size * 0.20}px ${c.glow})`,
+            `drop-shadow(0 0 ${size * 0.2}px ${c.glow})`,
             `drop-shadow(0 0 ${size * 0.04}px ${c.glow})`,
           ],
         }}
@@ -59,7 +78,9 @@ export default function AxenMark({ state = "standby", size = 40, wordmark = fals
       >
         {/* Outer halo ring */}
         <motion.circle
-          cx="50" cy="50" r="48"
+          cx="50"
+          cy="50"
+          r="48"
           fill="none"
           stroke={c.fiber}
           strokeWidth="0.6"
@@ -68,13 +89,23 @@ export default function AxenMark({ state = "standby", size = 40, wordmark = fals
         />
 
         {/* Hex chassis */}
-        <path d={HEX_PATH} fill="none" stroke={c.fiber} strokeOpacity="0.55" strokeWidth="1.4" strokeLinejoin="round" />
+        <path
+          d={HEX_PATH}
+          fill="none"
+          stroke={c.fiber}
+          strokeOpacity="0.55"
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
 
         {/* 6 dendrites: vertex → core */}
         {VERTS.map(([x, y], i) => (
           <line
             key={`d-${i}`}
-            x1={x} y1={y} x2="50" y2="50"
+            x1={x}
+            y1={y}
+            x2="50"
+            y2="50"
             stroke={c.fiber}
             strokeOpacity="0.35"
             strokeWidth="1"
@@ -135,7 +166,9 @@ export default function AxenMark({ state = "standby", size = 40, wordmark = fals
 
         {/* Synapse core — the heart */}
         <motion.circle
-          cx="50" cy="50" r="7"
+          cx="50"
+          cy="50"
+          r="7"
           fill={c.halo}
           animate={{ r: active ? [6, 10, 6] : [5.5, 7.5, 5.5], opacity: [0.55, 1, 0.55] }}
           transition={{ duration: pulseDur, repeat: Infinity, ease: "easeInOut" }}

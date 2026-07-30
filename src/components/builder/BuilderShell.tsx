@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { BuilderCtx, type AgentState, type BottomTabId, type PreviewMode, type VisualEditPick } from "@/lib/builder-state";
+import {
+  BuilderCtx,
+  type AgentState,
+  type BottomTabId,
+  type PreviewMode,
+  type VisualEditPick,
+} from "@/lib/builder-state";
 import { DEFAULT_PROJECT, type Branch, type Environment, type ProjectId } from "@/lib/projects";
 import TopBar from "./TopBar";
 import WorkspaceTabs from "./workspace/WorkspaceTabs";
@@ -45,11 +51,17 @@ export default function BuilderShell() {
     setPreviewEnv(ws.previewEnv);
     setLastBridgeEvent(null);
     setLastPreviewChange(null);
-    try { localStorage.setItem(ACTIVE_PROJECT_KEY, project); } catch { /* noop */ }
+    try {
+      localStorage.setItem(ACTIVE_PROJECT_KEY, project);
+    } catch {
+      /* noop */
+    }
   }, [project]);
 
   // Persist branch / env / previewEnv changes back into the active project's workspace.
-  useEffect(() => { patchWorkspace(project, { branch, environment, previewEnv }); }, [project, branch, environment, previewEnv]);
+  useEffect(() => {
+    patchWorkspace(project, { branch, environment, previewEnv });
+  }, [project, branch, environment, previewEnv]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -65,16 +77,50 @@ export default function BuilderShell() {
   // rrweb session replay — records builder UI, ships to Hetzner every 5s.
   useRrwebRecorder(project, true);
 
-
   const value = useMemo(
     () => ({
-      project, branch, environment, bottomTab, previewMode, paletteOpen, agentState, bridgeStatus, lastBridgeEvent,
-      previewEnv, lastPreviewChange, visualEditMode, lastVisualEditPick,
-      setProject, setBranch, setEnvironment, setBottomTab, setPreviewMode, setPaletteOpen, setAgentState,
-      setBridgeStatus, setLastBridgeEvent, setPreviewEnv, setLastPreviewChange,
-      setVisualEditMode, setLastVisualEditPick,
+      project,
+      branch,
+      environment,
+      bottomTab,
+      previewMode,
+      paletteOpen,
+      agentState,
+      bridgeStatus,
+      lastBridgeEvent,
+      previewEnv,
+      lastPreviewChange,
+      visualEditMode,
+      lastVisualEditPick,
+      setProject,
+      setBranch,
+      setEnvironment,
+      setBottomTab,
+      setPreviewMode,
+      setPaletteOpen,
+      setAgentState,
+      setBridgeStatus,
+      setLastBridgeEvent,
+      setPreviewEnv,
+      setLastPreviewChange,
+      setVisualEditMode,
+      setLastVisualEditPick,
     }),
-    [project, branch, environment, bottomTab, previewMode, paletteOpen, agentState, bridgeStatus, lastBridgeEvent, previewEnv, lastPreviewChange, visualEditMode, lastVisualEditPick],
+    [
+      project,
+      branch,
+      environment,
+      bottomTab,
+      previewMode,
+      paletteOpen,
+      agentState,
+      bridgeStatus,
+      lastBridgeEvent,
+      previewEnv,
+      lastPreviewChange,
+      visualEditMode,
+      lastVisualEditPick,
+    ],
   );
 
   return (
@@ -111,13 +157,15 @@ export default function BuilderShell() {
 
             <main className="relative flex min-w-0 flex-1 flex-col">
               {/* Phase 7 — continuous ribbon that links chat + preview top corners */}
-              <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-20 h-px bg-gradient-to-r from-[#E50914]/0 via-[#E50914]/70 to-[#7c3aed]/0" />
-              <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-20 h-[3px] bg-gradient-to-r from-transparent via-[#E50914]/30 to-transparent blur-sm" />
-              <HorizontalSplit
-                left={<UnifiedChat />}
-                right={<WorkspaceTabs />}
-                initial={0.4}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 top-0 z-20 h-px bg-gradient-to-r from-[#E50914]/0 via-[#E50914]/70 to-[#7c3aed]/0"
               />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 top-0 z-20 h-[3px] bg-gradient-to-r from-transparent via-[#E50914]/30 to-transparent blur-sm"
+              />
+              <HorizontalSplit left={<UnifiedChat />} right={<WorkspaceTabs />} initial={0.4} />
               <MorePill />
             </main>
 

@@ -6,7 +6,8 @@
  *   POST /api/agents/founder/secrets/rotate     → { name }
  * Values are never returned in full — only a masked preview (last 4).
  */
-const BASE = (import.meta.env.VITE_HOSTFLOW_SERVER_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+const BASE =
+  (import.meta.env.VITE_HOSTFLOW_SERVER_URL as string | undefined)?.replace(/\/$/, "") ?? "";
 
 export interface SecretRow {
   name: string;

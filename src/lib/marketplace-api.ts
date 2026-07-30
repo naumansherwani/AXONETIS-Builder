@@ -29,18 +29,18 @@ async function rpc<T>(path: string, init?: RequestInit): Promise<T | null> {
 export type MarketplaceCategory = "build" | "review" | "ops" | "data" | "creative" | "outreach";
 
 export interface MarketplaceAgent {
-  slug: string;                  // e.g. "seo-scout"
-  name: string;                  // display name
-  tagline: string;               // one-line
-  description: string;           // long
+  slug: string; // e.g. "seo-scout"
+  name: string; // display name
+  tagline: string; // one-line
+  description: string; // long
   category: MarketplaceCategory;
-  author: string;                // "NEXATECT" | community handle
-  version: string;               // semver
-  icon?: string | null;          // emoji or url
-  price_usd: number;             // 0 = free
+  author: string; // "NEXATECT" | community handle
+  version: string; // semver
+  icon?: string | null; // emoji or url
+  price_usd: number; // 0 = free
   installs: number;
-  rating: number;                // 0..5
-  tools: string[];               // tool registry ids it uses
+  rating: number; // 0..5
+  tools: string[]; // tool registry ids it uses
   featured?: boolean;
   official?: boolean;
 }
@@ -64,14 +64,20 @@ export async function listInstalled(projectId: string): Promise<InstalledAgent[]
   return Array.isArray(data?.installed) ? data!.installed : [];
 }
 
-export async function installAgent(projectId: string, slug: string): Promise<{ ok: boolean } | null> {
+export async function installAgent(
+  projectId: string,
+  slug: string,
+): Promise<{ ok: boolean } | null> {
   return rpc<{ ok: boolean }>("/rpc/marketplace.install", {
     method: "POST",
     body: JSON.stringify({ projectId, slug }),
   });
 }
 
-export async function uninstallAgent(projectId: string, slug: string): Promise<{ ok: boolean } | null> {
+export async function uninstallAgent(
+  projectId: string,
+  slug: string,
+): Promise<{ ok: boolean } | null> {
   return rpc<{ ok: boolean }>("/rpc/marketplace.uninstall", {
     method: "POST",
     body: JSON.stringify({ projectId, slug }),

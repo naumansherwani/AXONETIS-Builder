@@ -4,7 +4,8 @@
  *            GET /api/agents/founder/storage/objects?bucket=<name>&limit=50
  * Offline-safe: returns { live:false, buckets:[] } on failure.
  */
-const BASE = (import.meta.env.VITE_HOSTFLOW_SERVER_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+const BASE =
+  (import.meta.env.VITE_HOSTFLOW_SERVER_URL as string | undefined)?.replace(/\/$/, "") ?? "";
 
 export interface StorageBucket {
   name: string;

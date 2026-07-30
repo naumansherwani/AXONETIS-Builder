@@ -19,17 +19,18 @@ import {
   type DualBrainStage,
 } from "@/lib/hostflow-api";
 
-const STAGE_TONE: Record<DualBrainStage, "gray" | "violet" | "sky" | "amber" | "emerald" | "red"> = {
-  queued: "gray",
-  jimmy_planning: "violet",
-  jimmy_coding: "violet",
-  sherlock_reviewing: "sky",
-  awaiting_approval: "amber",
-  approved: "emerald",
-  applied: "emerald",
-  rejected: "red",
-  failed: "red",
-};
+const STAGE_TONE: Record<DualBrainStage, "gray" | "violet" | "sky" | "amber" | "emerald" | "red"> =
+  {
+    queued: "gray",
+    jimmy_planning: "violet",
+    jimmy_coding: "violet",
+    sherlock_reviewing: "sky",
+    awaiting_approval: "amber",
+    approved: "emerald",
+    applied: "emerald",
+    rejected: "red",
+    failed: "red",
+  };
 
 const STAGE_LABEL: Record<DualBrainStage, string> = {
   queued: "Queued",
@@ -57,20 +58,28 @@ export default function DualBrainPanel() {
   useEffect(() => {
     let alive = true;
     listDualBrainRuns({ projectId: project, limit: 10 })
-      .then((rows) => { if (alive) setRecent(rows); })
-      .catch(() => { /* server may be down, keep empty */ });
-    return () => { alive = false; };
+      .then((rows) => {
+        if (alive) setRecent(rows);
+      })
+      .catch(() => {
+        /* server may be down, keep empty */
+      });
+    return () => {
+      alive = false;
+    };
   }, [project]);
 
   // Live subscribe to active run
   useEffect(() => {
     if (!activeId) return;
     let alive = true;
-    getDualBrainRun(activeId).then((data) => {
-      if (!alive) return;
-      setActiveRun(data.run);
-      setSteps(data.steps);
-    }).catch(() => {});
+    getDualBrainRun(activeId)
+      .then((data) => {
+        if (!alive) return;
+        setActiveRun(data.run);
+        setSteps(data.steps);
+      })
+      .catch(() => {});
     const close = subscribeDualBrainRun(activeId, (evt) => {
       if (evt.type === "step" && evt.step) {
         setSteps((s) => [...s, evt.step!]);
@@ -78,7 +87,10 @@ export default function DualBrainPanel() {
         setActiveRun(evt.run);
       }
     });
-    return () => { alive = false; close(); };
+    return () => {
+      alive = false;
+      close();
+    };
   }, [activeId]);
 
   const dispatch = async () => {
@@ -112,7 +124,9 @@ export default function DualBrainPanel() {
 
   const tone = activeRun ? STAGE_TONE[activeRun.stage] : "gray";
   const awaiting = activeRun?.stage === "awaiting_approval";
-  const running = activeRun && ["queued", "jimmy_planning", "jimmy_coding", "sherlock_reviewing"].includes(activeRun.stage);
+  const running =
+    activeRun &&
+    ["queued", "jimmy_planning", "jimmy_coding", "sherlock_reviewing"].includes(activeRun.stage);
 
   return (
     <div>
@@ -120,7 +134,9 @@ export default function DualBrainPanel() {
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) dispatch(); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) dispatch();
+          }}
           placeholder="Describe what Jimmy should build…  (⌘/Ctrl+Enter to dispatch)"
           rows={3}
           className="w-full resize-none rounded-md border border-white/[0.06] bg-black/40 px-2.5 py-2 text-[12px] text-foreground placeholder:text-muted-foreground/50 focus:border-[#E50914]/40 focus:outline-none"
@@ -130,12 +146,17 @@ export default function DualBrainPanel() {
           disabled={!prompt.trim() || dispatching}
           className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-md bg-gradient-to-b from-[#E50914] to-[#a4060f] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow-[0_0_18px_-6px_#E50914] transition-opacity disabled:opacity-40"
         >
-          {dispatching ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
+          {dispatching ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Play className="h-3 w-3" />
+          )}
           Dispatch · Jimmy → Sherlock
         </button>
         {error && (
           <div className="mt-2 flex items-start gap-1.5 rounded border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-[10.5px] text-red-300">
-            <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" /><span>{error}</span>
+            <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+            <span>{error}</span>
           </div>
         )}
       </PanelSection>
@@ -159,7 +180,9 @@ export default function DualBrainPanel() {
 
             {steps.length > 0 && (
               <div className="mt-2 space-y-1.5">
-                {steps.map((s) => <StepRow key={s.id} step={s} />)}
+                {steps.map((s) => (
+                  <StepRow key={s.id} step={s} />
+                ))}
               </div>
             )}
 
@@ -177,7 +200,8 @@ export default function DualBrainPanel() {
             {activeRun.sherlock_notes && (
               <div className="rounded border border-sky-400/20 bg-sky-400/[0.04] px-2 py-1.5">
                 <div className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-sky-300">
-                  <ShieldCheck className="h-3 w-3" /> Sherlock · {activeRun.sherlock_verdict ?? "review"}
+                  <ShieldCheck className="h-3 w-3" /> Sherlock ·{" "}
+                  {activeRun.sherlock_verdict ?? "review"}
                 </div>
                 <p className="text-[11px] leading-relaxed text-foreground/85 whitespace-pre-wrap">
                   {activeRun.sherlock_notes}
@@ -203,7 +227,9 @@ export default function DualBrainPanel() {
             )}
 
             <div className="flex items-center justify-between border-t border-white/[0.04] pt-1.5 text-[10px] text-muted-foreground">
-              <span>Iter {activeRun.iteration}/{activeRun.max_iterations}</span>
+              <span>
+                Iter {activeRun.iteration}/{activeRun.max_iterations}
+              </span>
               <span>${activeRun.total_cost_usd.toFixed(4)}</span>
             </div>
           </div>
@@ -267,10 +293,10 @@ function StageTrack({ stage }: { stage: DualBrainStage }) {
               failed
                 ? "bg-red-500/60"
                 : active
-                ? "bg-gradient-to-r from-[#E50914] to-[#a855f7] shadow-[0_0_8px_#E50914]"
-                : done
-                ? "bg-emerald-400/70"
-                : "bg-white/[0.06]"
+                  ? "bg-gradient-to-r from-[#E50914] to-[#a855f7] shadow-[0_0_8px_#E50914]"
+                  : done
+                    ? "bg-emerald-400/70"
+                    : "bg-white/[0.06]"
             }`}
           />
         );
@@ -283,7 +309,9 @@ function StepRow({ step }: { step: DualBrainStep }) {
   const isJimmy = step.actor === "jimmy";
   const Icon = isJimmy ? Sparkles : ShieldCheck;
   return (
-    <div className={`rounded border px-2 py-1.5 ${isJimmy ? "border-[#E50914]/15 bg-[#E50914]/[0.04]" : "border-sky-400/20 bg-sky-400/[0.04]"}`}>
+    <div
+      className={`rounded border px-2 py-1.5 ${isJimmy ? "border-[#E50914]/15 bg-[#E50914]/[0.04]" : "border-sky-400/20 bg-sky-400/[0.04]"}`}
+    >
       <div className="mb-0.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em]">
         <Icon className={`h-3 w-3 ${isJimmy ? "text-[#ff7480]" : "text-sky-300"}`} />
         <span className={isJimmy ? "text-[#ff7480]" : "text-sky-300"}>{step.actor}</span>
@@ -294,7 +322,9 @@ function StepRow({ step }: { step: DualBrainStep }) {
       </div>
       <div className="text-[11px] font-medium text-foreground/90">{step.title}</div>
       {step.body && (
-        <p className="mt-0.5 text-[10.5px] leading-relaxed text-foreground/70 whitespace-pre-wrap">{step.body}</p>
+        <p className="mt-0.5 text-[10.5px] leading-relaxed text-foreground/70 whitespace-pre-wrap">
+          {step.body}
+        </p>
       )}
     </div>
   );

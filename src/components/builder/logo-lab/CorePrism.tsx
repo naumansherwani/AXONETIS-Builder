@@ -11,13 +11,20 @@ const FACE = {
   sherlock: "#a855f7",
 };
 
-export default function CorePrism({ state = "standby", size = 26 }: { state?: AgentState; size?: number }) {
+export default function CorePrism({
+  state = "standby",
+  size = 26,
+}: {
+  state?: AgentState;
+  size?: number;
+}) {
   const dim = "#26262e";
   const top = state === "standby" ? FACE.founder : dim;
   const left = state === "jimmy" ? FACE.jimmy : dim;
   const right = state === "sherlock" ? FACE.sherlock : dim;
   const stroke = "#3a3a44";
-  const label = state === "jimmy" ? FACE.jimmy : state === "sherlock" ? FACE.sherlock : FACE.founder;
+  const label =
+    state === "jimmy" ? FACE.jimmy : state === "sherlock" ? FACE.sherlock : FACE.founder;
 
   return (
     <div
@@ -28,8 +35,18 @@ export default function CorePrism({ state = "standby", size = 26 }: { state?: Ag
         width={size}
         height={size}
         viewBox="0 0 40 40"
-        animate={{ filter: [`drop-shadow(0 0 2px ${label}55)`, `drop-shadow(0 0 8px ${label}99)`, `drop-shadow(0 0 2px ${label}55)`] }}
-        transition={{ duration: state === "standby" ? 3.4 : 1.4, repeat: Infinity, ease: "easeInOut" }}
+        animate={{
+          filter: [
+            `drop-shadow(0 0 2px ${label}55)`,
+            `drop-shadow(0 0 8px ${label}99)`,
+            `drop-shadow(0 0 2px ${label}55)`,
+          ],
+        }}
+        transition={{
+          duration: state === "standby" ? 3.4 : 1.4,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
       >
         {/* top face */}
         <polygon points="20,4 34,12 20,20 6,12" fill={top} stroke={stroke} strokeWidth="0.8" />

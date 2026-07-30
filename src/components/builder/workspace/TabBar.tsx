@@ -36,7 +36,10 @@ export default function TabBar({ tabs, active, onSelect, onClose, onAdd }: TabBa
             <span className="font-medium">{def.label}</span>
             {def.closable && (
               <button
-                onClick={(e) => { e.stopPropagation(); onClose(kind); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClose(kind);
+                }}
                 className="ml-1 grid h-3.5 w-3.5 place-items-center rounded opacity-0 transition-opacity hover:bg-white/[0.1] group-hover:opacity-100"
                 aria-label={`Close ${def.label}`}
               >

@@ -19,7 +19,9 @@ export default function GenericPanel({
         <Icon className="h-6 w-6 text-muted-foreground" />
       </div>
       <div className="mb-1 text-[14px] font-semibold text-foreground/95">{title}</div>
-      <div className="mb-4 max-w-[240px] text-[11px] leading-relaxed text-muted-foreground">{hint}</div>
+      <div className="mb-4 max-w-[240px] text-[11px] leading-relaxed text-muted-foreground">
+        {hint}
+      </div>
       <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         Not wired yet
       </span>

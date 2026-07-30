@@ -35,14 +35,14 @@ const MODEL_PRICING: Record<string, { in: number; out: number }> = {
   "qwen/qwen-2.5-coder-32b": { in: 0.18, out: 0.18 },
   "qwen/qwen-2.5-coder-32b-instruct": { in: 0.18, out: 0.18 },
   "qwen/qwen3-32b": { in: 0.18, out: 0.18 },
-  "meta-llama/llama-3.3-70b-instruct": { in: 0.23, out: 0.40 },
+  "meta-llama/llama-3.3-70b-instruct": { in: 0.23, out: 0.4 },
   "deepseek/deepseek-r1": { in: 0.55, out: 2.19 },
   "deepseek/deepseek-r1:free": { in: 0, out: 0 },
   "deepseek/deepseek-chat-v3.1:free": { in: 0, out: 0 },
   "anthropic/claude-3.5-sonnet": { in: 3, out: 15 },
-  "openai/gpt-4o-mini": { in: 0.15, out: 0.60 },
-  "openai/gpt-oss-120b": { in: 0.15, out: 0.60 },
-  "llama-3.3-70b-versatile": { in: 0.23, out: 0.40 },
+  "openai/gpt-4o-mini": { in: 0.15, out: 0.6 },
+  "openai/gpt-oss-120b": { in: 0.15, out: 0.6 },
+  "llama-3.3-70b-versatile": { in: 0.23, out: 0.4 },
 };
 const SSE_HEADERS = {
   "Content-Type": "text/event-stream; charset=utf-8",
@@ -121,13 +121,17 @@ function normalizeModelLabel(model: string | null | undefined) {
 
 function priceFor(model: string | null | undefined) {
   const normalized = normalizeModelLabel(model);
-  return MODEL_PRICING[normalized] ?? MODEL_PRICING[normalized.replace(/:free$/i, "")] ?? { in: 0.6, out: 2.4 };
+  return (
+    MODEL_PRICING[normalized] ??
+    MODEL_PRICING[normalized.replace(/:free$/i, "")] ?? { in: 0.6, out: 2.4 }
+  );
 }
 
 function completionMeta(prompt: string, assistantText: string, meta?: CompletionMeta) {
   const model = normalizeModelLabel(meta?.model);
   const tokensIn = meta?.tokensIn && meta.tokensIn > 0 ? meta.tokensIn : estimateTokenCount(prompt);
-  const tokensOut = meta?.tokensOut && meta.tokensOut > 0 ? meta.tokensOut : estimateTokenCount(assistantText);
+  const tokensOut =
+    meta?.tokensOut && meta.tokensOut > 0 ? meta.tokensOut : estimateTokenCount(assistantText);
   const chosen = priceFor(model);
   const baseline = priceFor(DEFAULT_MODEL);
   const costUsd = (tokensIn * chosen.in + tokensOut * chosen.out) / 1_000_000;
@@ -156,7 +160,12 @@ function directSystemPrompt(slug: string) {
   return "You are JimmyBuild Agent for AXONETIS AI Builder. Reply in concise Roman Urdu/Hindi when the founder writes that way. Help build real production features, explain exact next actions, and never pretend a backend action happened if it did not.";
 }
 
-async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number, parentSignal?: AbortSignal) {
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+  parentSignal?: AbortSignal,
+) {
   const ctrl = new AbortController();
   const abort = () => ctrl.abort(parentSignal?.reason);
   if (parentSignal?.aborted) ctrl.abort(parentSignal.reason);
@@ -171,7 +180,12 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
 }
 
 async function callGroqFallback(slug: string, prompt: string, signal?: AbortSignal) {
-  const key = providerEnv("GROQ_API_KEY", "GROQ_KEY", "NEXATECT_GROQ_API_KEY", "HOSTFLOW_GROQ_API_KEY");
+  const key = providerEnv(
+    "GROQ_API_KEY",
+    "GROQ_KEY",
+    "NEXATECT_GROQ_API_KEY",
+    "HOSTFLOW_GROQ_API_KEY",
+  );
   if (!key) return null;
 
   const models = modelsFromEnv(
@@ -184,33 +198,47 @@ async function callGroqFallback(slug: string, prompt: string, signal?: AbortSign
   let lastError = "";
   for (const model of models) {
     try {
-      const r = await fetchWithTimeout("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${key}`,
-          "Content-Type": "application/json",
+      const r = await fetchWithTimeout(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${key}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: directSystemPrompt(slug) },
+              { role: "user", content: prompt },
+            ],
+            temperature: slug === "sherlock" ? 0.2 : 0.45,
+          }),
         },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: directSystemPrompt(slug) },
-            { role: "user", content: prompt },
-          ],
-          temperature: slug === "sherlock" ? 0.2 : 0.45,
-        }),
-      }, DIRECT_FALLBACK_TIMEOUT_MS, signal);
+        DIRECT_FALLBACK_TIMEOUT_MS,
+        signal,
+      );
       if (!r.ok) {
         lastError = `${model}: ${r.status} ${await r.text().catch(() => "")}`.slice(0, 280);
         continue;
       }
-      const payload = await r.json().catch(() => null) as { choices?: Array<{ message?: { content?: string } }>; usage?: { prompt_tokens?: number; completion_tokens?: number; input_tokens?: number; output_tokens?: number } } | null;
+      const payload = (await r.json().catch(() => null)) as {
+        choices?: Array<{ message?: { content?: string } }>;
+        usage?: {
+          prompt_tokens?: number;
+          completion_tokens?: number;
+          input_tokens?: number;
+          output_tokens?: number;
+        };
+      } | null;
       const text = payload?.choices?.[0]?.message?.content?.trim();
-      if (text) return {
-        text,
-        model: `groq:${model}`,
-        tokensIn: payload?.usage?.prompt_tokens ?? payload?.usage?.input_tokens,
-        tokensOut: payload?.usage?.completion_tokens ?? payload?.usage?.output_tokens,
-      };
+      if (text)
+        return {
+          text,
+          model: `groq:${model}`,
+          tokensIn: payload?.usage?.prompt_tokens ?? payload?.usage?.input_tokens,
+          tokensOut: payload?.usage?.completion_tokens ?? payload?.usage?.output_tokens,
+        };
     } catch (err) {
       lastError = `${model}: ${err instanceof Error ? err.message : String(err)}`.slice(0, 280);
     }
@@ -219,48 +247,77 @@ async function callGroqFallback(slug: string, prompt: string, signal?: AbortSign
 }
 
 async function callOpenRouterFallback(slug: string, prompt: string, signal?: AbortSignal) {
-  const key = providerEnv("OPENROUTER_API_KEY", "OPENROUTER_KEY", "NEXATECT_OPENROUTER_API_KEY", "HOSTFLOW_OPENROUTER_API_KEY");
+  const key = providerEnv(
+    "OPENROUTER_API_KEY",
+    "OPENROUTER_KEY",
+    "NEXATECT_OPENROUTER_API_KEY",
+    "HOSTFLOW_OPENROUTER_API_KEY",
+  );
   if (!key) return null;
 
   const models = modelsFromEnv(
-    slug === "sherlock" ? "AXONETIS_SHERLOCK_OPENROUTER_MODELS" : "AXONETIS_JIMMY_OPENROUTER_MODELS",
     slug === "sherlock"
-      ? ["deepseek/deepseek-r1:free", "meta-llama/llama-3.3-70b-instruct:free", "qwen/qwen-2.5-coder-32b-instruct"]
-      : ["qwen/qwen-2.5-coder-32b-instruct", "deepseek/deepseek-chat-v3.1:free", "meta-llama/llama-3.3-70b-instruct:free"],
+      ? "AXONETIS_SHERLOCK_OPENROUTER_MODELS"
+      : "AXONETIS_JIMMY_OPENROUTER_MODELS",
+    slug === "sherlock"
+      ? [
+          "deepseek/deepseek-r1:free",
+          "meta-llama/llama-3.3-70b-instruct:free",
+          "qwen/qwen-2.5-coder-32b-instruct",
+        ]
+      : [
+          "qwen/qwen-2.5-coder-32b-instruct",
+          "deepseek/deepseek-chat-v3.1:free",
+          "meta-llama/llama-3.3-70b-instruct:free",
+        ],
   );
 
   let lastError = "";
   for (const model of models) {
     try {
-      const r = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${key}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "https://axonetis.lovable.app",
-          "X-Title": "AXONETIS AI Builder",
+      const r = await fetchWithTimeout(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${key}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://axonetis.lovable.app",
+            "X-Title": "AXONETIS AI Builder",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: directSystemPrompt(slug) },
+              { role: "user", content: prompt },
+            ],
+            temperature: slug === "sherlock" ? 0.2 : 0.45,
+          }),
         },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: directSystemPrompt(slug) },
-            { role: "user", content: prompt },
-          ],
-          temperature: slug === "sherlock" ? 0.2 : 0.45,
-        }),
-      }, DIRECT_FALLBACK_TIMEOUT_MS, signal);
+        DIRECT_FALLBACK_TIMEOUT_MS,
+        signal,
+      );
       if (!r.ok) {
         lastError = `${model}: ${r.status} ${await r.text().catch(() => "")}`.slice(0, 280);
         continue;
       }
-      const payload = await r.json().catch(() => null) as { choices?: Array<{ message?: { content?: string } }>; usage?: { prompt_tokens?: number; completion_tokens?: number; input_tokens?: number; output_tokens?: number } } | null;
+      const payload = (await r.json().catch(() => null)) as {
+        choices?: Array<{ message?: { content?: string } }>;
+        usage?: {
+          prompt_tokens?: number;
+          completion_tokens?: number;
+          input_tokens?: number;
+          output_tokens?: number;
+        };
+      } | null;
       const text = payload?.choices?.[0]?.message?.content?.trim();
-      if (text) return {
-        text,
-        model: `openrouter:${model}`,
-        tokensIn: payload?.usage?.prompt_tokens ?? payload?.usage?.input_tokens,
-        tokensOut: payload?.usage?.completion_tokens ?? payload?.usage?.output_tokens,
-      };
+      if (text)
+        return {
+          text,
+          model: `openrouter:${model}`,
+          tokensIn: payload?.usage?.prompt_tokens ?? payload?.usage?.input_tokens,
+          tokensOut: payload?.usage?.completion_tokens ?? payload?.usage?.output_tokens,
+        };
     } catch (err) {
       lastError = `${model}: ${err instanceof Error ? err.message : String(err)}`.slice(0, 280);
     }
@@ -269,9 +326,10 @@ async function callOpenRouterFallback(slug: string, prompt: string, signal?: Abo
 }
 
 async function runDirectFallback(slug: string, prompt: string, signal?: AbortSignal) {
-  const primary = slug === "sherlock"
-    ? [callGroqFallback, callOpenRouterFallback]
-    : [callGroqFallback, callOpenRouterFallback];
+  const primary =
+    slug === "sherlock"
+      ? [callGroqFallback, callOpenRouterFallback]
+      : [callGroqFallback, callOpenRouterFallback];
   const errors: string[] = [];
   for (const call of primary) {
     const result = await call(slug, prompt, signal);
@@ -319,7 +377,9 @@ function extractModel(payload: unknown): string | null {
 function extractUsage(payload: unknown): { tokensIn?: number; tokensOut?: number } {
   if (!payload || typeof payload !== "object") return {};
   const p = payload as Record<string, unknown>;
-  const usage = (p.usage ?? (p.best as Record<string, unknown> | undefined)?.usage) as Record<string, unknown> | undefined;
+  const usage = (p.usage ?? (p.best as Record<string, unknown> | undefined)?.usage) as
+    | Record<string, unknown>
+    | undefined;
   const numberValue = (...keys: string[]) => {
     for (const key of keys) {
       const v = usage?.[key] ?? p[key];
@@ -343,7 +403,8 @@ function extractDelta(payload: unknown): string {
     p.text,
     p.content,
     (p.message as Record<string, unknown> | undefined)?.content,
-    (p.choices as Array<{ delta?: { content?: string }; text?: string }> | undefined)?.[0]?.delta?.content,
+    (p.choices as Array<{ delta?: { content?: string }; text?: string }> | undefined)?.[0]?.delta
+      ?.content,
     (p.choices as Array<{ delta?: { content?: string }; text?: string }> | undefined)?.[0]?.text,
   ];
   for (const c of candidates) {
@@ -386,7 +447,8 @@ function projectSlugCandidates(projectId: string) {
 }
 
 async function resolveProjectUuid(supabase: SupabaseClient, projectId: string) {
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(projectId)) return projectId;
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(projectId))
+    return projectId;
   const slugs = projectSlugCandidates(projectId);
   const { data, error } = await supabase
     .from("projects")
@@ -399,7 +461,10 @@ async function resolveProjectUuid(supabase: SupabaseClient, projectId: string) {
   return id;
 }
 
-async function loadProjectSnapshot(supabase: SupabaseClient, projectUuid: string): Promise<ProjectFileSnapshot[]> {
+async function loadProjectSnapshot(
+  supabase: SupabaseClient,
+  projectUuid: string,
+): Promise<ProjectFileSnapshot[]> {
   const { data, error } = await supabase
     .from("project_files")
     .select("path, content")
@@ -408,10 +473,12 @@ async function loadProjectSnapshot(supabase: SupabaseClient, projectUuid: string
     .order("updated_at", { ascending: false })
     .limit(80);
   if (error) throw error;
-  return (data ?? []).map((row) => ({
-    path: String((row as { path?: unknown }).path ?? ""),
-    content: ((row as { content?: unknown }).content as string | null) ?? null,
-  })).filter((row) => row.path);
+  return (data ?? [])
+    .map((row) => ({
+      path: String((row as { path?: unknown }).path ?? ""),
+      content: ((row as { content?: unknown }).content as string | null) ?? null,
+    }))
+    .filter((row) => row.path);
 }
 
 function compactSnapshot(files: ProjectFileSnapshot[]) {
@@ -424,23 +491,33 @@ function compactSnapshot(files: ProjectFileSnapshot[]) {
     .join("\n\n");
 }
 
-function buildJimmyPatchPrompt(founderPrompt: string, files: ProjectFileSnapshot[], previousAudit?: string) {
+function buildJimmyPatchPrompt(
+  founderPrompt: string,
+  files: ProjectFileSnapshot[],
+  previousAudit?: string,
+) {
   return [
     "You are JimmyBuild inside AXONETIS AI Builder. You must make real project file changes.",
     "Return a concise founder-facing summary first, then a machine-readable patch block.",
     "Patch block format is mandatory when code changes are needed:",
     "```axonetis-patch",
-    "[{\"path\":\"src/example.tsx\",\"action\":\"upsert\",\"content\":\"full file content\"}]",
+    '[{"path":"src/example.tsx","action":"upsert","content":"full file content"}]',
     "```",
     "Rules: only JSON array in the patch block; content must be full file content; no duplicate files; update existing paths where possible.",
     previousAudit ? `Sherlock previous audit to fix:\n${previousAudit}` : "",
     `Founder request:\n${founderPrompt}`,
     "Current project files snapshot:",
     compactSnapshot(files) || "No files loaded yet. Create only the minimum required app files.",
-  ].filter(Boolean).join("\n\n");
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 }
 
-function buildSherlockAuditPrompt(founderPrompt: string, files: ProjectFileSnapshot[], jimmyReply: string) {
+function buildSherlockAuditPrompt(
+  founderPrompt: string,
+  files: ProjectFileSnapshot[],
+  jimmyReply: string,
+) {
   return [
     "You are SherlockReview for AXONETIS. Audit Jimmy's proposed/applied builder changes.",
     "Return exactly one verdict line starting with APPROVED or CHANGES_REQUIRED, then concise findings.",
@@ -459,10 +536,12 @@ function parsePatchOperations(text: string): PatchOperation[] {
     const parsed = JSON.parse(match[1].trim()) as unknown;
     if (!Array.isArray(parsed)) return [];
     return parsed
-      .map((item) => item && typeof item === "object" ? item as Record<string, unknown> : null)
+      .map((item) => (item && typeof item === "object" ? (item as Record<string, unknown>) : null))
       .filter(Boolean)
       .map((item) => ({
-        path: String(item!.path ?? "").trim().replace(/^\/+/, ""),
+        path: String(item!.path ?? "")
+          .trim()
+          .replace(/^\/+/, ""),
         action: (item!.action === "delete" ? "delete" : "upsert") as PatchOperation["action"],
         content: typeof item!.content === "string" ? item!.content : undefined,
       }))
@@ -476,7 +555,12 @@ function stripPatchBlock(text: string) {
   return text.replace(/```axonetis-patch\s*[\s\S]*?```/gi, "").trim();
 }
 
-async function applyPatchOperations(job: BrainJob, projectUuid: string, ops: PatchOperation[], iteration: number) {
+async function applyPatchOperations(
+  job: BrainJob,
+  projectUuid: string,
+  ops: PatchOperation[],
+  iteration: number,
+) {
   const applied: string[] = [];
   for (const op of ops.slice(0, 12)) {
     if (op.action === "delete") {
@@ -490,9 +574,8 @@ async function applyPatchOperations(job: BrainJob, projectUuid: string, ops: Pat
       continue;
     }
     const content = op.content ?? "";
-    const { error } = await job.supabase
-      .from("project_files")
-      .upsert({
+    const { error } = await job.supabase.from("project_files").upsert(
+      {
         project_id: projectUuid,
         path: op.path,
         content,
@@ -501,7 +584,9 @@ async function applyPatchOperations(job: BrainJob, projectUuid: string, ops: Pat
         is_deleted: false,
         updated_by: job.userId,
         version: iteration,
-      }, { onConflict: "project_id,path" });
+      },
+      { onConflict: "project_id,path" },
+    );
     if (error) throw error;
     applied.push(`wrote ${op.path}`);
   }
@@ -513,26 +598,36 @@ async function insertAgentRun(job: BrainJob, fields: Record<string, unknown>) {
   try {
     projectUuid = await resolveProjectUuid(job.supabase, job.projectId);
   } catch (err) {
-    console.warn("[agent-loop] agent_runs skipped:", err instanceof Error ? err.message : String(err));
+    console.warn(
+      "[agent-loop] agent_runs skipped:",
+      err instanceof Error ? err.message : String(err),
+    );
     return;
   }
-  await job.supabase.from("agent_runs").insert({
-    project_id: projectUuid,
-    user_id: job.userId,
-    agent: job.slug,
-    model: String(fields.model ?? "router"),
-    provider: String(fields.provider ?? "axonetis-loop"),
-    status: String(fields.status ?? "running"),
-    sherlock_loop: Number(fields.sherlock_loop ?? 0),
-    input: fields.input ?? { prompt: job.prompt },
-    output: fields.output ?? {},
-    error: fields.error ? String(fields.error) : null,
-    finished_at: fields.finished_at ?? null,
-  }).then(() => null, (err) => console.warn("[agent-loop] agent_runs insert skipped:", err.message));
+  await job.supabase
+    .from("agent_runs")
+    .insert({
+      project_id: projectUuid,
+      user_id: job.userId,
+      agent: job.slug,
+      model: String(fields.model ?? "router"),
+      provider: String(fields.provider ?? "axonetis-loop"),
+      status: String(fields.status ?? "running"),
+      sherlock_loop: Number(fields.sherlock_loop ?? 0),
+      input: fields.input ?? { prompt: job.prompt },
+      output: fields.output ?? {},
+      error: fields.error ? String(fields.error) : null,
+      finished_at: fields.finished_at ?? null,
+    })
+    .then(
+      () => null,
+      (err) => console.warn("[agent-loop] agent_runs insert skipped:", err.message),
+    );
 }
 
 async function runCoreBuilderLoop(job: BrainJob, firstReply: string, firstMeta?: CompletionMeta) {
-  if (job.slug !== "jimmy") return { text: firstReply, meta: firstMeta, applied: [] as string[], audit: "" };
+  if (job.slug !== "jimmy")
+    return { text: firstReply, meta: firstMeta, applied: [] as string[], audit: "" };
 
   const projectUuid = await resolveProjectUuid(job.supabase, job.projectId);
   let files = await loadProjectSnapshot(job.supabase, projectUuid);
@@ -541,7 +636,12 @@ async function runCoreBuilderLoop(job: BrainJob, firstReply: string, firstMeta?:
   let audit = "";
   const appliedAll: string[] = [];
 
-  await insertAgentRun(job, { status: "running", sherlock_loop: 0, model: meta?.model, input: { prompt: job.prompt } });
+  await insertAgentRun(job, {
+    status: "running",
+    sherlock_loop: 0,
+    model: meta?.model,
+    input: { prompt: job.prompt },
+  });
 
   for (let iteration = 1; iteration <= MAX_SHERLOCK_LOOPS; iteration += 1) {
     if (job.signal?.aborted) break;
@@ -564,12 +664,27 @@ async function runCoreBuilderLoop(job: BrainJob, firstReply: string, firstMeta?:
 
     const auditPrompt = buildSherlockAuditPrompt(job.prompt, files, jimmyReply);
     const verdict = await runDirectFallback("sherlock", auditPrompt, job.signal);
-    audit = verdict && "text" in verdict && verdict.text ? verdict.text : "CHANGES_REQUIRED — Sherlock audit unavailable; retry once with safer patch.";
+    audit =
+      verdict && "text" in verdict && verdict.text
+        ? verdict.text
+        : "CHANGES_REQUIRED — Sherlock audit unavailable; retry once with safer patch.";
 
-    await insertAssistantMessage({ ...job, slug: "sherlock" }, `Loop ${iteration}/3 — ${audit}`, verdict && "text" in verdict ? { model: verdict.model, tokensIn: verdict.tokensIn, tokensOut: verdict.tokensOut } : undefined);
+    await insertAssistantMessage(
+      { ...job, slug: "sherlock" },
+      `Loop ${iteration}/3 — ${audit}`,
+      verdict && "text" in verdict
+        ? { model: verdict.model, tokensIn: verdict.tokensIn, tokensOut: verdict.tokensOut }
+        : undefined,
+    );
 
     if (/^\s*APPROVED\b/i.test(audit)) {
-      await insertAgentRun(job, { status: "success", sherlock_loop: iteration, model: meta?.model, output: { applied: appliedAll, audit }, finished_at: new Date().toISOString() });
+      await insertAgentRun(job, {
+        status: "success",
+        sherlock_loop: iteration,
+        model: meta?.model,
+        output: { applied: appliedAll, audit },
+        finished_at: new Date().toISOString(),
+      });
       break;
     }
   }
@@ -577,14 +692,22 @@ async function runCoreBuilderLoop(job: BrainJob, firstReply: string, firstMeta?:
   const cleanReply = stripPatchBlock(jimmyReply);
   const summary = [
     cleanReply || "Jimmy ne project files update kar diye.",
-    appliedAll.length ? `\nApplied files:\n${appliedAll.map((x) => `- ${x}`).join("\n")}` : "\nNo patch block applied — Sherlock ne changes require kiye.",
+    appliedAll.length
+      ? `\nApplied files:\n${appliedAll.map((x) => `- ${x}`).join("\n")}`
+      : "\nNo patch block applied — Sherlock ne changes require kiye.",
     audit ? `\nSherlock final:\n${audit}` : "",
-  ].join("\n").trim();
+  ]
+    .join("\n")
+    .trim();
 
   return { text: summary, meta, applied: appliedAll, audit };
 }
 
-async function safeRunCoreBuilderLoop(job: BrainJob, firstReply: string, firstMeta?: CompletionMeta) {
+async function safeRunCoreBuilderLoop(
+  job: BrainJob,
+  firstReply: string,
+  firstMeta?: CompletionMeta,
+) {
   try {
     return await runCoreBuilderLoop(job, firstReply, firstMeta);
   } catch (err) {
@@ -632,7 +755,12 @@ async function insertAssistantMessage(job: BrainJob, assistantText: string, meta
     .select("id")
     .single();
 
-  if (error && /parent_message_id|cost_usd|saved_vs_default_usd|default_model|tokens_in|tokens_out|model/.test(error.message)) {
+  if (
+    error &&
+    /parent_message_id|cost_usd|saved_vs_default_usd|default_model|tokens_in|tokens_out|model/.test(
+      error.message,
+    )
+  ) {
     // Server DB hasn't been fully migrated yet — retry with legacy-safe columns.
     const retry = await supabase
       .from("agent_thread_messages")
@@ -676,7 +804,10 @@ async function runBrainAndInsert(job: BrainJob) {
         signal: ctrl.signal,
       });
       if (!r.ok) {
-        rustError = `Brain ${brainURL} ${r.status}: ${await r.text().catch(() => "")}`.slice(0, 500);
+        rustError = `Brain ${brainURL} ${r.status}: ${await r.text().catch(() => "")}`.slice(
+          0,
+          500,
+        );
       } else {
         rustPayload = await r.json().catch(() => null);
         assistantText = extractText(rustPayload);
@@ -685,9 +816,12 @@ async function runBrainAndInsert(job: BrainJob) {
         break;
       }
     } catch (err) {
-      rustError = err instanceof Error && err.name === "AbortError"
-        ? `Brain response timeout: ${brainURL}`
-        : err instanceof Error ? `${brainURL}: ${err.message}` : `${brainURL}: ${String(err)}`;
+      rustError =
+        err instanceof Error && err.name === "AbortError"
+          ? `Brain response timeout: ${brainURL}`
+          : err instanceof Error
+            ? `${brainURL}: ${err.message}`
+            : `${brainURL}: ${String(err)}`;
     } finally {
       clearTimeout(timer);
       signal?.removeEventListener("abort", abort);
@@ -727,7 +861,11 @@ function streamBrainToClient(job: BrainJob) {
     new ReadableStream({
       async start(controller) {
         const send = (event: string, data: unknown) => controller.enqueue(sseFrame(event, data));
-        send("ack", { threadId: job.threadId, userMessageId: job.userMessageId, status: "streaming" });
+        send("ack", {
+          threadId: job.threadId,
+          userMessageId: job.userMessageId,
+          status: "streaming",
+        });
 
         let assistantText = "";
         let rustError: string | null = null;
@@ -759,12 +897,18 @@ function streamBrainToClient(job: BrainJob) {
                 signal: ctrl.signal,
               });
               if (r.ok) break;
-              rustError = `Brain ${brainURL} ${r.status}: ${await r.text().catch(() => "")}`.slice(0, 500);
+              rustError = `Brain ${brainURL} ${r.status}: ${await r.text().catch(() => "")}`.slice(
+                0,
+                500,
+              );
               r = null;
             } catch (err) {
-              rustError = err instanceof Error && err.name === "AbortError"
-                ? `Brain response timeout: ${brainURL}`
-                : err instanceof Error ? `${brainURL}: ${err.message}` : `${brainURL}: ${String(err)}`;
+              rustError =
+                err instanceof Error && err.name === "AbortError"
+                  ? `Brain response timeout: ${brainURL}`
+                  : err instanceof Error
+                    ? `${brainURL}: ${err.message}`
+                    : `${brainURL}: ${String(err)}`;
               r = null;
             }
             if (job.signal?.aborted) break;
@@ -806,7 +950,11 @@ function streamBrainToClient(job: BrainJob) {
                   .join("\n");
                 if (!data || data === "[DONE]") continue;
                 let payload: unknown = data;
-                try { payload = JSON.parse(data); } catch { /* plain token */ }
+                try {
+                  payload = JSON.parse(data);
+                } catch {
+                  /* plain token */
+                }
                 const payloadModel = extractModel(payload);
                 const payloadUsage = extractUsage(payload);
                 if (payloadModel || payloadUsage.tokensIn || payloadUsage.tokensOut) {
@@ -839,19 +987,27 @@ function streamBrainToClient(job: BrainJob) {
               : await r.text().catch(() => "");
             assistantText = extractText(payload);
             meta = { model: extractModel(payload), ...extractUsage(payload) };
-            if (assistantText && !hasProviderKeyFailure(assistantText)) send("token", { delta: assistantText });
+            if (assistantText && !hasProviderKeyFailure(assistantText))
+              send("token", { delta: assistantText });
           }
         } catch (err) {
-          rustError = err instanceof Error && err.name === "AbortError"
-            ? "Brain response timeout"
-            : err instanceof Error ? err.message : String(err);
+          rustError =
+            err instanceof Error && err.name === "AbortError"
+              ? "Brain response timeout"
+              : err instanceof Error
+                ? err.message
+                : String(err);
         } finally {
           clearTimeout(timer);
           job.signal?.removeEventListener("abort", abort);
         }
 
         if (abortedByFounder || job.signal?.aborted) {
-          try { controller.close(); } catch { /* client already gone */ }
+          try {
+            controller.close();
+          } catch {
+            /* client already gone */
+          }
           return;
         }
 
@@ -871,7 +1027,11 @@ function streamBrainToClient(job: BrainJob) {
         if (rustError && !assistantText) {
           if (isBackgroundSherlockAudit(job.slug, job.prompt)) {
             console.warn("[agents.chat] Background Sherlock audit skipped:", rustError);
-            send("done", { threadId: job.threadId, userMessageId: job.userMessageId, status: "done" });
+            send("done", {
+              threadId: job.threadId,
+              userMessageId: job.userMessageId,
+              status: "done",
+            });
             controller.close();
             return;
           }
@@ -885,9 +1045,12 @@ function streamBrainToClient(job: BrainJob) {
           const looped = await safeRunCoreBuilderLoop(job, assistantText, meta);
           finalText = looped.text;
           finalMeta = looped.meta;
-          if (finalText !== assistantText) send("token", { delta: `\n\n${finalText.replace(assistantText, "").trim()}` });
+          if (finalText !== assistantText)
+            send("token", { delta: `\n\n${finalText.replace(assistantText, "").trim()}` });
         }
-        const assistantMessageId = finalText ? await insertAssistantMessage(job, finalText, finalMeta) : null;
+        const assistantMessageId = finalText
+          ? await insertAssistantMessage(job, finalText, finalMeta)
+          : null;
         send("done", {
           threadId: job.threadId,
           userMessageId: job.userMessageId,
@@ -908,10 +1071,7 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
       POST: async ({ request, params }) => {
         const slug = params.slug;
         if (!ALLOWED_SLUGS.has(slug)) {
-          return Response.json(
-            { error: `Agent slug not allowed: ${slug}` },
-            { status: 400 },
-          );
+          return Response.json({ error: `Agent slug not allowed: ${slug}` }, { status: 400 });
         }
 
         let body: ChatBody;
@@ -924,10 +1084,7 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
         const projectId = body.projectId?.trim();
         const prompt = body.prompt?.trim();
         if (!projectId || !prompt) {
-          return Response.json(
-            { error: "projectId and prompt are required" },
-            { status: 400 },
-          );
+          return Response.json({ error: "projectId and prompt are required" }, { status: 400 });
         }
 
         const SB_URL = process.env.SUPABASE3_URL;
@@ -959,7 +1116,8 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
           }
           userId = userRes.user.id;
         } else {
-          const { readFounderSession, resolveFounderUserId } = await import("@/lib/founder-session.server");
+          const { readFounderSession, resolveFounderUserId } =
+            await import("@/lib/founder-session.server");
           const founderSession = readFounderSession(request);
           if (founderSession) {
             userId = await resolveFounderUserId(supabase, founderSession);
@@ -1037,7 +1195,8 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
 
         // 3. Kick Rust ensemble in background. Do NOT hold the UI hostage.
         const brainURLs = resolveBrainURLs();
-        const wantsSse = body.stream === true || request.headers.get("accept")?.includes("text/event-stream");
+        const wantsSse =
+          body.stream === true || request.headers.get("accept")?.includes("text/event-stream");
         if (wantsSse) {
           return streamBrainToClient({
             supabase,

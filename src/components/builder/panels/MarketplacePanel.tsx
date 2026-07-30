@@ -53,7 +53,9 @@ export default function MarketplacePanel() {
       setInstalled(inst);
       setLive(list.length > 0 || inst.length > 0);
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [project]);
 
   const installedSet = useMemo(() => new Set(installed.map((i) => i.slug)), [installed]);
@@ -89,7 +91,9 @@ export default function MarketplacePanel() {
     <div>
       <PanelSection
         title="Agent Marketplace"
-        action={<span className="text-[10px] text-muted-foreground/60">{installed.length} installed</span>}
+        action={
+          <span className="text-[10px] text-muted-foreground/60">{installed.length} installed</span>
+        }
       >
         <div className="px-2 pb-2">
           <div className="relative">
@@ -119,12 +123,19 @@ export default function MarketplacePanel() {
         </div>
       </PanelSection>
 
-      <PanelSection title="Available" action={<span className="text-[10px] text-muted-foreground/60">{filtered.length}</span>}>
+      <PanelSection
+        title="Available"
+        action={<span className="text-[10px] text-muted-foreground/60">{filtered.length}</span>}
+      >
         {agents === null ? (
-          <div className="flex items-center justify-center py-6"><Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground/60" /></div>
+          <div className="flex items-center justify-center py-6">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground/60" />
+          </div>
         ) : filtered.length === 0 ? (
           <div className="px-2 py-4 text-[11px] text-muted-foreground/60">
-            {live ? "No agents match filter." : "Marketplace endpoint pending on Hetzner — /rpc/marketplace.list."}
+            {live
+              ? "No agents match filter."
+              : "Marketplace endpoint pending on Hetzner — /rpc/marketplace.list."}
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-1.5 px-2">
@@ -142,7 +153,9 @@ export default function MarketplacePanel() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <span className="truncate font-mono text-[11.5px] font-semibold text-foreground">{a.name}</span>
+                        <span className="truncate font-mono text-[11.5px] font-semibold text-foreground">
+                          {a.name}
+                        </span>
                         {a.official && <Sparkles className="h-2.5 w-2.5 shrink-0 text-[#E50914]" />}
                         {a.featured && <Star className="h-2.5 w-2.5 shrink-0 text-amber-400" />}
                       </div>
@@ -162,7 +175,11 @@ export default function MarketplacePanel() {
                         className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-white/[0.06] text-muted-foreground/70 transition hover:border-red-400/40 hover:text-red-300 disabled:opacity-40"
                         title="Uninstall"
                       >
-                        {isBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                        {isBusy ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3 w-3" />
+                        )}
                       </button>
                     ) : (
                       <button
@@ -171,7 +188,11 @@ export default function MarketplacePanel() {
                         className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-[#E50914]/40 bg-[#E50914]/10 text-[#ff7480] transition hover:bg-[#E50914]/20 disabled:opacity-40"
                         title="Install"
                       >
-                        {isBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                        {isBusy ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Download className="h-3 w-3" />
+                        )}
                       </button>
                     )}
                   </div>

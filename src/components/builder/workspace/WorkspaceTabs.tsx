@@ -23,7 +23,8 @@ function load(): PersistedState {
     const parsed = JSON.parse(raw) as PersistedState;
     const tabs = (parsed.tabs ?? []).filter((k) => TAB_KINDS.includes(k));
     if (tabs.length === 0) tabs.push("preview");
-    const active = TAB_KINDS.includes(parsed.active) && tabs.includes(parsed.active) ? parsed.active : tabs[0];
+    const active =
+      TAB_KINDS.includes(parsed.active) && tabs.includes(parsed.active) ? parsed.active : tabs[0];
     return { tabs, active };
   } catch {
     return { tabs: ["preview"], active: "preview" };
@@ -34,7 +35,11 @@ export default function WorkspaceTabs() {
   const [{ tabs, active }, setState] = useState<PersistedState>(() => load());
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ tabs, active })); } catch { /* noop */ }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tabs, active }));
+    } catch {
+      /* noop */
+    }
   }, [tabs, active]);
 
   const openTab = useCallback((kind: TabKind) => {
@@ -57,7 +62,9 @@ export default function WorkspaceTabs() {
   // Expose imperative openTab via window for StatusBar chips (Phase A1 wiring).
   useEffect(() => {
     (window as unknown as { axonetisOpenTab?: (k: TabKind) => void }).axonetisOpenTab = openTab;
-    return () => { delete (window as unknown as { axonetisOpenTab?: (k: TabKind) => void }).axonetisOpenTab; };
+    return () => {
+      delete (window as unknown as { axonetisOpenTab?: (k: TabKind) => void }).axonetisOpenTab;
+    };
   }, [openTab]);
 
   // Keyboard shortcuts
@@ -66,9 +73,13 @@ export default function WorkspaceTabs() {
       if (!(e.ctrlKey || e.metaKey)) return;
       if (e.key >= "1" && e.key <= "9") {
         const idx = parseInt(e.key, 10) - 1;
-        if (tabs[idx]) { e.preventDefault(); setState((s) => ({ ...s, active: tabs[idx] })); }
+        if (tabs[idx]) {
+          e.preventDefault();
+          setState((s) => ({ ...s, active: tabs[idx] }));
+        }
       } else if (e.key.toLowerCase() === "w") {
-        e.preventDefault(); closeTab(active);
+        e.preventDefault();
+        closeTab(active);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -79,7 +90,12 @@ export default function WorkspaceTabs() {
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
-      <TabBar tabs={tabs} active={active} onSelect={(k) => setState((s) => ({ ...s, active: k }))} onClose={closeTab} />
+      <TabBar
+        tabs={tabs}
+        active={active}
+        onSelect={(k) => setState((s) => ({ ...s, active: k }))}
+        onClose={closeTab}
+      />
       <div className="relative flex min-h-0 flex-1 flex-col">
         {/* Keep all opened tabs mounted to preserve scroll/state; show only active. */}
         {tabs.map((kind) => {

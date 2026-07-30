@@ -45,7 +45,11 @@ function parseCookies(header: string | null) {
   return out;
 }
 
-export function createFounderSession(input: { login: string; githubId: number; name?: string | null }) {
+export function createFounderSession(input: {
+  login: string;
+  githubId: number;
+  name?: string | null;
+}) {
   const now = Math.floor(Date.now() / 1000);
   const session: FounderSession = {
     sub: `github:${input.githubId}`,
@@ -64,7 +68,9 @@ export function verifyFounderSession(token: string | undefined | null): FounderS
   const [payload, signature] = token.split(".");
   if (!payload || !signature || !safeEqual(sign(payload), signature)) return null;
   try {
-    const session = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as FounderSession;
+    const session = JSON.parse(
+      Buffer.from(payload, "base64url").toString("utf8"),
+    ) as FounderSession;
     if (!session.exp || session.exp < Math.floor(Date.now() / 1000)) return null;
     if (!session.login || !session.githubId) return null;
     return session;
@@ -108,7 +114,11 @@ export async function verifyGithubPat(username: string, pat: string) {
   });
 
   if (!response.ok) {
-    return { ok: false as const, status: response.status, message: "GitHub username ya PAT invalid hai." };
+    return {
+      ok: false as const,
+      status: response.status,
+      message: "GitHub username ya PAT invalid hai.",
+    };
   }
 
   const profile = (await response.json()) as { id?: number; login?: string; name?: string | null };
@@ -117,7 +127,11 @@ export async function verifyGithubPat(username: string, pat: string) {
   }
 
   if (profile.login.toLowerCase() !== username.trim().toLowerCase()) {
-    return { ok: false as const, status: 401, message: "Username is PAT ke GitHub account se match nahi karta." };
+    return {
+      ok: false as const,
+      status: 401,
+      message: "Username is PAT ke GitHub account se match nahi karta.",
+    };
   }
 
   const allowlist = (process.env.FOUNDER_GITHUB_USERS || process.env.FOUNDER_GITHUB_USERNAME || "")
@@ -125,14 +139,26 @@ export async function verifyGithubPat(username: string, pat: string) {
     .map((item) => item.trim().toLowerCase())
     .filter(Boolean);
   if (allowlist.length && !allowlist.includes(profile.login.toLowerCase())) {
-    return { ok: false as const, status: 403, message: "Yeh GitHub account founder allowlist mein nahi hai." };
+    return {
+      ok: false as const,
+      status: 403,
+      message: "Yeh GitHub account founder allowlist mein nahi hai.",
+    };
   }
 
-  return { ok: true as const, login: profile.login, githubId: profile.id, name: profile.name ?? null };
+  return {
+    ok: true as const,
+    login: profile.login,
+    githubId: profile.id,
+    name: profile.name ?? null,
+  };
 }
 
 function stableUuidFromGithubId(githubId: number) {
-  const hex = createHash("sha256").update(`axon-founder-github:${githubId}`).digest("hex").slice(0, 32);
+  const hex = createHash("sha256")
+    .update(`axon-founder-github:${githubId}`)
+    .digest("hex")
+    .slice(0, 32);
   const variant = ((Number.parseInt(hex[16], 16) & 0x3) | 0x8).toString(16);
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-${variant}${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
@@ -141,13 +167,19 @@ export async function resolveFounderUserId(supabase: SupabaseClient, session: Fo
   const configured = process.env.FOUNDER_AUTH_USER_ID || process.env.SUPABASE3_FOUNDER_USER_ID;
   if (configured) return configured;
 
-  const founderEmails = (process.env.FOUNDER_AUTH_EMAILS ||
-    "naumansherwani@nexatect.com,naumankhansherwani@gmail.com,hostflowaibuilder@gmail.com")
+  const founderEmails = (
+    process.env.FOUNDER_AUTH_EMAILS ||
+    "naumansherwani@nexatect.com,naumankhansherwani@gmail.com,hostflowaibuilder@gmail.com"
+  )
     .split(",")
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean);
 
-  const { data } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 }).catch(() => ({ data: null }));
-  const user = data?.users?.find((candidate) => founderEmails.includes((candidate.email ?? "").toLowerCase()));
+  const { data } = await supabase.auth.admin
+    .listUsers({ page: 1, perPage: 1000 })
+    .catch(() => ({ data: null }));
+  const user = data?.users?.find((candidate) =>
+    founderEmails.includes((candidate.email ?? "").toLowerCase()),
+  );
   return user?.id ?? stableUuidFromGithubId(session.githubId);
 }

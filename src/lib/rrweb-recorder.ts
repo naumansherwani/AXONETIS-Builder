@@ -31,20 +31,23 @@ export function useRrwebRecorder(projectId: string, enabled = true) {
     };
 
     try {
-      stopFn.current = record({
-        emit(event) {
-          buf.current.push(event as eventWithTime);
-          if (buf.current.length >= MAX_BUFFER) void flush();
-        },
-        sampling: { mousemove: 100, scroll: 200, input: "last" },
-        recordCanvas: false,
-        collectFonts: false,
-      }) ?? null;
+      stopFn.current =
+        record({
+          emit(event) {
+            buf.current.push(event as eventWithTime);
+            if (buf.current.length >= MAX_BUFFER) void flush();
+          },
+          sampling: { mousemove: 100, scroll: 200, input: "last" },
+          recordCanvas: false,
+          collectFonts: false,
+        }) ?? null;
     } catch {
       // rrweb init failed — silent
     }
 
-    flushT.current = setInterval(() => { void flush(); }, FLUSH_MS);
+    flushT.current = setInterval(() => {
+      void flush();
+    }, FLUSH_MS);
 
     const onUnload = () => {
       // best-effort final flush

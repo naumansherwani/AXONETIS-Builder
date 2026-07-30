@@ -3,10 +3,20 @@ import { ChevronDown, Command, LogOut, Rocket, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "@tanstack/react-router";
 import { useBuilder } from "@/lib/builder-state";
-import { BRANCHES, ENVIRONMENTS, PROJECTS, type Branch, type Environment, type ProjectId } from "@/lib/projects";
+import {
+  BRANCHES,
+  ENVIRONMENTS,
+  PROJECTS,
+  type Branch,
+  type Environment,
+  type ProjectId,
+} from "@/lib/projects";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { supabase3, SUPABASE3_READY } from "@/integrations/supabase3/client";
 import AxenMark from "./logo-lab/AxonMark";
@@ -19,7 +29,17 @@ import { supabaseLabelFor } from "@/lib/project-workspace";
  */
 export default function TopBar() {
   const navigate = useNavigate();
-  const { project, branch, environment, agentState, setProject, setBranch, setEnvironment, setPaletteOpen, setAgentState } = useBuilder();
+  const {
+    project,
+    branch,
+    environment,
+    agentState,
+    setProject,
+    setBranch,
+    setEnvironment,
+    setPaletteOpen,
+    setAgentState,
+  } = useBuilder();
   const [publishOpen, setPublishOpen] = useState(false);
   const active = PROJECTS.find((p) => p.id === project)!;
 
@@ -38,7 +58,6 @@ export default function TopBar() {
       window.removeEventListener("axonetis:publish", onPublish as EventListener);
     };
   }, [setAgentState]);
-
 
   async function handleSignOut() {
     if (SUPABASE3_READY) await supabase3.auth.signOut();
@@ -108,8 +127,15 @@ export default function TopBar() {
       <div className="flex flex-1 items-center justify-center gap-2">
         <Selector label={active.name} accent={active.accent}>
           {PROJECTS.map((p) => (
-            <DropdownMenuItem key={p.id} onClick={() => setProject(p.id as ProjectId)} className="gap-2">
-              <span className="inline-block h-2 w-2 rounded-full" style={{ background: p.accent }} />
+            <DropdownMenuItem
+              key={p.id}
+              onClick={() => setProject(p.id as ProjectId)}
+              className="gap-2"
+            >
+              <span
+                className="inline-block h-2 w-2 rounded-full"
+                style={{ background: p.accent }}
+              />
               <span className="flex-1">{p.name}</span>
               <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground/70">
                 {supabaseLabelFor(p.id as ProjectId)}
@@ -120,7 +146,11 @@ export default function TopBar() {
 
         <Selector label={branch} mono>
           {BRANCHES.map((b) => (
-            <DropdownMenuItem key={b} onClick={() => setBranch(b as Branch)} className="font-mono text-xs">
+            <DropdownMenuItem
+              key={b}
+              onClick={() => setBranch(b as Branch)}
+              className="font-mono text-xs"
+            >
               {b}
             </DropdownMenuItem>
           ))}
@@ -128,7 +158,11 @@ export default function TopBar() {
 
         <Selector label={environment} pill={envDot(environment)}>
           {ENVIRONMENTS.map((e) => (
-            <DropdownMenuItem key={e} onClick={() => setEnvironment(e as Environment)} className="gap-2">
+            <DropdownMenuItem
+              key={e}
+              onClick={() => setEnvironment(e as Environment)}
+              className="gap-2"
+            >
               <span className={`inline-block h-2 w-2 rounded-full ${envDot(e)}`} />
               {e}
             </DropdownMenuItem>
@@ -163,7 +197,10 @@ export default function TopBar() {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem onClick={handleSignOut} className="gap-2 text-red-400 focus:text-red-300">
+            <DropdownMenuItem
+              onClick={handleSignOut}
+              className="gap-2 text-red-400 focus:text-red-300"
+            >
               <LogOut className="h-3.5 w-3.5" /> Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -175,23 +212,44 @@ export default function TopBar() {
 }
 
 function Selector({
-  label, children, accent, mono, pill,
-}: { label: string; children: React.ReactNode; accent?: string; mono?: boolean; pill?: string }) {
+  label,
+  children,
+  accent,
+  mono,
+  pill,
+}: {
+  label: string;
+  children: React.ReactNode;
+  accent?: string;
+  mono?: boolean;
+  pill?: string;
+}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="flex h-10 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] px-3.5 text-[13px] transition-colors hover:border-white/[0.18] hover:bg-white/[0.05]">
-          {accent && <span className="inline-block h-2 w-2 rounded-full" style={{ background: accent, boxShadow: `0 0 8px ${accent}` }} />}
+          {accent && (
+            <span
+              className="inline-block h-2 w-2 rounded-full"
+              style={{ background: accent, boxShadow: `0 0 8px ${accent}` }}
+            />
+          )}
           {pill && <span className={`inline-block h-2 w-2 rounded-full ${pill}`} />}
           <span className={mono ? "font-mono" : "font-medium"}>{label}</span>
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-[200px]">{children}</DropdownMenuContent>
+      <DropdownMenuContent align="start" className="min-w-[200px]">
+        {children}
+      </DropdownMenuContent>
     </DropdownMenu>
   );
 }
 
 function envDot(env: string) {
-  return env === "Production" ? "bg-red-500" : env === "Staging" ? "bg-amber-400" : "bg-emerald-400";
+  return env === "Production"
+    ? "bg-red-500"
+    : env === "Staging"
+      ? "bg-amber-400"
+      : "bg-emerald-400";
 }

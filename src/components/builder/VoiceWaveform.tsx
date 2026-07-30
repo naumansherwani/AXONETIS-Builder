@@ -5,7 +5,13 @@
  */
 import { useEffect, useRef } from "react";
 
-export default function VoiceWaveform({ analyser, active }: { analyser: AnalyserNode | null; active: boolean }) {
+export default function VoiceWaveform({
+  analyser,
+  active,
+}: {
+  analyser: AnalyserNode | null;
+  active: boolean;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -57,7 +63,9 @@ export default function VoiceWaveform({ analyser, active }: { analyser: Analyser
   return (
     <div className="pointer-events-none absolute inset-x-3 bottom-full mb-2 flex items-center gap-2 rounded-lg border border-[#E50914]/30 bg-black/70 px-3 py-2 backdrop-blur-md">
       <span className="inline-block h-2 w-2 shrink-0 animate-pulse rounded-full bg-[#E50914] shadow-[0_0_10px_#E50914]" />
-      <span className="shrink-0 font-mono text-[10px] uppercase tracking-widest text-[#ff7480]">Recording</span>
+      <span className="shrink-0 font-mono text-[10px] uppercase tracking-widest text-[#ff7480]">
+        Recording
+      </span>
       <canvas ref={canvasRef} width={280} height={28} className="flex-1" />
     </div>
   );

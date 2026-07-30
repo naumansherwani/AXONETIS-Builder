@@ -2,7 +2,17 @@
  * Tools panel — Tool Registry preview (read-only). Full CRUD lives in Phase 3.10.
  */
 import { useEffect, useState } from "react";
-import { Wrench, Loader2, Code2, Search, Database, Globe, TerminalSquare, Cpu, Boxes } from "lucide-react";
+import {
+  Wrench,
+  Loader2,
+  Code2,
+  Search,
+  Database,
+  Globe,
+  TerminalSquare,
+  Cpu,
+  Boxes,
+} from "lucide-react";
 import { PanelSection, Row } from "./PanelChrome";
 import { fetchTools, type ToolEntry } from "@/lib/tools-api";
 
@@ -25,9 +35,17 @@ export default function ToolsPanel() {
     let alive = true;
     setLoading(true);
     fetchTools()
-      .then((s) => { if (!alive) return; setTools(s.tools); setLive(s.live); })
-      .finally(() => { if (alive) setLoading(false); });
-    return () => { alive = false; };
+      .then((s) => {
+        if (!alive) return;
+        setTools(s.tools);
+        setLive(s.live);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const byCat = tools.reduce<Record<string, ToolEntry[]>>((acc, t) => {
@@ -72,14 +90,18 @@ export default function ToolsPanel() {
                     key={t.name}
                     left={
                       <>
-                        <Icon className={`h-3.5 w-3.5 ${t.enabled ? "text-[#ff7480]" : "text-muted-foreground/50"}`} />
+                        <Icon
+                          className={`h-3.5 w-3.5 ${t.enabled ? "text-[#ff7480]" : "text-muted-foreground/50"}`}
+                        />
                         <span className="font-mono">{t.name}</span>
                       </>
                     }
                     right={
                       <span className="flex items-center gap-2 font-mono">
                         <span className="text-muted-foreground/60">{t.invocations24h}×/24h</span>
-                        <span className={t.enabled ? "text-emerald-400" : "text-muted-foreground/50"}>
+                        <span
+                          className={t.enabled ? "text-emerald-400" : "text-muted-foreground/50"}
+                        >
                           {t.enabled ? "on" : "off"}
                         </span>
                       </span>

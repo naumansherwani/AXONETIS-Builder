@@ -46,7 +46,11 @@ export default function VerticalSplit({
     draggingRef.current = false;
     document.body.style.cursor = "";
     document.body.style.userSelect = "";
-    try { localStorage.setItem(storageKey, String(topPct)); } catch { /* noop */ }
+    try {
+      localStorage.setItem(storageKey, String(topPct));
+    } catch {
+      /* noop */
+    }
   }, [storageKey, topPct]);
 
   useEffect(() => {

@@ -10,10 +10,8 @@
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const URL =
-  (import.meta.env.VITE_SUPABASE3_URL as string | undefined) ?? "";
-const ANON_KEY =
-  (import.meta.env.VITE_SUPABASE3_ANON_KEY as string | undefined) ?? "";
+const URL = (import.meta.env.VITE_SUPABASE3_URL as string | undefined) ?? "";
+const ANON_KEY = (import.meta.env.VITE_SUPABASE3_ANON_KEY as string | undefined) ?? "";
 
 export const SUPABASE3_READY = Boolean(URL && ANON_KEY);
 

@@ -5,7 +5,12 @@
 import { useEffect, useState } from "react";
 import { Folder, FolderOpen, File as FileIcon, Loader2, Lock, Globe } from "lucide-react";
 import { PanelSection, Row } from "./PanelChrome";
-import { fetchBuckets, fetchObjects, type StorageBucket, type StorageObject } from "@/lib/storage-api";
+import {
+  fetchBuckets,
+  fetchObjects,
+  type StorageBucket,
+  type StorageObject,
+} from "@/lib/storage-api";
 
 function humanBytes(n: number) {
   if (!n) return "0 B";
@@ -26,19 +31,36 @@ export default function StoragePanel() {
     let alive = true;
     setLoading(true);
     fetchBuckets()
-      .then((s) => { if (!alive) return; setBuckets(s.buckets); setLive(s.live); })
-      .finally(() => { if (alive) setLoading(false); });
-    return () => { alive = false; };
+      .then((s) => {
+        if (!alive) return;
+        setBuckets(s.buckets);
+        setLive(s.live);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   useEffect(() => {
-    if (!openBucket) { setObjects([]); return; }
+    if (!openBucket) {
+      setObjects([]);
+      return;
+    }
     let alive = true;
     setObjLoading(true);
     fetchObjects(openBucket)
-      .then((o) => { if (alive) setObjects(o); })
-      .finally(() => { if (alive) setObjLoading(false); });
-    return () => { alive = false; };
+      .then((o) => {
+        if (alive) setObjects(o);
+      })
+      .finally(() => {
+        if (alive) setObjLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
   }, [openBucket]);
 
   return (
@@ -65,13 +87,17 @@ export default function StoragePanel() {
                 onClick={() => setOpenBucket(openBucket === b.name ? null : b.name)}
                 left={
                   <>
-                    {openBucket === b.name
-                      ? <FolderOpen className="h-3.5 w-3.5 text-[#ff7480]" />
-                      : <Folder className="h-3.5 w-3.5 text-muted-foreground" />}
+                    {openBucket === b.name ? (
+                      <FolderOpen className="h-3.5 w-3.5 text-[#ff7480]" />
+                    ) : (
+                      <Folder className="h-3.5 w-3.5 text-muted-foreground" />
+                    )}
                     <span className="font-mono">{b.name}</span>
-                    {b.public
-                      ? <Globe className="h-3 w-3 text-emerald-400/80" />
-                      : <Lock className="h-3 w-3 text-muted-foreground/60" />}
+                    {b.public ? (
+                      <Globe className="h-3 w-3 text-emerald-400/80" />
+                    ) : (
+                      <Lock className="h-3 w-3 text-muted-foreground/60" />
+                    )}
                   </>
                 }
                 right={
@@ -103,7 +129,12 @@ export default function StoragePanel() {
               {objects.map((o) => (
                 <Row
                   key={o.key}
-                  left={<><FileIcon className="h-3.5 w-3.5 text-muted-foreground" /><span className="truncate font-mono text-[11px]">{o.key}</span></>}
+                  left={
+                    <>
+                      <FileIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="truncate font-mono text-[11px]">{o.key}</span>
+                    </>
+                  }
                   right={<span className="font-mono">{humanBytes(o.size)}</span>}
                 />
               ))}

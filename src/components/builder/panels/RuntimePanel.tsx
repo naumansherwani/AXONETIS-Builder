@@ -10,34 +10,101 @@ import { Dot, PanelSection, Row } from "./PanelChrome";
 export default function RuntimePanel() {
   const { project, bridgeStatus, lastBridgeEvent, previewEnv, lastPreviewChange } = useBuilder();
   const active = PROJECTS.find((p) => p.id === project)!;
-  const dot: "emerald" | "amber" | "gray" = bridgeStatus === "connected" ? "emerald" : bridgeStatus === "no-signal" ? "amber" : "gray";
+  const dot: "emerald" | "amber" | "gray" =
+    bridgeStatus === "connected" ? "emerald" : bridgeStatus === "no-signal" ? "amber" : "gray";
 
   return (
     <>
-      <PanelSection title="Preview Bridge" action={<span className="font-mono text-[10px] uppercase text-muted-foreground/70">Phase 3</span>}>
-        <div className="space-y-2">
-          <Row left={<><Dot tone={dot} /> Status</>} right={bridgeStatus} />
-          <Row left={<><Waypoints className="h-3.5 w-3.5" /> Domain</>} right={active.shortName} />
-          <Row left={<><Radio className="h-3.5 w-3.5" /> Channel</>} right="postMessage" />
-        </div>
-      </PanelSection>
-
-      <PanelSection title="Preview Engine" action={<span className="font-mono text-[10px] uppercase text-muted-foreground/70">Phase 5</span>}>
+      <PanelSection
+        title="Preview Bridge"
+        action={
+          <span className="font-mono text-[10px] uppercase text-muted-foreground/70">Phase 3</span>
+        }
+      >
         <div className="space-y-2">
           <Row
-            left={previewEnv === "sandbox" ? <><FlaskConical className="h-3.5 w-3.5 text-amber-300" /> Environment</> : <><Rocket className="h-3.5 w-3.5 text-emerald-300" /> Environment</>}
-            right={previewEnv === "sandbox" ? "Sandbox" : "Production"}
+            left={
+              <>
+                <Dot tone={dot} /> Status
+              </>
+            }
+            right={bridgeStatus}
           />
-          <Row left={<><Zap className="h-3.5 w-3.5" /> Hot Reload</>} right={previewEnv === "sandbox" ? "Realtime" : "Off"} />
-          <Row left={<><ShieldCheck className="h-3.5 w-3.5" /> Source</>} right="project_files" />
+          <Row
+            left={
+              <>
+                <Waypoints className="h-3.5 w-3.5" /> Domain
+              </>
+            }
+            right={active.shortName}
+          />
+          <Row
+            left={
+              <>
+                <Radio className="h-3.5 w-3.5" /> Channel
+              </>
+            }
+            right="postMessage"
+          />
         </div>
       </PanelSection>
 
-      <PanelSection title="Last Signal" action={<span className="font-mono text-[10px] text-muted-foreground/60">iframe</span>}>
+      <PanelSection
+        title="Preview Engine"
+        action={
+          <span className="font-mono text-[10px] uppercase text-muted-foreground/70">Phase 5</span>
+        }
+      >
+        <div className="space-y-2">
+          <Row
+            left={
+              previewEnv === "sandbox" ? (
+                <>
+                  <FlaskConical className="h-3.5 w-3.5 text-amber-300" /> Environment
+                </>
+              ) : (
+                <>
+                  <Rocket className="h-3.5 w-3.5 text-emerald-300" /> Environment
+                </>
+              )
+            }
+            right={previewEnv === "sandbox" ? "Sandbox" : "Production"}
+          />
+          <Row
+            left={
+              <>
+                <Zap className="h-3.5 w-3.5" /> Hot Reload
+              </>
+            }
+            right={previewEnv === "sandbox" ? "Realtime" : "Off"}
+          />
+          <Row
+            left={
+              <>
+                <ShieldCheck className="h-3.5 w-3.5" /> Source
+              </>
+            }
+            right="project_files"
+          />
+        </div>
+      </PanelSection>
+
+      <PanelSection
+        title="Last Signal"
+        action={<span className="font-mono text-[10px] text-muted-foreground/60">iframe</span>}
+      >
         {lastBridgeEvent ? (
           <div className="space-y-2 rounded-md border border-white/[0.06] bg-black/35 p-2 font-mono text-[11px] leading-relaxed">
             <div className="flex items-center gap-2 text-foreground/90">
-              <Dot tone={lastBridgeEvent.level === "error" ? "red" : lastBridgeEvent.level === "ok" ? "emerald" : "sky"} />
+              <Dot
+                tone={
+                  lastBridgeEvent.level === "error"
+                    ? "red"
+                    : lastBridgeEvent.level === "ok"
+                      ? "emerald"
+                      : "sky"
+                }
+              />
               <span>{lastBridgeEvent.summary}</span>
             </div>
             <div className="truncate text-muted-foreground/70">{lastBridgeEvent.origin}</div>
@@ -49,12 +116,17 @@ export default function RuntimePanel() {
         )}
       </PanelSection>
 
-      <PanelSection title="Last HMR Change" action={<span className="font-mono text-[10px] text-muted-foreground/60">supabase</span>}>
+      <PanelSection
+        title="Last HMR Change"
+        action={<span className="font-mono text-[10px] text-muted-foreground/60">supabase</span>}
+      >
         {lastPreviewChange ? (
           <div className="space-y-1 rounded-md border border-white/[0.06] bg-black/35 p-2 font-mono text-[11px] leading-relaxed">
             <div className="flex items-center gap-2">
               <Dot tone={lastPreviewChange.change === "delete" ? "red" : "emerald"} />
-              <span className="uppercase tracking-widest text-muted-foreground/80">{lastPreviewChange.change}</span>
+              <span className="uppercase tracking-widest text-muted-foreground/80">
+                {lastPreviewChange.change}
+              </span>
             </div>
             <div className="truncate text-foreground/90">{lastPreviewChange.path}</div>
           </div>
@@ -65,7 +137,10 @@ export default function RuntimePanel() {
         )}
       </PanelSection>
 
-      <PanelSection title="Architecture Lock" action={<ShieldCheck className="h-3.5 w-3.5 text-emerald-300" />}>
+      <PanelSection
+        title="Architecture Lock"
+        action={<ShieldCheck className="h-3.5 w-3.5 text-emerald-300" />}
+      >
         <div className="space-y-1.5 text-[11px] leading-relaxed text-foreground/80">
           <p>Preview never edits production directly.</p>
           <p>All AI changes land in Sandbox first.</p>

@@ -14,7 +14,12 @@ export interface PreviewBridgeEvent {
 }
 
 const BUILDER_SOURCE = "axonetis-builder";
-const PREVIEW_SOURCES = new Set(["hostflow-preview", "anexvotaipay-preview", "axonetis-preview", "hostflow-bridge"]);
+const PREVIEW_SOURCES = new Set([
+  "hostflow-preview",
+  "anexvotaipay-preview",
+  "axonetis-preview",
+  "hostflow-bridge",
+]);
 const ALLOWED_ORIGINS = new Set(PROJECTS.map((project) => new URL(project.previewUrl).origin));
 
 export function getProjectOrigin(projectId: ProjectId) {
@@ -42,7 +47,14 @@ export function normalizePreviewBridgeEvent(messageEvent: MessageEvent): Preview
   const data = messageEvent.data;
   if (!data || typeof data !== "object") return null;
 
-  const raw = data as { source?: string; type?: string; projectId?: ProjectId; payload?: unknown; url?: string; message?: string };
+  const raw = data as {
+    source?: string;
+    type?: string;
+    projectId?: ProjectId;
+    payload?: unknown;
+    url?: string;
+    message?: string;
+  };
   if (!raw.source || !PREVIEW_SOURCES.has(raw.source) || !raw.type) return null;
 
   const level: BridgeEventLevel = raw.type.includes("error")

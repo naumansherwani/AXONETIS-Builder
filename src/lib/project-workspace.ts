@@ -70,7 +70,11 @@ function readAll(): Record<string, ProjectWorkspace> {
 }
 
 function writeAll(map: Record<string, ProjectWorkspace>) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(map)); } catch { /* noop */ }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+  } catch {
+    /* noop */
+  }
 }
 
 export function loadWorkspace(projectId: ProjectId, seed: ChatMsg[]): ProjectWorkspace {

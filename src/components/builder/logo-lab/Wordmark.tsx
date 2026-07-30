@@ -10,8 +10,8 @@ export default function Wordmark({ state = "standby" }: { state?: AgentState }) 
     state === "jimmy"
       ? "linear-gradient(90deg, #fff 0%, #E50914 50%, #fff 100%)"
       : state === "sherlock"
-      ? "linear-gradient(90deg, #fff 0%, #a855f7 50%, #fff 100%)"
-      : "linear-gradient(90deg, #6a6a74 0%, #ffffff 50%, #6a6a74 100%)";
+        ? "linear-gradient(90deg, #fff 0%, #a855f7 50%, #fff 100%)"
+        : "linear-gradient(90deg, #6a6a74 0%, #ffffff 50%, #6a6a74 100%)";
 
   return (
     <motion.span

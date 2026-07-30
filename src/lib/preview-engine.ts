@@ -60,17 +60,11 @@ export function getPreviewSession(projectId: ProjectId, env: PreviewEnv) {
   );
 }
 
-export function promoteSandboxToProduction(input: {
-  projectId: ProjectId;
-  branch?: string;
-}) {
-  return callHostFlowServer<{ promoted: boolean; deploymentId: string }>(
-    "/api/preview/promote",
-    {
-      method: "POST",
-      body: JSON.stringify({ projectId: input.projectId, branch: input.branch ?? "main" }),
-    },
-  );
+export function promoteSandboxToProduction(input: { projectId: ProjectId; branch?: string }) {
+  return callHostFlowServer<{ promoted: boolean; deploymentId: string }>("/api/preview/promote", {
+    method: "POST",
+    body: JSON.stringify({ projectId: input.projectId, branch: input.branch ?? "main" }),
+  });
 }
 
 // ── Realtime HMR: subscribe to project_files changes (sandbox only) ─────────

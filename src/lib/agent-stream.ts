@@ -64,8 +64,10 @@ export function subscribeThread(threadId: string, handlers: ThreadStreamHandlers
 export async function fetchThreadMessages(threadId: string): Promise<AgentMessageRow[]> {
   if (!SUPABASE3_READY) return [];
   // Try with parent_message_id first; fall back if server DB hasn't migrated yet.
-  const fullCols = "id, thread_id, parent_message_id, role, agent_slug, parts, tokens_in, tokens_out, model, created_at";
-  const baseCols = "id, thread_id, role, agent_slug, parts, tokens_in, tokens_out, model, created_at";
+  const fullCols =
+    "id, thread_id, parent_message_id, role, agent_slug, parts, tokens_in, tokens_out, model, created_at";
+  const baseCols =
+    "id, thread_id, role, agent_slug, parts, tokens_in, tokens_out, model, created_at";
   let { data, error } = await supabase3
     .from("agent_thread_messages")
     .select(fullCols)
@@ -118,8 +120,9 @@ export function extractStructured(row: AgentMessageRow): {
     if (!p || typeof p !== "object") continue;
     const rec = p as Record<string, unknown>;
     if (rec.type === "tool_call" && typeof rec.name === "string") {
-      const status = (typeof rec.status === "string" ? rec.status : "queued") as
-        import("@/components/builder/ToolCallBubble").ToolCallStatus;
+      const status = (
+        typeof rec.status === "string" ? rec.status : "queued"
+      ) as import("@/components/builder/ToolCallBubble").ToolCallStatus;
       toolCalls.push({
         id: String(rec.id ?? `${row.id}-tc-${toolCalls.length}`),
         name: rec.name,
@@ -157,19 +160,25 @@ export function cleanAgentText(raw: string): string {
     try {
       const obj = JSON.parse(text);
       if (typeof obj.final_answer === "string") text = obj.final_answer;
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
   // Strip <think>…</think> (DOTALL)
   text = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
   // Strip leaked plain-text reasoning preambles ("Okay, let's see…", "First, I need to…", "The user…").
   // If the head looks like meta-reasoning, drop everything up to the first blank line.
-  const reasoningHead = /^(okay[,. ]|alright[,. ]|let me\b|let's see|first[,. ]|the user\b|i need to\b|i should\b|hmm[,. ]|so[,. ]|wait[,. ])/i;
+  const reasoningHead =
+    /^(okay[,. ]|alright[,. ]|let me\b|let's see|first[,. ]|the user\b|i need to\b|i should\b|hmm[,. ]|so[,. ]|wait[,. ])/i;
   if (reasoningHead.test(text)) {
     const split = text.split(/\n\s*\n/);
     if (split.length > 1) text = split.slice(1).join("\n\n").trim();
   }
   // Strip a leading lone ```lang fence
-  text = text.replace(/^```[a-z]*\n?/i, "").replace(/```\s*$/i, "").trim();
+  text = text
+    .replace(/^```[a-z]*\n?/i, "")
+    .replace(/```\s*$/i, "")
+    .trim();
   return text;
 }
 

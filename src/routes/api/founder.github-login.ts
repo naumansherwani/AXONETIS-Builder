@@ -14,12 +14,14 @@ export const Route = createFileRoute("/api/founder/github-login")({
         const username = body.username?.trim() ?? "";
         const pat = body.pat?.trim() ?? "";
         if (!username || !pat) {
-          return Response.json({ error: "GitHub username aur PAT dono required hain." }, { status: 400 });
+          return Response.json(
+            { error: "GitHub username aur PAT dono required hain." },
+            { status: 400 },
+          );
         }
 
-        const { createFounderSession, founderSessionCookie, verifyGithubPat } = await import(
-          "@/lib/founder-session.server"
-        );
+        const { createFounderSession, founderSessionCookie, verifyGithubPat } =
+          await import("@/lib/founder-session.server");
         const verified = await verifyGithubPat(username, pat);
         if (!verified.ok) {
           return Response.json({ error: verified.message }, { status: verified.status });

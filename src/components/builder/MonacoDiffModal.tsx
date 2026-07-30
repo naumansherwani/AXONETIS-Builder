@@ -12,7 +12,12 @@ const DiffEditor = lazy(() =>
 );
 
 export default function MonacoDiffModal({
-  open, onClose, path, oldValue, newValue, language,
+  open,
+  onClose,
+  path,
+  oldValue,
+  newValue,
+  language,
 }: {
   open: boolean;
   onClose: () => void;
@@ -25,7 +30,9 @@ export default function MonacoDiffModal({
     <AnimatePresence>
       {open && (
         <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           className="fixed inset-0 z-[85] grid place-items-center bg-black/80 backdrop-blur-md"
           onClick={onClose}
         >
@@ -59,7 +66,9 @@ export default function MonacoDiffModal({
               <Suspense
                 fallback={
                   <div className="grid h-full place-items-center text-[12px] text-muted-foreground">
-                    <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Loading Monaco…</span>
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Loading Monaco…
+                    </span>
                   </div>
                 }
               >

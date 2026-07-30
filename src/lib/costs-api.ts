@@ -3,7 +3,8 @@
  * Endpoint: GET /api/agents/founder/costs?window=24h
  * Falls back to zeroed totals if server unreachable (never throws to UI).
  */
-const BASE = (import.meta.env.VITE_HOSTFLOW_SERVER_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+const BASE =
+  (import.meta.env.VITE_HOSTFLOW_SERVER_URL as string | undefined)?.replace(/\/$/, "") ?? "";
 
 export interface CostModelRow {
   model: string;

@@ -10,7 +10,11 @@ import { motion } from "framer-motion";
 import { useBuilder } from "@/lib/builder-state";
 import { fetchDeployments, type Deployment } from "@/lib/versions-api";
 
-type Stage = { key: "sandbox" | "staging" | "production"; label: string; deployment: Deployment | null };
+type Stage = {
+  key: "sandbox" | "staging" | "production";
+  label: string;
+  deployment: Deployment | null;
+};
 
 const rel = (iso: string) => {
   const diff = Date.now() - new Date(iso).getTime();
@@ -38,16 +42,25 @@ export default function DeployPanel() {
     let alive = true;
     setLoading(true);
     fetchDeployments(project)
-      .then((rows) => { if (alive) setDeps(rows); })
-      .finally(() => { if (alive) setLoading(false); });
-    return () => { alive = false; };
+      .then((rows) => {
+        if (alive) setDeps(rows);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
   }, [project]);
 
   const latestSandbox = deps.find((d) => d.target_env === "sandbox") ?? null;
   // Staging is derived: any building deployment targeting production
   const latestStaging =
-    deps.find((d) => d.target_env === "production" && (d.status === "pending" || d.status === "building")) ?? null;
-  const latestProd = deps.find((d) => d.target_env === "production" && d.status === "live" && d.current) ?? null;
+    deps.find(
+      (d) => d.target_env === "production" && (d.status === "pending" || d.status === "building"),
+    ) ?? null;
+  const latestProd =
+    deps.find((d) => d.target_env === "production" && d.status === "live" && d.current) ?? null;
 
   const stages: Stage[] = [
     { key: "sandbox", label: "Sandbox", deployment: latestSandbox },
@@ -56,13 +69,18 @@ export default function DeployPanel() {
   ];
 
   const recent = deps.slice(0, 5);
-  const canPromote = latestSandbox && latestSandbox.status === "live" && (!latestProd || latestProd.id !== latestSandbox.id);
+  const canPromote =
+    latestSandbox &&
+    latestSandbox.status === "live" &&
+    (!latestProd || latestProd.id !== latestSandbox.id);
 
   return (
     <div>
       <PanelSection
         title="Pipeline"
-        action={loading ? <Loader2 className="h-3 w-3 animate-spin text-muted-foreground/70" /> : null}
+        action={
+          loading ? <Loader2 className="h-3 w-3 animate-spin text-muted-foreground/70" /> : null
+        }
       >
         <div className="space-y-1.5 px-1">
           {stages.map((s, i) => {
@@ -78,14 +96,19 @@ export default function DeployPanel() {
                       : "no deployment"}
                   </div>
                 </div>
-                {i < stages.length - 1 && <span className="ml-auto text-muted-foreground/30">→</span>}
+                {i < stages.length - 1 && (
+                  <span className="ml-auto text-muted-foreground/30">→</span>
+                )}
               </div>
             );
           })}
         </div>
       </PanelSection>
 
-      <PanelSection title="Recent Deploys" action={<span className="text-[10px] text-muted-foreground/60">{deps.length}</span>}>
+      <PanelSection
+        title="Recent Deploys"
+        action={<span className="text-[10px] text-muted-foreground/60">{deps.length}</span>}
+      >
         {recent.length === 0 ? (
           <div className="rounded-md border border-white/[0.05] bg-white/[0.01] px-3 py-3 text-center text-[11px] text-muted-foreground/70">
             {loading ? "loading…" : "no deployments yet"}
@@ -93,14 +116,21 @@ export default function DeployPanel() {
         ) : (
           <div className="space-y-1 text-[11px]">
             {recent.map((d) => (
-              <div key={d.id} className="flex items-center justify-between rounded px-2 py-1 hover:bg-white/[0.03]">
+              <div
+                key={d.id}
+                className="flex items-center justify-between rounded px-2 py-1 hover:bg-white/[0.03]"
+              >
                 <div className="min-w-0">
-                  <div className="truncate text-foreground/90">{d.label ?? d.summary ?? d.id.slice(0, 8)}</div>
+                  <div className="truncate text-foreground/90">
+                    {d.label ?? d.summary ?? d.id.slice(0, 8)}
+                  </div>
                   <div className="font-mono text-[9px] text-muted-foreground/60">
                     {d.id.slice(0, 8)} · {d.target_env} · {d.files_changed} files
                   </div>
                 </div>
-                <span className="ml-2 shrink-0 text-[10px] text-muted-foreground">{rel(d.started_at)}</span>
+                <span className="ml-2 shrink-0 text-[10px] text-muted-foreground">
+                  {rel(d.started_at)}
+                </span>
               </div>
             ))}
           </div>

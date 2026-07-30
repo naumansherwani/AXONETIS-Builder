@@ -6,12 +6,18 @@ import { motion } from "framer-motion";
 import type { AgentState } from "@/lib/builder-state";
 
 const C: Record<AgentState, { core: string; ring: string; glow: string }> = {
-  standby:  { core: "#e8e8ee", ring: "#8a8a96", glow: "rgba(232,232,238,0.35)" },
-  jimmy:    { core: "#E50914", ring: "#E50914", glow: "rgba(229,9,20,0.6)" },
+  standby: { core: "#e8e8ee", ring: "#8a8a96", glow: "rgba(232,232,238,0.35)" },
+  jimmy: { core: "#E50914", ring: "#E50914", glow: "rgba(229,9,20,0.6)" },
   sherlock: { core: "#a855f7", ring: "#a855f7", glow: "rgba(168,85,247,0.6)" },
 };
 
-export default function PulseNode({ state = "standby", size = 22 }: { state?: AgentState; size?: number }) {
+export default function PulseNode({
+  state = "standby",
+  size = 22,
+}: {
+  state?: AgentState;
+  size?: number;
+}) {
   const c = C[state];
   const active = state !== "standby";
   return (
@@ -24,7 +30,11 @@ export default function PulseNode({ state = "standby", size = 22 }: { state?: Ag
         <motion.div
           className="absolute inset-0 rounded-full border"
           style={{ borderColor: c.ring }}
-          animate={active ? { scale: [1, 1.35, 1], opacity: [0.6, 0, 0.6] } : { opacity: [0.18, 0.3, 0.18] }}
+          animate={
+            active
+              ? { scale: [1, 1.35, 1], opacity: [0.6, 0, 0.6] }
+              : { opacity: [0.18, 0.3, 0.18] }
+          }
           transition={{ duration: active ? 1.6 : 3.6, repeat: Infinity, ease: "easeOut" }}
         />
         {/* middle ring */}
@@ -34,8 +44,17 @@ export default function PulseNode({ state = "standby", size = 22 }: { state?: Ag
             inset: size * 0.4,
             borderColor: c.ring,
           }}
-          animate={active ? { scale: [1, 1.5, 1], opacity: [0.8, 0, 0.8] } : { opacity: [0.35, 0.55, 0.35] }}
-          transition={{ duration: active ? 1.6 : 3.6, repeat: Infinity, ease: "easeOut", delay: 0.3 }}
+          animate={
+            active
+              ? { scale: [1, 1.5, 1], opacity: [0.8, 0, 0.8] }
+              : { opacity: [0.35, 0.55, 0.35] }
+          }
+          transition={{
+            duration: active ? 1.6 : 3.6,
+            repeat: Infinity,
+            ease: "easeOut",
+            delay: 0.3,
+          }}
         />
         {/* core */}
         <motion.div

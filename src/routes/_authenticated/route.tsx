@@ -16,7 +16,9 @@ export const Route = createFileRoute("/_authenticated")({
         host.startsWith("preview--");
       if (isPreview) return { user: null };
 
-      const session = await fetch("/api/founder/session", { credentials: "same-origin" }).catch(() => null);
+      const session = await fetch("/api/founder/session", { credentials: "same-origin" }).catch(
+        () => null,
+      );
       if (session?.ok) {
         const payload = (await session.json().catch(() => null)) as { user?: unknown } | null;
         return { user: payload?.user ?? null };

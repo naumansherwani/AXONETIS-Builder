@@ -3,7 +3,8 @@
  * Endpoint: GET /api/agents/founder/security
  * Graceful offline fallback.
  */
-const BASE = (import.meta.env.VITE_HOSTFLOW_SERVER_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+const BASE =
+  (import.meta.env.VITE_HOSTFLOW_SERVER_URL as string | undefined)?.replace(/\/$/, "") ?? "";
 
 export type Severity = "critical" | "high" | "medium" | "low" | "info";
 
