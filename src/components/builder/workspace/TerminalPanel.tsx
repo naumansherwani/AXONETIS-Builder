@@ -16,8 +16,8 @@ type Status = "idle" | "connecting" | "open" | "closed" | "error";
 
 export default function TerminalPanel() {
   const hostRef = useRef<HTMLDivElement>(null);
-  const termRef = useRef<any>(null);
-  const fitRef = useRef<any>(null);
+  const termRef = useRef<XtermTerminal | null>(null);
+  const fitRef = useRef<XtermFitAddon | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const onDataDisposeRef = useRef<(() => void) | null>(null);
   const [status, setStatus] = useState<Status>("idle");
