@@ -3,13 +3,10 @@
  * Opens from DiffPreview "Full diff" button for a side-by-side Monaco view.
  * Lazy-loaded — Monaco bundle only ships when the founder opens a diff.
  */
-import { lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, FileDiff, Loader2 } from "lucide-react";
+import { X, FileDiff } from "lucide-react";
+import MonacoDiffView from "./MonacoDiffView";
 
-const DiffEditor = lazy(() =>
-  import("@monaco-editor/react").then((m) => ({ default: m.DiffEditor })),
-);
 
 export default function MonacoDiffModal({
   open,
