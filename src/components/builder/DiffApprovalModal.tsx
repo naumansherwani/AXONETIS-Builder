@@ -209,3 +209,33 @@ export default function DiffApprovalModal({
     </AnimatePresence>
   );
 }
+
+/**
+ * Batch review bar — shown in chat when Jimmy proposes multiple file diffs.
+ * Owns its own modal state so message rows stay stateless.
+ */
+export function DiffBatchReview({ diffs }: { diffs: DiffPart[] }) {
+  const [open, setOpen] = useState(false);
+  if (diffs.length < 2) return null;
+  const failing = diffs.filter((d) => d.sherlock === "fail").length;
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-2 flex w-full items-center gap-2 rounded-lg border border-[#7c3aed]/30 bg-[#7c3aed]/[0.06] px-2.5 py-1.5 text-left transition-colors hover:bg-[#7c3aed]/[0.12]"
+      >
+        <FileDiff className="h-3.5 w-3.5 text-[#c4a8ff]" />
+        <span className="text-[11px] font-medium text-foreground/85">
+          Review {diffs.length} file changes
+        </span>
+        {failing > 0 && (
+          <span className="ml-auto font-mono text-[9px] uppercase tracking-wider text-red-300">
+            {failing} Sherlock fail
+          </span>
+        )}
+      </button>
+      <DiffApprovalModal open={open} onClose={() => setOpen(false)} diffs={diffs} />
+    </>
+  );
+}
