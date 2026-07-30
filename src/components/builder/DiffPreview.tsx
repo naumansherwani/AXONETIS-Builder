@@ -10,6 +10,7 @@ import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Check, ChevronDown, ChevronRight, FileDiff, Maximize2, X } from "lucide-react";
 import MonacoDiffModal from "./MonacoDiffModal";
+import { postDiffDecision } from "@/lib/diff-api";
 
 export interface DiffPart {
   /** Optional server-side identifier used to POST the founder decision. */
@@ -18,7 +19,10 @@ export interface DiffPart {
   old: string;
   new: string;
   language?: string;
+  /** Phase 3.10.3 — Sherlock auto-review verdict for this file. */
+  sherlock?: "pass" | "fail" | "retry";
 }
+
 
 type Row = { kind: "same" | "add" | "del"; text: string };
 
