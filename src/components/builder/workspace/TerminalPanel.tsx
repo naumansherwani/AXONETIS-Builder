@@ -39,9 +39,9 @@ export default function TerminalPanel() {
     let ws: WebSocket;
     try {
       ws = new WebSocket(WS_URL);
-    } catch (e: any) {
+    } catch (e) {
       setStatus("error");
-      writeLine("\x1b[31mWebSocket error: " + (e?.message ?? e) + "\x1b[0m");
+      writeLine("\x1b[31mWebSocket error: " + ((e as Error)?.message ?? String(e)) + "\x1b[0m");
       return;
     }
     ws.binaryType = "arraybuffer";
@@ -51,7 +51,7 @@ export default function TerminalPanel() {
       setStatus("open");
       backoffRef.current = 1000;
       try {
-        const { cols, rows } = termRef.current;
+        const { cols, rows } = termRef.current!;
         ws.send(JSON.stringify({ type: "resize", cols, rows }));
       } catch { /* noop */ }
     };
