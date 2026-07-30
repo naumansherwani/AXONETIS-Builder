@@ -10,6 +10,7 @@ import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Check, ChevronDown, ChevronRight, FileDiff, Maximize2, X } from "lucide-react";
 import MonacoDiffModal from "./MonacoDiffModal";
+import { postDiffDecision } from "@/lib/diff-api";
 
 export interface DiffPart {
   /** Optional server-side identifier used to POST the founder decision. */
@@ -18,7 +19,10 @@ export interface DiffPart {
   old: string;
   new: string;
   language?: string;
+  /** Phase 3.10.3 — Sherlock auto-review verdict for this file. */
+  sherlock?: "pass" | "fail" | "retry";
 }
+
 
 type Row = { kind: "same" | "add" | "del"; text: string };
 
@@ -56,17 +60,7 @@ function computeDiff(oldStr: string, newStr: string): Row[] {
   return rows;
 }
 
-async function postDecision(diffId: string, decision: "approve" | "reject") {
-  try {
-    await fetch("/api/agents/diff/decision", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ diff_id: diffId, decision }),
-    });
-  } catch (err) {
-    console.warn("[DiffPreview] decision post failed", err);
-  }
-}
+
 
 export default function DiffPreview({ diff }: { diff: DiffPart }) {
   const [open, setOpen] = useState(true);
@@ -78,7 +72,7 @@ export default function DiffPreview({ diff }: { diff: DiffPart }) {
 
   const decide = (d: "approve" | "reject") => {
     setDecision(d);
-    if (diff.diff_id) void postDecision(diff.diff_id, d);
+    if (diff.diff_id) void postDiffDecision(diff.diff_id, d);
   };
 
   return (

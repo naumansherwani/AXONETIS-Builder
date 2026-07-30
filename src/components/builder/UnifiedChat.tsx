@@ -25,6 +25,7 @@ import ChatScrollRail from "./ChatScrollRail";
 import VoiceWaveform from "./VoiceWaveform";
 import ToolCallBubble from "./ToolCallBubble";
 import DiffPreview from "./DiffPreview";
+import { DiffBatchReview } from "./DiffApprovalModal";
 import { MessageResponse } from "@/components/ai-elements/message";
 import {
   PromptInput,
@@ -1272,6 +1273,10 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
         {msg.diffs?.map((d, i) => (
           <DiffPreview key={d.diff_id ?? `${d.path}-${i}`} diff={d} />
         ))}
+
+        {/* 3.10.3 — batch diff approval (Monaco side-by-side + Sherlock verdict) */}
+        {msg.diffs && msg.diffs.length > 1 && <DiffBatchReview diffs={msg.diffs} />}
+
 
         {/* meta chips + hover actions */}
         {isAssistant && !msg.thinking && (

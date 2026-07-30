@@ -3,13 +3,10 @@
  * Opens from DiffPreview "Full diff" button for a side-by-side Monaco view.
  * Lazy-loaded — Monaco bundle only ships when the founder opens a diff.
  */
-import { lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, FileDiff, Loader2 } from "lucide-react";
+import { X, FileDiff } from "lucide-react";
+import MonacoDiffView from "./MonacoDiffView";
 
-const DiffEditor = lazy(() =>
-  import("@monaco-editor/react").then((m) => ({ default: m.DiffEditor })),
-);
 
 export default function MonacoDiffModal({
   open,
@@ -63,32 +60,9 @@ export default function MonacoDiffModal({
               </button>
             </div>
             <div className="flex-1 overflow-hidden">
-              <Suspense
-                fallback={
-                  <div className="grid h-full place-items-center text-[12px] text-muted-foreground">
-                    <span className="inline-flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Loading Monaco…
-                    </span>
-                  </div>
-                }
-              >
-                <DiffEditor
-                  original={oldValue}
-                  modified={newValue}
-                  language={language ?? "typescript"}
-                  theme="vs-dark"
-                  options={{
-                    readOnly: true,
-                    renderSideBySide: true,
-                    minimap: { enabled: false },
-                    fontSize: 12,
-                    lineNumbers: "on",
-                    scrollBeyondLastLine: false,
-                    smoothScrolling: true,
-                  }}
-                />
-              </Suspense>
+              <MonacoDiffView oldValue={oldValue} newValue={newValue} language={language} />
             </div>
+
           </motion.div>
         </motion.div>
       )}
