@@ -60,17 +60,7 @@ function computeDiff(oldStr: string, newStr: string): Row[] {
   return rows;
 }
 
-async function postDecision(diffId: string, decision: "approve" | "reject") {
-  try {
-    await fetch("/api/agents/diff/decision", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ diff_id: diffId, decision }),
-    });
-  } catch (err) {
-    console.warn("[DiffPreview] decision post failed", err);
-  }
-}
+
 
 export default function DiffPreview({ diff }: { diff: DiffPart }) {
   const [open, setOpen] = useState(true);
