@@ -25,6 +25,7 @@ import ChatScrollRail from "./ChatScrollRail";
 import VoiceWaveform from "./VoiceWaveform";
 import ToolCallBubble from "./ToolCallBubble";
 import DiffPreview from "./DiffPreview";
+import { DiffBatchReview } from "./DiffApprovalModal";
 import { MessageResponse } from "@/components/ai-elements/message";
 import {
   PromptInput,
