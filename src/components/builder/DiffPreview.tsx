@@ -72,7 +72,7 @@ export default function DiffPreview({ diff }: { diff: DiffPart }) {
 
   const decide = (d: "approve" | "reject") => {
     setDecision(d);
-    if (diff.diff_id) void postDecision(diff.diff_id, d);
+    if (diff.diff_id) void postDiffDecision(diff.diff_id, d);
   };
 
   return (
