@@ -140,7 +140,12 @@ export function extractStructured(row: AgentMessageRow): {
         old: typeof rec.old === "string" ? rec.old : "",
         new: typeof rec.new === "string" ? rec.new : "",
         language: typeof rec.language === "string" ? rec.language : undefined,
+        sherlock:
+          rec.sherlock === "pass" || rec.sherlock === "fail" || rec.sherlock === "retry"
+            ? rec.sherlock
+            : undefined,
       });
+
     }
   }
   return { toolCalls, diffs };
