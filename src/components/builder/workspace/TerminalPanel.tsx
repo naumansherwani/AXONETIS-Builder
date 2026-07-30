@@ -6,6 +6,10 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Plug, PlugZap, Loader2 } from "lucide-react";
 import "xterm/css/xterm.css";
+import type { Terminal as XtermTerminal } from "xterm";
+import type { FitAddon as XtermFitAddon } from "xterm-addon-fit";
+
+
 
 const WS_URL =
   (typeof window !== "undefined" && window.location.hostname === "localhost")
