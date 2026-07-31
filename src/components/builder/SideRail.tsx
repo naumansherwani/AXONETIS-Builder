@@ -49,18 +49,26 @@ export default function SideRail({ side, items, label }: Props) {
               title={`${it.label} — ${it.hint}`}
               className={`group relative grid h-11 w-11 place-items-center rounded-lg border transition-all ${
                 active
-                  ? "border-[#E50914]/40 bg-[#E50914]/10 text-[#ff6b73] shadow-[0_0_20px_-4px_rgba(229,9,20,0.5)]"
+                  ? "fb-rail-active border-jimmy/40 bg-jimmy/10 text-jimmy"
                   : "border-transparent text-muted-foreground hover:border-white/[0.08] hover:bg-white/[0.04] hover:text-foreground"
               }`}
             >
-              <Icon className="h-[18px] w-[18px]" />
+              {active && (
+                <span className="fb-rail-pulse pointer-events-none absolute inset-0 rounded-lg border border-jimmy/50" />
+              )}
+              <motion.span
+                animate={active ? { scale: [1, 1.08, 1] } : { scale: 1 }}
+                transition={{ duration: 2.8, repeat: active ? Infinity : 0, ease: "easeInOut" }}
+                className="relative"
+              >
+                <Icon className="h-[18px] w-[18px]" />
+              </motion.span>
               {active && (
                 <motion.span
                   layoutId={`rail-active-${side}`}
-                  className={`absolute ${side === "left" ? "-right-[5px]" : "-left-[5px]"} top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-full bg-[#E50914] shadow-[0_0_8px_#E50914]`}
+                  className={`absolute ${side === "left" ? "-right-[5px]" : "-left-[5px]"} top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-full bg-jimmy shadow-[0_0_10px_var(--jimmy)]`}
                 />
               )}
-              <span className="mt-0.5 text-[8.5px] font-medium uppercase tracking-wider opacity-80 absolute -bottom-0.5"></span>
             </button>
           );
         })}

@@ -58,6 +58,7 @@
   --color-glass-border: var(--glass-border);
   --color-jimmy: var(--jimmy);
   --color-sherlock: var(--sherlock);
+  --color-advisor: var(--advisor);
   --color-founder: var(--founder);
 }
 
@@ -106,6 +107,7 @@
   --founder: oklch(0.98 0 0);
   --jimmy: oklch(0.58 0.24 25);                  /* red */
   --sherlock: oklch(0.45 0.2 295);               /* purple glow #1a0933 family */
+  --advisor: oklch(0.72 0.15 200);               /* cyan — 8 advisors */
 
   --sidebar: oklch(0.07 0.006 280);
   --sidebar-foreground: oklch(0.96 0.005 280);
@@ -261,4 +263,21 @@ textarea.fb-no-scrollbar::-webkit-scrollbar { display: none; width: 0; height: 0
 @keyframes tc-shimmer-slide {
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(400%); }
+}
+
+/* Phase 3.10 — cinematic active rail icon (glow -> pulse -> soft breathe) */
+.fb-rail-active {
+  animation: fb-rail-breathe 2.8s ease-in-out infinite;
+}
+@keyframes fb-rail-breathe {
+  0%, 100% { box-shadow: 0 0 14px -4px color-mix(in oklab, var(--jimmy) 60%, transparent); }
+  50%      { box-shadow: 0 0 26px -2px color-mix(in oklab, var(--jimmy) 85%, transparent); }
+}
+.fb-rail-pulse {
+  animation: fb-rail-pulse 2.8s ease-out infinite;
+}
+@keyframes fb-rail-pulse {
+  0%   { transform: scale(0.85); opacity: 0.5; }
+  70%  { transform: scale(1.35); opacity: 0; }
+  100% { transform: scale(1.35); opacity: 0; }
 }
