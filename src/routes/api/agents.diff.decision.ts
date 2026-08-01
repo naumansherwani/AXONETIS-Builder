@@ -58,8 +58,8 @@ export const Route = createFileRoute("/api/agents/diff/decision")({
         }
         const supabase = createClient(url, key, { auth: { persistSession: false } });
 
-        const status: Decision extends never ? never : string =
-          decision === "approve" ? "approved" : "rejected";
+        const status = decision === "approve" ? "approved" : "rejected";
+
 
         const { error } = await supabase
           .from("agent_diffs")
