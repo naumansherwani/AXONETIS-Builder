@@ -21,6 +21,7 @@ import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiFounderSessionRouteImport } from './routes/api/founder.session'
 import { Route as ApiFounderGithubLoginRouteImport } from './routes/api/founder.github-login'
 import { Route as AuthenticatedSettingsDomainsRouteImport } from './routes/_authenticated/settings.domains'
+import { Route as ApiAgentsDiffDecisionRouteImport } from './routes/api/agents.diff.decision'
 import { Route as ApiAgentsSlugChatRouteImport } from './routes/api/agents.$slug.chat'
 
 const LogoLabRoute = LogoLabRouteImport.update({
@@ -83,6 +84,11 @@ const AuthenticatedSettingsDomainsRoute =
     path: '/settings/domains',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiAgentsDiffDecisionRoute = ApiAgentsDiffDecisionRouteImport.update({
+  id: '/api/agents/diff/decision',
+  path: '/api/agents/diff/decision',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAgentsSlugChatRoute = ApiAgentsSlugChatRouteImport.update({
   id: '/api/agents/$slug/chat',
   path: '/api/agents/$slug/chat',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/system/health': typeof ApiSystemHealthRoute
   '/api/agents/$slug/chat': typeof ApiAgentsSlugChatRoute
+  '/api/agents/diff/decision': typeof ApiAgentsDiffDecisionRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRouteWithChildren
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/system/health': typeof ApiSystemHealthRoute
   '/api/agents/$slug/chat': typeof ApiAgentsSlugChatRoute
+  '/api/agents/diff/decision': typeof ApiAgentsDiffDecisionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/system/health': typeof ApiSystemHealthRoute
   '/api/agents/$slug/chat': typeof ApiAgentsSlugChatRoute
+  '/api/agents/diff/decision': typeof ApiAgentsDiffDecisionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -148,6 +157,7 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/system/health'
     | '/api/agents/$slug/chat'
+    | '/api/agents/diff/decision'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -162,6 +172,7 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/system/health'
     | '/api/agents/$slug/chat'
+    | '/api/agents/diff/decision'
   id:
     | '__root__'
     | '/_authenticated'
@@ -177,6 +188,7 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/system/health'
     | '/api/agents/$slug/chat'
+    | '/api/agents/diff/decision'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -190,6 +202,7 @@ export interface RootRouteChildren {
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiSystemHealthRoute: typeof ApiSystemHealthRoute
   ApiAgentsSlugChatRoute: typeof ApiAgentsSlugChatRoute
+  ApiAgentsDiffDecisionRoute: typeof ApiAgentsDiffDecisionRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -278,6 +291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsDomainsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/agents/diff/decision': {
+      id: '/api/agents/diff/decision'
+      path: '/api/agents/diff/decision'
+      fullPath: '/api/agents/diff/decision'
+      preLoaderRoute: typeof ApiAgentsDiffDecisionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/agents/$slug/chat': {
       id: '/api/agents/$slug/chat'
       path: '/api/agents/$slug/chat'
@@ -322,6 +342,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiSystemHealthRoute: ApiSystemHealthRoute,
   ApiAgentsSlugChatRoute: ApiAgentsSlugChatRoute,
+  ApiAgentsDiffDecisionRoute: ApiAgentsDiffDecisionRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
