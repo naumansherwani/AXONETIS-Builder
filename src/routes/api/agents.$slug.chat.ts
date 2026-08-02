@@ -785,50 +785,65 @@ async function runBrainAndInsert(job: BrainJob) {
   let rustError: string | null = null;
   let meta: CompletionMeta | undefined;
 
-  for (const brainURL of brainURLs) {
-    const ctrl = new AbortController();
-    const abort = () => ctrl.abort(signal?.reason);
-    if (signal?.aborted) ctrl.abort(signal.reason);
-    else signal?.addEventListener("abort", abort, { once: true });
-    const timer = setTimeout(() => ctrl.abort(), BRAIN_ATTEMPT_TIMEOUT_MS);
-    try {
-      const r = await fetch(`${brainURL}/api/agents/${slug}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: prompt,
-          disabledProviders: DISABLED_PROVIDER_IDS,
-          excludeProviderIds: DISABLED_PROVIDER_IDS,
-          skipProviderIds: DISABLED_PROVIDER_IDS,
-        }),
-        signal: ctrl.signal,
-      });
-      if (!r.ok) {
-        rustError = `Brain ${brainURL} ${r.status}: ${await r.text().catch(() => "")}`.slice(
-          0,
-          500,
-        );
-      } else {
-        rustPayload = await r.json().catch(() => null);
-        assistantText = extractText(rustPayload);
-        meta = { model: extractModel(rustPayload), ...extractUsage(rustPayload) };
-        rustError = null;
-        break;
+  const chatPaths = brainChatPaths(slug);
+  outer: for (const brainURL of brainURLs) {
+    for (const path of chatPaths) {
+      const ctrl = new AbortController();
+      const abort = () => ctrl.abort(signal?.reason);
+      if (signal?.aborted) ctrl.abort(signal.reason);
+      else signal?.addEventListener("abort", abort, { once: true });
+      const timer = setTimeout(() => ctrl.abort(), BRAIN_ATTEMPT_TIMEOUT_MS);
+      try {
+        const r = await fetch(`${brainURL}${path}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            agent: slug,
+            slug,
+            message: prompt,
+            disabledProviders: DISABLED_PROVIDER_IDS,
+            excludeProviderIds: DISABLED_PROVIDER_IDS,
+            skipProviderIds: DISABLED_PROVIDER_IDS,
+          }),
+          signal: ctrl.signal,
+        });
+        if (!r.ok) {
+          rustError = `Brain ${brainURL}${path} ${r.status}: ${await r.text().catch(() => "")}`.slice(
+            0,
+            500,
+          );
+          // 404/405 = wrong path on this brain, try the next candidate path
+          if (r.status !== 404 && r.status !== 405) {
+            clearTimeout(timer);
+            signal?.removeEventListener("abort", abort);
+            break;
+          }
+        } else {
+          rustPayload = await r.json().catch(() => null);
+          assistantText = extractText(rustPayload);
+          meta = { model: extractModel(rustPayload), ...extractUsage(rustPayload) };
+          rustError = null;
+          clearTimeout(timer);
+          signal?.removeEventListener("abort", abort);
+          break outer;
+        }
+      } catch (err) {
+        rustError =
+          err instanceof Error && err.name === "AbortError"
+            ? `Brain response timeout: ${brainURL}`
+            : err instanceof Error
+              ? `${brainURL}: ${err.message}`
+              : `${brainURL}: ${String(err)}`;
+      } finally {
+        clearTimeout(timer);
+        signal?.removeEventListener("abort", abort);
       }
-    } catch (err) {
-      rustError =
-        err instanceof Error && err.name === "AbortError"
-          ? `Brain response timeout: ${brainURL}`
-          : err instanceof Error
-            ? `${brainURL}: ${err.message}`
-            : `${brainURL}: ${String(err)}`;
-    } finally {
-      clearTimeout(timer);
-      signal?.removeEventListener("abort", abort);
-    }
 
+      if (signal?.aborted) break outer;
+    }
     if (signal?.aborted || assistantText) break;
   }
+
 
   if (signal?.aborted) return;
 
