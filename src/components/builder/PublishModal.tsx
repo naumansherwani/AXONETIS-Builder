@@ -243,7 +243,8 @@ export default function PublishModal({ open, onClose }: { open: boolean; onClose
                   onClick={openDomains}
                   className="inline-flex items-center gap-1.5 text-[#ff7480] hover:text-[#ff9ba5]"
                 >
-                  <Link2 className="h-3 w-3" /> Add custom domain
+                  <Link2 className="h-3 w-3" />
+                  {state?.customDomain ? state.customDomain : "Add custom domain"}
                 </button>
                 <div className="inline-flex items-center gap-1.5 text-muted-foreground/70">
                   <Users className="h-3 w-3" />
@@ -251,7 +252,12 @@ export default function PublishModal({ open, onClose }: { open: boolean; onClose
                   <span>visitors · 24h</span>
                 </div>
               </div>
-            </div>
+              <div className="text-[10px] text-muted-foreground/50">
+                {state?.lastPublishedAt
+                  ? `Last published ${new Date(state.lastPublishedAt).toLocaleString()}`
+                  : "Not published yet"}
+              </div>
+
 
             {/* Visibility — Founder builder: Private only (locked) */}
             <div className="space-y-2 border-t border-white/[0.06] bg-white/[0.02] px-5 py-4">
