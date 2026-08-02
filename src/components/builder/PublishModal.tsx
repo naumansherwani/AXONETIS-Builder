@@ -257,6 +257,9 @@ export default function PublishModal({ open, onClose }: { open: boolean; onClose
                   ? `Last published ${new Date(state.lastPublishedAt).toLocaleString()}`
                   : "Not published yet"}
               </div>
+            </div>
+
+
 
 
             {/* Visibility — Founder builder: Private only (locked) */}
