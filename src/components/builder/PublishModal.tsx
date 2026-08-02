@@ -136,8 +136,8 @@ export default function PublishModal({ open, onClose }: { open: boolean; onClose
   }
 
   function openDomains() {
-    setBottomTab("versions");
     onClose();
+    void navigate({ to: "/settings/domains" });
   }
 
   function reset() {
