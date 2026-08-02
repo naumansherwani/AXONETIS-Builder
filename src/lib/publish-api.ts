@@ -4,7 +4,11 @@
  * Server endpoints pending on founder Hetzner — falls back to null/offline
  * per constitutional principle (no dummy data).
  */
-const BRIDGE = import.meta.env.VITE_HOSTFLOW_BRIDGE_URL ?? "";
+const BRIDGE = (
+  (import.meta.env.VITE_HOSTFLOW_BRIDGE_URL as string | undefined) ??
+  (import.meta.env.VITE_HOSTFLOW_SERVER_URL as string | undefined) ??
+  ""
+).replace(/\/$/, "");
 
 export type Visibility = "public" | "unlisted" | "private";
 export type DeployStatus = "up_to_date" | "changes_pending" | "deploying" | "failed" | "offline";
