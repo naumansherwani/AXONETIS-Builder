@@ -5,6 +5,7 @@
  * Talks to Hetzner /rpc/publish.* + /rpc/deploys.status (SSE).
  */
 import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Rocket,
