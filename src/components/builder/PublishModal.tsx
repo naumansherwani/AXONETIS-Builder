@@ -43,7 +43,8 @@ type Stage = "idle" | "auditing" | "promoting" | "done" | "error";
 const SHARE_TTL_DAYS = 7; // blueprint-locked
 
 export default function PublishModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { project, branch, setBottomTab } = useBuilder();
+  const { project, branch } = useBuilder();
+  const navigate = useNavigate();
   const active = PROJECTS.find((p) => p.id === project)!;
   const [stage, setStage] = useState<Stage>("idle");
   const [error, setError] = useState<string | null>(null);
