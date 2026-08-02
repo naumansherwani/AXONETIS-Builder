@@ -898,36 +898,45 @@ function streamBrainToClient(job: BrainJob) {
         try {
           let r: Response | null = null;
           for (const brainURL of job.brainURLs) {
-            try {
-              r = await fetch(`${brainURL}/api/agents/${job.slug}/chat`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
-                body: JSON.stringify({
-                  message: job.prompt,
-                  stream: true,
-                  disabledProviders: DISABLED_PROVIDER_IDS,
-                  excludeProviderIds: DISABLED_PROVIDER_IDS,
-                  skipProviderIds: DISABLED_PROVIDER_IDS,
-                }),
-                signal: ctrl.signal,
-              });
-              if (r.ok) break;
-              rustError = `Brain ${brainURL} ${r.status}: ${await r.text().catch(() => "")}`.slice(
-                0,
-                500,
-              );
-              r = null;
-            } catch (err) {
-              rustError =
-                err instanceof Error && err.name === "AbortError"
-                  ? `Brain response timeout: ${brainURL}`
-                  : err instanceof Error
-                    ? `${brainURL}: ${err.message}`
-                    : `${brainURL}: ${String(err)}`;
-              r = null;
+            for (const path of brainChatPaths(job.slug)) {
+              try {
+                r = await fetch(`${brainURL}${path}`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+                  body: JSON.stringify({
+                    agent: job.slug,
+                    slug: job.slug,
+                    message: job.prompt,
+                    stream: true,
+                    disabledProviders: DISABLED_PROVIDER_IDS,
+                    excludeProviderIds: DISABLED_PROVIDER_IDS,
+                    skipProviderIds: DISABLED_PROVIDER_IDS,
+                  }),
+                  signal: ctrl.signal,
+                });
+                if (r.ok) break;
+                rustError =
+                  `Brain ${brainURL}${path} ${r.status}: ${await r.text().catch(() => "")}`.slice(
+                    0,
+                    500,
+                  );
+                const retryable = r.status === 404 || r.status === 405;
+                r = null;
+                if (!retryable) break;
+              } catch (err) {
+                rustError =
+                  err instanceof Error && err.name === "AbortError"
+                    ? `Brain response timeout: ${brainURL}`
+                    : err instanceof Error
+                      ? `${brainURL}: ${err.message}`
+                      : `${brainURL}: ${String(err)}`;
+                r = null;
+              }
+              if (job.signal?.aborted) break;
             }
-            if (job.signal?.aborted) break;
+            if (r?.ok || job.signal?.aborted) break;
           }
+
 
           if (!r) {
             throw new Error(rustError ?? "Brain unavailable");
