@@ -5,6 +5,7 @@
  * Talks to Hetzner /rpc/publish.* + /rpc/deploys.status (SSE).
  */
 import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Rocket,
@@ -42,7 +43,8 @@ type Stage = "idle" | "auditing" | "promoting" | "done" | "error";
 const SHARE_TTL_DAYS = 7; // blueprint-locked
 
 export default function PublishModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { project, branch, setBottomTab } = useBuilder();
+  const { project, branch } = useBuilder();
+  const navigate = useNavigate();
   const active = PROJECTS.find((p) => p.id === project)!;
   const [stage, setStage] = useState<Stage>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -136,8 +138,8 @@ export default function PublishModal({ open, onClose }: { open: boolean; onClose
   }
 
   function openDomains() {
-    setBottomTab("versions");
     onClose();
+    void navigate({ to: "/settings/domains" });
   }
 
   function reset() {
@@ -241,7 +243,8 @@ export default function PublishModal({ open, onClose }: { open: boolean; onClose
                   onClick={openDomains}
                   className="inline-flex items-center gap-1.5 text-[#ff7480] hover:text-[#ff9ba5]"
                 >
-                  <Link2 className="h-3 w-3" /> Add custom domain
+                  <Link2 className="h-3 w-3" />
+                  {state?.customDomain ? state.customDomain : "Add custom domain"}
                 </button>
                 <div className="inline-flex items-center gap-1.5 text-muted-foreground/70">
                   <Users className="h-3 w-3" />
@@ -249,7 +252,15 @@ export default function PublishModal({ open, onClose }: { open: boolean; onClose
                   <span>visitors · 24h</span>
                 </div>
               </div>
+              <div className="text-[10px] text-muted-foreground/50">
+                {state?.lastPublishedAt
+                  ? `Last published ${new Date(state.lastPublishedAt).toLocaleString()}`
+                  : "Not published yet"}
+              </div>
             </div>
+
+
+
 
             {/* Visibility — Founder builder: Private only (locked) */}
             <div className="space-y-2 border-t border-white/[0.06] bg-white/[0.02] px-5 py-4">
