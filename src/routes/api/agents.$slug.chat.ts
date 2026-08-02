@@ -778,6 +778,17 @@ async function insertAssistantMessage(job: BrainJob, assistantText: string, meta
   return (data?.id as string | undefined) ?? null;
 }
 
+/** Brain chat endpoint path candidates — tried in order, 404/405 falls through. */
+function brainChatPaths(slug: string) {
+  return [
+    `/api/agents/${slug}/chat`,
+    `/api/agents/chat`,
+    `/agents/${slug}/chat`,
+    `/api/chat`,
+    `/chat`,
+  ];
+}
+
 async function runBrainAndInsert(job: BrainJob) {
   const { supabase, slug, prompt, threadId, userMessageId, brainURLs, signal } = job;
   let assistantText = "";
