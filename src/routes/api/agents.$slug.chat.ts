@@ -778,16 +778,27 @@ async function insertAssistantMessage(job: BrainJob, assistantText: string, meta
   return (data?.id as string | undefined) ?? null;
 }
 
-/** Brain chat endpoint path candidates — tried in order, 404/405 falls through. */
+/**
+ * Brain chat endpoint path candidates — tried in order, 404/405 falls through.
+ * Confirmed live on hostflowai-brain (app.use("/api", router) → router.use("/founder", …)):
+ *   POST /api/founder/sherlock/audit | /sherlock/stream | /sherlock/orchestrate
+ *   POST /api/founder/jimmy/orchestrate | /jimmy/stream
+ */
 function brainChatPaths(slug: string) {
+  if (slug === "sherlock") {
+    return [
+      "/api/founder/sherlock/audit",
+      "/api/founder/sherlock/orchestrate",
+      "/api/founder/sherlock/stream",
+    ];
+  }
   return [
+    "/api/founder/jimmy/orchestrate",
+    "/api/founder/jimmy/stream",
     `/api/agents/${slug}/chat`,
-    `/api/agents/chat`,
-    `/agents/${slug}/chat`,
-    `/api/chat`,
-    `/chat`,
   ];
 }
+
 
 async function runBrainAndInsert(job: BrainJob) {
   const { supabase, slug, prompt, threadId, userMessageId, brainURLs, signal } = job;
