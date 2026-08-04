@@ -852,7 +852,6 @@ async function runBrainAndInsert(job: BrainJob) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(brainChatBody(slug, prompt)),
-          }),
           signal: ctrl.signal,
         });
         if (!r.ok) {
