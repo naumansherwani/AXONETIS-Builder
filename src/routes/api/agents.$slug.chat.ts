@@ -851,13 +851,7 @@ async function runBrainAndInsert(job: BrainJob) {
         const r = await fetch(`${brainURL}${path}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            agent: slug,
-            slug,
-            message: prompt,
-            disabledProviders: DISABLED_PROVIDER_IDS,
-            excludeProviderIds: DISABLED_PROVIDER_IDS,
-            skipProviderIds: DISABLED_PROVIDER_IDS,
+          body: JSON.stringify(brainChatBody(slug, prompt)),
           }),
           signal: ctrl.signal,
         });
