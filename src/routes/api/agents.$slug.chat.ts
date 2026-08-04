@@ -784,7 +784,7 @@ async function insertAssistantMessage(job: BrainJob, assistantText: string, meta
  * Each Brain route has its own request contract:
  *   /sherlock/audit  -> { content }   (real 3x audit loop, DeepSeek R1)
  *   /sherlock/stream -> { messages }  (SSE)
- *   /*/orchestrate   -> { message }   (compat)
+ *   orchestrate      -> { message }   (compat)
  * `brainChatBody()` sends all three shapes so every candidate route validates.
  */
 function brainChatPaths(slug: string, opts?: { stream?: boolean }) {
