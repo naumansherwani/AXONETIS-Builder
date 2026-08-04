@@ -779,23 +779,56 @@ async function insertAssistantMessage(job: BrainJob, assistantText: string, meta
 }
 
 /**
- * Standard founder-agent message endpoints.
- * `/sherlock/audit` is intentionally excluded: it is a specialized validator
- * with a different request schema, so sending the normal `{ message }` chat
- * contract to it correctly returns 400.
+ * Founder-agent message endpoints on the Brain.
+ *
+ * Each Brain route has its own request contract:
+ *   /sherlock/audit  -> { content }   (real 3x audit loop, DeepSeek R1)
+ *   /sherlock/stream -> { messages }  (SSE)
+ *   /*/orchestrate   -> { message }   (compat)
+ * `brainChatBody()` sends all three shapes so every candidate route validates.
  */
-function brainChatPaths(slug: string) {
+function brainChatPaths(slug: string, opts?: { stream?: boolean }) {
   if (slug === "sherlock") {
-    return [
-      "/api/founder/sherlock/orchestrate",
-      "/api/founder/sherlock/stream",
-    ];
+    return opts?.stream
+      ? [
+          "/api/founder/sherlock/stream",
+          "/api/founder/sherlock/audit",
+          "/api/founder/sherlock/orchestrate",
+        ]
+      : [
+          "/api/founder/sherlock/audit",
+          "/api/founder/sherlock/stream",
+          "/api/founder/sherlock/orchestrate",
+        ];
   }
   return [
     "/api/founder/jimmy/orchestrate",
     "/api/founder/jimmy/stream",
     `/api/agents/${slug}/chat`,
   ];
+}
+
+/**
+ * Superset request body accepted by every Brain founder route.
+ * Missing any of `content` / `messages` / `message` makes one of them 400.
+ */
+function brainChatBody(
+  slug: string,
+  prompt: string,
+  extra?: Record<string, unknown>,
+): Record<string, unknown> {
+  return {
+    agent: slug,
+    slug,
+    message: prompt,
+    prompt,
+    content: prompt,
+    messages: [{ role: "user", content: prompt }],
+    disabledProviders: DISABLED_PROVIDER_IDS,
+    excludeProviderIds: DISABLED_PROVIDER_IDS,
+    skipProviderIds: DISABLED_PROVIDER_IDS,
+    ...extra,
+  };
 }
 
 
