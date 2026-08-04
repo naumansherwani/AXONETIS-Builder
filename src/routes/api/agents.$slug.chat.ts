@@ -362,7 +362,36 @@ function extractText(payload: unknown): string {
   for (const c of candidates) {
     if (typeof c === "string" && c.trim()) return c;
   }
+  const audit = formatSherlockAudit(p);
+  if (audit) return audit;
   return JSON.stringify(payload, null, 2);
+}
+
+/**
+ * Brain `/sherlock/audit` returns { finalVerdict, auditLoop: [{ attempt,
+ * verdict, reasoning, suggestions, confidence }] } instead of a text field.
+ * Render it as readable markdown so the chat never shows raw JSON.
+ */
+function formatSherlockAudit(p: Record<string, unknown>): string | null {
+  const loop = p.auditLoop;
+  if (!Array.isArray(loop) || loop.length === 0) return null;
+  const verdict = typeof p.finalVerdict === "string" ? p.finalVerdict : "RETRY";
+  const icon = verdict === "PASS" ? "✅" : verdict === "FAIL" ? "❌" : "⚠️";
+  const passes = loop
+    .map((raw) => {
+      const r = (raw ?? {}) as Record<string, unknown>;
+      const suggestions = Array.isArray(r.suggestions)
+        ? r.suggestions.filter((s): s is string => typeof s === "string")
+        : [];
+      const lines = [
+        `**Pass ${r.attempt ?? "?"} — ${r.verdict ?? "?"}** (confidence ${r.confidence ?? "?"})`,
+        typeof r.reasoning === "string" ? r.reasoning.trim() : "",
+        ...suggestions.map((s) => `- ${s}`),
+      ];
+      return lines.filter(Boolean).join("\n");
+    })
+    .join("\n\n");
+  return `${icon} **Sherlock audit: ${verdict}**\n\n${passes}`;
 }
 
 function extractModel(payload: unknown): string | null {
@@ -779,23 +808,56 @@ async function insertAssistantMessage(job: BrainJob, assistantText: string, meta
 }
 
 /**
- * Standard founder-agent message endpoints.
- * `/sherlock/audit` is intentionally excluded: it is a specialized validator
- * with a different request schema, so sending the normal `{ message }` chat
- * contract to it correctly returns 400.
+ * Founder-agent message endpoints on the Brain.
+ *
+ * Each Brain route has its own request contract:
+ *   /sherlock/audit  -> { content }   (real 3x audit loop, DeepSeek R1)
+ *   /sherlock/stream -> { messages }  (SSE)
+ *   orchestrate      -> { message }   (compat)
+ * `brainChatBody()` sends all three shapes so every candidate route validates.
  */
-function brainChatPaths(slug: string) {
+function brainChatPaths(slug: string, opts?: { stream?: boolean }) {
   if (slug === "sherlock") {
-    return [
-      "/api/founder/sherlock/orchestrate",
-      "/api/founder/sherlock/stream",
-    ];
+    return opts?.stream
+      ? [
+          "/api/founder/sherlock/stream",
+          "/api/founder/sherlock/audit",
+          "/api/founder/sherlock/orchestrate",
+        ]
+      : [
+          "/api/founder/sherlock/audit",
+          "/api/founder/sherlock/stream",
+          "/api/founder/sherlock/orchestrate",
+        ];
   }
   return [
     "/api/founder/jimmy/orchestrate",
     "/api/founder/jimmy/stream",
     `/api/agents/${slug}/chat`,
   ];
+}
+
+/**
+ * Superset request body accepted by every Brain founder route.
+ * Missing any of `content` / `messages` / `message` makes one of them 400.
+ */
+function brainChatBody(
+  slug: string,
+  prompt: string,
+  extra?: Record<string, unknown>,
+): Record<string, unknown> {
+  return {
+    agent: slug,
+    slug,
+    message: prompt,
+    prompt,
+    content: prompt,
+    messages: [{ role: "user", content: prompt }],
+    disabledProviders: DISABLED_PROVIDER_IDS,
+    excludeProviderIds: DISABLED_PROVIDER_IDS,
+    skipProviderIds: DISABLED_PROVIDER_IDS,
+    ...extra,
+  };
 }
 
 
@@ -818,14 +880,7 @@ async function runBrainAndInsert(job: BrainJob) {
         const r = await fetch(`${brainURL}${path}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            agent: slug,
-            slug,
-            message: prompt,
-            disabledProviders: DISABLED_PROVIDER_IDS,
-            excludeProviderIds: DISABLED_PROVIDER_IDS,
-            skipProviderIds: DISABLED_PROVIDER_IDS,
-          }),
+          body: JSON.stringify(brainChatBody(slug, prompt)),
           signal: ctrl.signal,
         });
         if (!r.ok) {
@@ -919,20 +974,12 @@ function streamBrainToClient(job: BrainJob) {
         try {
           let r: Response | null = null;
           for (const brainURL of job.brainURLs) {
-            for (const path of brainChatPaths(job.slug)) {
+            for (const path of brainChatPaths(job.slug, { stream: true })) {
               try {
                 r = await fetch(`${brainURL}${path}`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
-                  body: JSON.stringify({
-                    agent: job.slug,
-                    slug: job.slug,
-                    message: job.prompt,
-                    stream: true,
-                    disabledProviders: DISABLED_PROVIDER_IDS,
-                    excludeProviderIds: DISABLED_PROVIDER_IDS,
-                    skipProviderIds: DISABLED_PROVIDER_IDS,
-                  }),
+                  body: JSON.stringify(brainChatBody(job.slug, job.prompt, { stream: true })),
                   signal: ctrl.signal,
                 });
                 if (r.ok) break;
