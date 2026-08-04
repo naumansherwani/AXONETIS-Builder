@@ -945,20 +945,12 @@ function streamBrainToClient(job: BrainJob) {
         try {
           let r: Response | null = null;
           for (const brainURL of job.brainURLs) {
-            for (const path of brainChatPaths(job.slug)) {
+            for (const path of brainChatPaths(job.slug, { stream: true })) {
               try {
                 r = await fetch(`${brainURL}${path}`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
-                  body: JSON.stringify({
-                    agent: job.slug,
-                    slug: job.slug,
-                    message: job.prompt,
-                    stream: true,
-                    disabledProviders: DISABLED_PROVIDER_IDS,
-                    excludeProviderIds: DISABLED_PROVIDER_IDS,
-                    skipProviderIds: DISABLED_PROVIDER_IDS,
-                  }),
+                  body: JSON.stringify(brainChatBody(job.slug, job.prompt, { stream: true })),
                   signal: ctrl.signal,
                 });
                 if (r.ok) break;
