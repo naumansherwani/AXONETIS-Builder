@@ -25,6 +25,7 @@ import ChatScrollRail from "./ChatScrollRail";
 import VoiceWaveform from "./VoiceWaveform";
 import ToolCallBubble from "./ToolCallBubble";
 import DiffPreview from "./DiffPreview";
+import PlanningTree from "./PlanningTree";
 import { DiffBatchReview } from "./DiffApprovalModal";
 import { MessageResponse } from "@/components/ai-elements/message";
 import {
@@ -284,7 +285,7 @@ export default function UnifiedChat() {
     const slug = (row.agent_slug ?? "jimmy") as AgentSlug;
     if (!UNIFIED_CHAT_SLUGS.has(slug)) return;
     const text = extractText(row) || "(empty reply)";
-    const { toolCalls, diffs } = extractStructured(row);
+    const { toolCalls, diffs, plans } = extractStructured(row);
     const agent: Agent = slug === "sherlock" ? "sherlock" : "jimmy";
     const meta = {
       model: row.model ?? null,
@@ -311,11 +312,12 @@ export default function UnifiedChat() {
           meta,
           toolCalls,
           diffs,
+          plans,
         };
         pendingPlaceholderRef.current = null;
         pendingUserMessageIdRef.current = null;
       } else {
-        next.push({ id: row.id, agent, text, meta, toolCalls, diffs });
+        next.push({ id: row.id, agent, text, meta, toolCalls, diffs, plans });
       }
       return next;
     });
@@ -1263,6 +1265,11 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
         ) : (
           <MessageResponse>{msg.text}</MessageResponse>
         )}
+
+        {/* 3.10.2 — Jimmy Planning Tree (Goal → Tasks → Verification) */}
+        {msg.plans?.map((p, i) => (
+          <PlanningTree key={p.plan_id ?? `plan-${i}`} plan={p} />
+        ))}
 
         {/* 3.9.1 — tool_call cards (Rust runtime parts) */}
         {msg.toolCalls?.map((tc) => (
