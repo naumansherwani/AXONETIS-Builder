@@ -112,10 +112,12 @@ export function extractText(row: AgentMessageRow): string {
 export function extractStructured(row: AgentMessageRow): {
   toolCalls: import("@/components/builder/ToolCallBubble").ToolCallPart[];
   diffs: import("@/components/builder/DiffPreview").DiffPart[];
+  plans: import("@/components/builder/PlanningTree").PlanPart[];
 } {
   const toolCalls: import("@/components/builder/ToolCallBubble").ToolCallPart[] = [];
   const diffs: import("@/components/builder/DiffPreview").DiffPart[] = [];
-  if (!Array.isArray(row.parts)) return { toolCalls, diffs };
+  const plans: import("@/components/builder/PlanningTree").PlanPart[] = [];
+  if (!Array.isArray(row.parts)) return { toolCalls, diffs, plans };
   for (const p of row.parts) {
     if (!p || typeof p !== "object") continue;
     const rec = p as Record<string, unknown>;
@@ -146,9 +148,54 @@ export function extractStructured(row: AgentMessageRow): {
             : undefined,
       });
 
+    } else if (rec.type === "plan") {
+      const plan = parsePlanPart(rec);
+      if (plan) plans.push(plan);
     }
   }
-  return { toolCalls, diffs };
+  return { toolCalls, diffs, plans };
+}
+
+/** 3.10.2 — normalize a `plan` part (Planning Tree). Returns null when unusable. */
+function parsePlanPart(
+  rec: Record<string, unknown>,
+): import("@/components/builder/PlanningTree").PlanPart | null {
+  type Node = import("@/components/builder/PlanningTree").PlanNode;
+  const goal = typeof rec.goal === "string" ? rec.goal : "";
+  const rawNodes = Array.isArray(rec.nodes) ? rec.nodes : [];
+  const statuses = ["pending", "running", "done", "failed", "skipped"];
+  const kinds = ["task", "verify", "subagent"];
+  const nodes: Node[] = [];
+  rawNodes.forEach((n, i) => {
+    if (!n || typeof n !== "object") return;
+    const nr = n as Record<string, unknown>;
+    const title = typeof nr.title === "string" ? nr.title : "";
+    if (!title) return;
+    const st = typeof nr.status === "string" && statuses.includes(nr.status) ? nr.status : "pending";
+    const kd = typeof nr.kind === "string" && kinds.includes(nr.kind) ? nr.kind : "task";
+    nodes.push({
+      id: String(nr.id ?? `pn-${i}`),
+      title,
+      kind: kd as Node["kind"],
+      status: st as Node["status"],
+      parent_id: typeof nr.parent_id === "string" ? nr.parent_id : undefined,
+      detail: typeof nr.detail === "string" ? nr.detail : undefined,
+      agent: typeof nr.agent === "string" ? nr.agent : undefined,
+      tool: typeof nr.tool === "string" ? nr.tool : undefined,
+      cost_usd: typeof nr.cost_usd === "number" ? nr.cost_usd : undefined,
+      duration_ms: typeof nr.duration_ms === "number" ? nr.duration_ms : undefined,
+    });
+  });
+  if (!goal && nodes.length === 0) return null;
+  const planStatuses = ["planning", "running", "done", "failed"];
+  const ps =
+    typeof rec.status === "string" && planStatuses.includes(rec.status) ? rec.status : "running";
+  return {
+    plan_id: typeof rec.plan_id === "string" ? rec.plan_id : undefined,
+    goal,
+    status: ps as import("@/components/builder/PlanningTree").PlanStatus,
+    nodes,
+  };
 }
 
 /**
