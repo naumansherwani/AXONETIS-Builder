@@ -81,3 +81,4 @@ MODERN RUNTIME LOCKED: Rust + Bun native, SSE now → WebTransport/HTTP3 next, t
 - [Rapid Pay Blueprint P3-5](mem://features/rapidpay-blueprint-parts3-5) — Founder command, AI civilization, API ecosystem (hf_live/hf_test keys, SDKs, webhooks)
 - [HostFlow AI Master](mem://features/hostflowai-master) — Full HostFlow snapshot: 8 industries, £25/£52/£108 GBP plans, Hetzner brain endpoints, Jimmy/Sherlock qwen3:8b + 8 advisors qwen3:4b, SQL truth tables, hard rules, phase progress (Aria 28, Orion 22/30)
 - [Builder Workflow Rules LOCKED](mem://features/builder-workflow-rules) — 2 repos locked, phase-by-phase pull workflow, founder controls pace, never push to server repo
+- [Jimmy live brain routes LOCKED](mem://features/jimmy-live-brain-routes-LOCKED) — Live /api/founder/jimmy/stream source (raw fetch SSE), model order llama-3.3-70b → hermes-405b → qwen-coder-32b, ws transport requirement, full loop verified + root-user security finding.
