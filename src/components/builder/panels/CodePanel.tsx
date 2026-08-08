@@ -77,18 +77,56 @@ export default function CodePanel() {
   const lines = useMemo(() => (content ?? "").split("\n"), [content]);
   const ext = selected?.split(".").pop() ?? "";
   const Icon = ["md", "txt", "mdx"].includes(ext) ? FileText : FileCode;
+  const lineDiags = useMemo(
+    () => (selected ? diagnosticsByLine(diag.diagnostics, selected) : new Map<number, Diagnostic[]>()),
+    [diag.diagnostics, selected],
+  );
+  const fileErrors = useMemo(
+    () => [...lineDiags.values()].flat(),
+    [lineDiags],
+  );
+
+  async function autoFix(d: Diagnostic) {
+    const key = `${d.path}:${d.line}:${d.code}`;
+    setFixing(key);
+    try {
+      await requestAutoFix({ projectId: project, diagnostic: d });
+      toast.success("Jimmy ko fix bhej diya", { description: `${d.code} · line ${d.line}` });
+    } catch (e) {
+      toast.error("Auto-fix failed", { description: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setFixing(null);
+    }
+  }
 
   return (
     <PanelSection
       title={selected ? selected.split("/").pop()! : "Code"}
       action={
-        <span className="font-mono text-[10px] text-muted-foreground/60">
-          {currentFile
-            ? `${formatBytes(currentFile.size_bytes ?? undefined)} · read-only`
-            : "read-only"}
+        <span className="flex items-center gap-2 font-mono text-[10px] text-muted-foreground/60">
+          <ProblemsBadge
+            errors={diag.errorCount}
+            warnings={diag.warningCount}
+            loading={diag.loading}
+          />
+          <button
+            onClick={() => void diag.scan()}
+            disabled={diag.scanning}
+            title="Re-run TypeScript diagnostics"
+            className="flex items-center gap-1 rounded border border-white/[0.08] px-1.5 py-0.5 text-[10px] text-foreground/70 hover:bg-white/[0.05] disabled:opacity-50"
+          >
+            <RefreshCw className={`h-2.5 w-2.5 ${diag.scanning ? "animate-spin" : ""}`} />
+            Scan
+          </button>
+          <span>
+            {currentFile
+              ? `${formatBytes(currentFile.size_bytes ?? undefined)} · read-only`
+              : "read-only"}
+          </span>
         </span>
       }
     >
+
       {!SUPABASE3_READY ? (
         <Empty
           title="Supabase 3 offline"
