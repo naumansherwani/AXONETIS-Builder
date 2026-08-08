@@ -18,19 +18,40 @@ export const SUPABASE3_READY = Boolean(URL && ANON_KEY);
 
 let instance: SupabaseClient | undefined;
 
+/**
+ * On the server (Node/worker) there is no global WebSocket in some runtimes, and
+ * realtime-js throws at construction time. Realtime is only ever used in the
+ * browser, so we hand the server a harmless stub transport.
+ */
+const ServerWebSocketStub = class {
+  static readonly CONNECTING = 0;
+  static readonly OPEN = 1;
+  static readonly CLOSING = 2;
+  static readonly CLOSED = 3;
+  readonly readyState = 3;
+  close() {}
+  send() {}
+  addEventListener() {}
+  removeEventListener() {}
+} as unknown as typeof WebSocket;
+
 export function getSupabase3(): SupabaseClient {
   if (!instance) {
+    const isBrowser = typeof window !== "undefined";
+    const hasWebSocket = typeof globalThis.WebSocket !== "undefined";
     instance = createClient(URL || "https://placeholder.supabase.co", ANON_KEY || "placeholder-anon-key", {
       auth: {
-        persistSession: typeof window !== "undefined",
-        autoRefreshToken: typeof window !== "undefined",
-        detectSessionInUrl: typeof window !== "undefined",
+        persistSession: isBrowser,
+        autoRefreshToken: isBrowser,
+        detectSessionInUrl: isBrowser,
         storageKey: "fb.supabase3.auth",
       },
+      ...(hasWebSocket ? {} : { realtime: { transport: ServerWebSocketStub } }),
     });
   }
   return instance;
 }
+
 
 /** Lazy proxy — behaves like a SupabaseClient but only constructs on first use. */
 export const supabase3: SupabaseClient = new Proxy({} as SupabaseClient, {
