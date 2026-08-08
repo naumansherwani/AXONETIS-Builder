@@ -34,7 +34,7 @@ create table if not exists public.tool_call_registry (
   created_at timestamptz not null default now()
 );
 
--- additive columns for older installs (никогда drop)
+-- additive columns for older installs (never drop)
 alter table public.tool_call_registry add column if not exists tokens_in integer;
 alter table public.tool_call_registry add column if not exists tokens_out integer;
 alter table public.tool_call_registry add column if not exists cost numeric(12,6) not null default 0;
