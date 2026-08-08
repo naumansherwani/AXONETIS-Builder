@@ -15,6 +15,7 @@ import type { ToolCallPart } from "@/components/builder/ToolCallBubble";
 import type { DiffPart } from "@/components/builder/DiffPreview";
 import type { PlanPart } from "@/components/builder/PlanningTree";
 import type { VerificationPart } from "@/components/builder/SelfVerifyLoop";
+import type { DelegationPart } from "@/components/builder/DelegationTree";
 
 export type ChatAgent = "founder" | "jimmy" | "sherlock";
 
@@ -48,6 +49,8 @@ export interface ChatMsg {
   plans?: PlanPart[];
   /** 3.10.2 — Sherlock self-verification loop passes. */
   verifications?: VerificationPart[];
+  /** 3.10.2 — Jimmy sub-agent delegation fan-out. */
+  delegations?: DelegationPart[];
 }
 
 export interface ProjectWorkspace {

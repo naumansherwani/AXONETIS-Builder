@@ -114,12 +114,14 @@ export function extractStructured(row: AgentMessageRow): {
   diffs: import("@/components/builder/DiffPreview").DiffPart[];
   plans: import("@/components/builder/PlanningTree").PlanPart[];
   verifications: import("@/components/builder/SelfVerifyLoop").VerificationPart[];
+  delegations: import("@/components/builder/DelegationTree").DelegationPart[];
 } {
   const toolCalls: import("@/components/builder/ToolCallBubble").ToolCallPart[] = [];
   const diffs: import("@/components/builder/DiffPreview").DiffPart[] = [];
   const plans: import("@/components/builder/PlanningTree").PlanPart[] = [];
   const verifications: import("@/components/builder/SelfVerifyLoop").VerificationPart[] = [];
-  if (!Array.isArray(row.parts)) return { toolCalls, diffs, plans, verifications };
+  const delegations: import("@/components/builder/DelegationTree").DelegationPart[] = [];
+  if (!Array.isArray(row.parts)) return { toolCalls, diffs, plans, verifications, delegations };
   for (const p of row.parts) {
     if (!p || typeof p !== "object") continue;
     const rec = p as Record<string, unknown>;
@@ -156,9 +158,52 @@ export function extractStructured(row: AgentMessageRow): {
     } else if (rec.type === "verification") {
       const v = parseVerificationPart(rec);
       if (v) verifications.push(v);
+    } else if (rec.type === "delegation") {
+      const d = parseDelegationPart(rec);
+      if (d) delegations.push(d);
     }
   }
-  return { toolCalls, diffs, plans, verifications };
+  return { toolCalls, diffs, plans, verifications, delegations };
+}
+
+/** 3.10.2 sub-step 3 — normalize a `delegation` part (Sub-Agent Delegation). */
+function parseDelegationPart(
+  rec: Record<string, unknown>,
+): import("@/components/builder/DelegationTree").DelegationPart | null {
+  type Task = import("@/components/builder/DelegationTree").DelegationTask;
+  const taskStatuses = ["queued", "running", "done", "failed", "cancelled"];
+  const rawTasks = Array.isArray(rec.tasks) ? rec.tasks : [];
+  const tasks: Task[] = [];
+  rawTasks.forEach((t, i) => {
+    if (!t || typeof t !== "object") return;
+    const tr = t as Record<string, unknown>;
+    const title = typeof tr.title === "string" ? tr.title : "";
+    if (!title) return;
+    const st =
+      typeof tr.status === "string" && taskStatuses.includes(tr.status) ? tr.status : "queued";
+    tasks.push({
+      id: String(tr.id ?? `dt-${i}`),
+      agent: typeof tr.agent === "string" && tr.agent ? tr.agent : "advisor",
+      title,
+      status: st as Task["status"],
+      model: typeof tr.model === "string" ? tr.model : undefined,
+      summary: typeof tr.summary === "string" ? tr.summary : undefined,
+      tokens: typeof tr.tokens === "number" ? tr.tokens : undefined,
+      duration_ms: typeof tr.duration_ms === "number" ? tr.duration_ms : undefined,
+    });
+  });
+  const goal = typeof rec.goal === "string" ? rec.goal : undefined;
+  if (tasks.length === 0 && !goal) return null;
+  const dStatuses = ["running", "done", "failed", "cancelled"];
+  const status =
+    typeof rec.status === "string" && dStatuses.includes(rec.status) ? rec.status : "running";
+  return {
+    delegation_id: typeof rec.delegation_id === "string" ? rec.delegation_id : undefined,
+    parent_agent: typeof rec.parent_agent === "string" ? rec.parent_agent : undefined,
+    goal,
+    status: status as import("@/components/builder/DelegationTree").DelegationStatus,
+    tasks,
+  };
 }
 
 /** 3.10.2 sub-step 2 — normalize a `verification` part (Self-Verify Loop). */

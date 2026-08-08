@@ -26,6 +26,7 @@ import VoiceWaveform from "./VoiceWaveform";
 import ToolCallBubble from "./ToolCallBubble";
 import DiffPreview from "./DiffPreview";
 import PlanningTree from "./PlanningTree";
+import DelegationTree from "@/components/builder/DelegationTree";
 import SelfVerifyLoop from "./SelfVerifyLoop";
 import { DiffBatchReview } from "./DiffApprovalModal";
 import { MessageResponse } from "@/components/ai-elements/message";
@@ -286,7 +287,7 @@ export default function UnifiedChat() {
     const slug = (row.agent_slug ?? "jimmy") as AgentSlug;
     if (!UNIFIED_CHAT_SLUGS.has(slug)) return;
     const text = extractText(row) || "(empty reply)";
-    const { toolCalls, diffs, plans, verifications } = extractStructured(row);
+    const { toolCalls, diffs, plans, verifications, delegations } = extractStructured(row);
     const agent: Agent = slug === "sherlock" ? "sherlock" : "jimmy";
     const meta = {
       model: row.model ?? null,
@@ -315,11 +316,12 @@ export default function UnifiedChat() {
           diffs,
           plans,
           verifications,
+          delegations,
         };
         pendingPlaceholderRef.current = null;
         pendingUserMessageIdRef.current = null;
       } else {
-        next.push({ id: row.id, agent, text, meta, toolCalls, diffs, plans, verifications });
+        next.push({ id: row.id, agent, text, meta, toolCalls, diffs, plans, verifications, delegations });
       }
       return next;
     });
@@ -1276,6 +1278,11 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
         {/* 3.10.2 — Sherlock self-verification loop */}
         {msg.verifications?.map((v, i) => (
           <SelfVerifyLoop key={v.verify_id ?? `verify-${i}`} verification={v} />
+        ))}
+
+        {/* 3.10.2 — Jimmy sub-agent delegation tree */}
+        {msg.delegations?.map((d, i) => (
+          <DelegationTree key={d.delegation_id ?? `deleg-${i}`} delegation={d} />
         ))}
 
         {/* 3.9.1 — tool_call cards (Rust runtime parts) */}
