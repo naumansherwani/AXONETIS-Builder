@@ -17,6 +17,7 @@ import {
   Folder,
   GitBranch,
   History,
+  KanbanSquare,
   Key,
   Layers,
   LineChart,
@@ -136,6 +137,12 @@ export const RIGHT_RAIL_ITEMS: RailItem[] = [
     label: "Tools",
     icon: Wrench,
     hint: "Tool Registry — what Jimmy & Sherlock can call.",
+  },
+  {
+    id: "pipeline",
+    label: "Pipeline",
+    icon: KanbanSquare,
+    hint: "Outreach Engine — Scraped → Closed kanban + live ARR.",
   },
   {
     id: "marketplace",

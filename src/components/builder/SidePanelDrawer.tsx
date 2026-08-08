@@ -116,9 +116,35 @@ function renderPanel(id: string, Icon: typeof X, label: string, hint: string) {
       return <MarketplacePanel />;
     case "terminal":
       return <TerminalRailPanel />;
+    case "pipeline":
+      return <PipelineRailPanel />;
     default:
       return <GenericPanel icon={Icon as never} title={label} hint={hint} />;
   }
+}
+
+function PipelineRailPanel() {
+  const open = () => {
+    const fn = (window as unknown as { axonetisOpenTab?: (k: "pipeline") => void }).axonetisOpenTab;
+    fn?.("pipeline");
+  };
+  return (
+    <div className="flex h-full flex-col items-center justify-center px-6 py-10 text-center">
+      <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl border border-[#E50914]/30 bg-[#E50914]/[0.06] shadow-[0_0_30px_-10px_rgba(229,9,20,0.6)]">
+        <span className="font-mono text-lg text-[#ff7480]">$1M</span>
+      </div>
+      <div className="mb-1 text-[14px] font-semibold text-foreground/95">Outreach Pipeline</div>
+      <div className="mb-4 max-w-[240px] text-[11px] leading-relaxed text-muted-foreground">
+        Scraped → Qualified → Contacted → Replied → Demo → Closed, with live ARR counter.
+      </div>
+      <button
+        onClick={open}
+        className="rounded-md border border-[#E50914]/30 bg-[#E50914]/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#ff7480] hover:bg-[#E50914]/15"
+      >
+        Open in Workspace
+      </button>
+    </div>
+  );
 }
 
 function TerminalRailPanel() {
