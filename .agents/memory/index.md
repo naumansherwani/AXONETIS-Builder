@@ -1,6 +1,7 @@
 # Project Memory
 
 ## Core
+SQL LOCKED: saari SQL repo mein — sql/founder/phase-<NN>-<slug>/ (founder) aur sql/awam/ (public, alag server). Chat mein SQL paste nahi, sirf path + run cmd.
 Project: Self-hosted AI agent builder — **AXONETIS AI Builder™**. LIVE at **founderbuilder.axonetis.com** (founder-only, hidden, Caddy + Namecheap). **axonetis.com** root = future PUBLIC marketing site — DO NOT point builder there. FORBIDDEN: aiaxonetis.hostflowai.net, aiaxonetis.nexatect.com, any *.hostflowai.net. Edits founder's existing sites. Backend: self-hosted Supabase on Hetzner. Never mention Supabase. APIs via OpenRouter + Groq.
 Founder: Muhammad Nauman Sherwani. Roman Urdu/Hindi — reply same style, keep short.
 Backend endpoint workflow LOCKED: for hostflowai-server, write exact copy-paste TypeScript endpoint code for founder to run manually. No vague contracts only.
@@ -99,3 +100,4 @@ TROJAN BY JIMMY LOCKED (Phase 9): zero-entry autonomous CRM — Attract/Nurture/
 - [Additive-only tech policy LOCKED](mem://constraints/additive-only-tech-policy-LOCKED) — old-gen frozen list, new-gen /trpc + WebTransport on new files only, no refactor proposals
 - [Phase 11.1 Pipeline Dashboard LOCKED](mem://features/phase-11.1-pipeline-dashboard-LOCKED) — outreach_leads + kanban 6 stages, drag-drop, ARR counter, workspace tab "pipeline"
 - [Phase 11.2+11.3 Standup & Compliance LOCKED](mem://features/phase-11.2-11.3-standup-compliance-LOCKED) — Jimmy daily standup panel + GDPR/spam/unsubscribe/Sherlock compliance badge, outreach_campaigns/standups/compliance tables
+- [SQL repo folder structure LOCKED](mem://constraints/sql-repo-folder-structure-LOCKED) — saari SQL repo mein: sql/founder/phase-<NN>-<slug>/ + sql/awam/ alag; hetzner-migrations & db/migrations deleted

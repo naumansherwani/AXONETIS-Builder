@@ -38,7 +38,7 @@ import {
 const SEED_SNAP: Snapshot[] = [
   {
     id: "v17",
-    path: "db/migrations/2026_06_14_phase6_versions.sql",
+    path: "sql/founder/legacy-phase-03-06/2026_06_14_phase6_versions.sql",
     change: "create",
     author: "jimmy",
     message: "phase 6 sql",
