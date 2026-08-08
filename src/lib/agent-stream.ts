@@ -113,11 +113,13 @@ export function extractStructured(row: AgentMessageRow): {
   toolCalls: import("@/components/builder/ToolCallBubble").ToolCallPart[];
   diffs: import("@/components/builder/DiffPreview").DiffPart[];
   plans: import("@/components/builder/PlanningTree").PlanPart[];
+  verifications: import("@/components/builder/SelfVerifyLoop").VerificationPart[];
 } {
   const toolCalls: import("@/components/builder/ToolCallBubble").ToolCallPart[] = [];
   const diffs: import("@/components/builder/DiffPreview").DiffPart[] = [];
   const plans: import("@/components/builder/PlanningTree").PlanPart[] = [];
-  if (!Array.isArray(row.parts)) return { toolCalls, diffs, plans };
+  const verifications: import("@/components/builder/SelfVerifyLoop").VerificationPart[] = [];
+  if (!Array.isArray(row.parts)) return { toolCalls, diffs, plans, verifications };
   for (const p of row.parts) {
     if (!p || typeof p !== "object") continue;
     const rec = p as Record<string, unknown>;
@@ -151,9 +153,60 @@ export function extractStructured(row: AgentMessageRow): {
     } else if (rec.type === "plan") {
       const plan = parsePlanPart(rec);
       if (plan) plans.push(plan);
+    } else if (rec.type === "verification") {
+      const v = parseVerificationPart(rec);
+      if (v) verifications.push(v);
     }
   }
-  return { toolCalls, diffs, plans };
+  return { toolCalls, diffs, plans, verifications };
+}
+
+/** 3.10.2 sub-step 2 — normalize a `verification` part (Self-Verify Loop). */
+function parseVerificationPart(
+  rec: Record<string, unknown>,
+): import("@/components/builder/SelfVerifyLoop").VerificationPart | null {
+  type Check = import("@/components/builder/SelfVerifyLoop").VerifyCheck;
+  const checkStatuses = ["pending", "running", "pass", "fail", "skipped"];
+  const kinds = ["logic", "security", "performance", "build", "test"];
+  const rawChecks = Array.isArray(rec.checks) ? rec.checks : [];
+  const checks: Check[] = [];
+  rawChecks.forEach((c, i) => {
+    if (!c || typeof c !== "object") return;
+    const cr = c as Record<string, unknown>;
+    const label = typeof cr.label === "string" ? cr.label : "";
+    if (!label) return;
+    const st =
+      typeof cr.status === "string" && checkStatuses.includes(cr.status) ? cr.status : "pending";
+    const kd = typeof cr.kind === "string" && kinds.includes(cr.kind) ? cr.kind : "logic";
+    checks.push({
+      id: String(cr.id ?? `vc-${i}`),
+      label,
+      kind: kd as Check["kind"],
+      status: st as Check["status"],
+      detail: typeof cr.detail === "string" ? cr.detail : undefined,
+      duration_ms: typeof cr.duration_ms === "number" ? cr.duration_ms : undefined,
+    });
+  });
+  const target = typeof rec.target === "string" ? rec.target : undefined;
+  const verdict = typeof rec.verdict === "string" ? rec.verdict : undefined;
+  if (checks.length === 0 && !target && !verdict) return null;
+  const vStatuses = ["running", "pass", "fail", "retrying"];
+  const status =
+    typeof rec.status === "string" && vStatuses.includes(rec.status) ? rec.status : "running";
+  const attempt = typeof rec.attempt === "number" && rec.attempt > 0 ? rec.attempt : 1;
+  const maxAttempts =
+    typeof rec.max_attempts === "number" && rec.max_attempts > 0 ? rec.max_attempts : attempt;
+  return {
+    verify_id: typeof rec.verify_id === "string" ? rec.verify_id : undefined,
+    target,
+    agent: typeof rec.agent === "string" ? rec.agent : undefined,
+    attempt,
+    max_attempts: maxAttempts,
+    status: status as import("@/components/builder/SelfVerifyLoop").VerifyStatus,
+    verdict,
+    fix_summary: typeof rec.fix_summary === "string" ? rec.fix_summary : undefined,
+    checks,
+  };
 }
 
 /** 3.10.2 — normalize a `plan` part (Planning Tree). Returns null when unusable. */

@@ -14,6 +14,7 @@ import type { PreviewEnv } from "./preview-engine";
 import type { ToolCallPart } from "@/components/builder/ToolCallBubble";
 import type { DiffPart } from "@/components/builder/DiffPreview";
 import type { PlanPart } from "@/components/builder/PlanningTree";
+import type { VerificationPart } from "@/components/builder/SelfVerifyLoop";
 
 export type ChatAgent = "founder" | "jimmy" | "sherlock";
 
@@ -45,6 +46,8 @@ export interface ChatMsg {
   diffs?: DiffPart[];
   /** 3.10.2 — Jimmy planning tree (Goal → Tasks → Verification). */
   plans?: PlanPart[];
+  /** 3.10.2 — Sherlock self-verification loop passes. */
+  verifications?: VerificationPart[];
 }
 
 export interface ProjectWorkspace {
