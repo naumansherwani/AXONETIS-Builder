@@ -114,7 +114,11 @@ async function runAgentReply({ threadId, messageId, agentSlug, projectId, prompt
     .eq("thread_id", threadId)
     .order("created_at", { ascending: false })
     .limit(40);
-  const messages = (history ?? []).reverse().map(toCoreMessage).filter(Boolean);
+  const messages = (history ?? [])
+    .reverse()
+    .map(toCoreMessage)
+    .filter((m): m is { role: "assistant" | "user" | "system"; content: string } => m !== null);
+
 
   // 3. System prompt — agent identity + scope.
   const system = buildSystemPrompt(agentSlug, reg.name, reg.role, memoryTarget);
@@ -229,11 +233,12 @@ function parsePatch(text: string): PatchOperation[] {
   try {
     const arr = JSON.parse(match[1].trim());
     if (!Array.isArray(arr)) return [];
-    return arr.map((x) => ({
+    return (arr as any[]).map((x): PatchOperation => ({
       path: String(x.path ?? "").trim().replace(/^\/+/, ""),
-      action: x.action === "delete" ? "delete" : "upsert",
+      action: x.action === "delete" ? ("delete" as const) : ("upsert" as const),
       content: typeof x.content === "string" ? x.content : undefined,
     })).filter((x) => x.path && !x.path.includes("..") && !x.path.startsWith("."));
+
   } catch { return []; }
 }
 
