@@ -27,6 +27,8 @@ import StoragePanel from "./panels/StoragePanel";
 import SecretsPanel from "./panels/SecretsPanel";
 import ToolsPanel from "./panels/ToolsPanel";
 import MarketplacePanel from "./panels/MarketplacePanel";
+import SettingsPanel from "./panels/SettingsPanel";
+import HelpPanel from "./panels/HelpPanel";
 import GenericPanel from "./panels/GenericPanel";
 
 export default function SidePanelDrawer({ side }: { side: "left" | "right" }) {
@@ -114,6 +116,10 @@ function renderPanel(id: string, Icon: typeof X, label: string, hint: string) {
       return <ToolsPanel />;
     case "marketplace":
       return <MarketplacePanel />;
+    case "settings":
+      return <SettingsPanel />;
+    case "help":
+      return <HelpPanel />;
     case "terminal":
       return <TerminalRailPanel />;
     case "pipeline":
