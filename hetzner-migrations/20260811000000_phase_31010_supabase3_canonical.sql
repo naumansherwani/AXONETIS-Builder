@@ -225,9 +225,23 @@ create table if not exists public.mem_entries (
   created_at timestamptz not null default now()
 );
 
+alter table public.mem_entries add column if not exists agent_id text not null default 'jimmy';
+alter table public.mem_entries add column if not exists project_id text;
+alter table public.mem_entries add column if not exists thread_id uuid;
+alter table public.mem_entries add column if not exists scope text not null default 'semantic';
+alter table public.mem_entries add column if not exists title text;
+alter table public.mem_entries add column if not exists embedding vector(1536);
+alter table public.mem_entries add column if not exists model_version text not null default 'openai/text-embedding-3-small';
+alter table public.mem_entries add column if not exists importance numeric(4,3) not null default 0.5;
+alter table public.mem_entries add column if not exists tokens integer;
+alter table public.mem_entries add column if not exists source text;
+alter table public.mem_entries add column if not exists metadata jsonb not null default '{}'::jsonb;
 alter table public.mem_entries add column if not exists pinned boolean not null default false;
 alter table public.mem_entries add column if not exists expires_at timestamptz;
+alter table public.mem_entries add column if not exists accessed_at timestamptz not null default now();
 alter table public.mem_entries add column if not exists access_count integer not null default 0;
+alter table public.mem_entries add column if not exists created_at timestamptz not null default now();
+alter table public.mem_entries add column if not exists content_hash text generated always as (md5(content)) stored;
 
 -- dedupe: same agent+project must not store identical content twice
 create unique index if not exists mem_entries_dedupe_idx
