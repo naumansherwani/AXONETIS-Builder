@@ -37,7 +37,8 @@ export type BottomTabId =
   | "secrets"
   | "tools"
   | "marketplace"
-  | "pipeline";
+  | "pipeline"
+  | "standup";
 
 export type PreviewMode = "single" | "triptych";
 

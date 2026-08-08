@@ -18,6 +18,7 @@ import {
   GitBranch,
   History,
   KanbanSquare,
+  CalendarClock,
   Key,
   Layers,
   LineChart,
@@ -143,6 +144,12 @@ export const RIGHT_RAIL_ITEMS: RailItem[] = [
     label: "Pipeline",
     icon: KanbanSquare,
     hint: "Outreach Engine — Scraped → Closed kanban + live ARR.",
+  },
+  {
+    id: "standup",
+    label: "Standup",
+    icon: CalendarClock,
+    hint: "Jimmy's daily outreach standup + GDPR/spam compliance badge.",
   },
   {
     id: "marketplace",
