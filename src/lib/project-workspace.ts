@@ -46,6 +46,8 @@ export interface ChatMsg {
   diffs?: DiffPart[];
   /** 3.10.2 — Jimmy planning tree (Goal → Tasks → Verification). */
   plans?: PlanPart[];
+  /** 3.10.2 — Sherlock self-verification loop passes. */
+  verifications?: VerificationPart[];
 }
 
 export interface ProjectWorkspace {
