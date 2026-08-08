@@ -75,7 +75,8 @@ create policy "tool_call_registry readable" on public.tool_call_registry
   for select using (true);
 
 -- Blueprint-named alias (id, agent_id, tool_name, input, output, cost, status, created_at)
-create or replace view public.tool_calls as
+drop view if exists public.tool_calls;
+create view public.tool_calls as
   select id,
          agent_slug   as agent_id,
          tool_name,
@@ -91,7 +92,8 @@ create or replace view public.tool_calls as
 grant select on public.tool_calls to anon, authenticated, service_role;
 
 -- Cost Meter rollup (3.9.7): per project/day tool spend
-create or replace view public.tool_cost_daily as
+drop view if exists public.tool_cost_daily;
+create view public.tool_cost_daily as
   select project_id,
          date_trunc('day', started_at)::date as day,
          count(*)                            as calls,
