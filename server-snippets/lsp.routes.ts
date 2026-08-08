@@ -15,7 +15,7 @@
  *
  * Env: SUPABASE3_URL, SUPABASE3_SERVICE_ROLE_KEY, PROJECTS_ROOT (default /opt/axonetis-projects)
  */
-import { Router } from "express";
+import express, { Router } from "express";
 import { createClient } from "@supabase/supabase-js";
 import { execFile } from "node:child_process";
 import path from "node:path";
@@ -29,6 +29,10 @@ const sb = createClient(
 const PROJECTS_ROOT = process.env.PROJECTS_ROOT || "/opt/axonetis-projects";
 
 export const lspRouter = Router();
+
+// Self-sufficient body parsing: mount order (before/after global express.json)
+// se independent rehta hai, warna req.body undefined aata hai.
+lspRouter.use(express.json({ limit: "4mb" }));
 
 interface Diag {
   path: string;
