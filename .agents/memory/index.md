@@ -35,6 +35,7 @@ PHASE 3.10.1 BLOCKER LOCKED Jul 25 2026: 3.10.2 tab tak forbidden jab tak Tool A
 MODERN RUNTIME LOCKED: Rust + Bun native, SSE now → WebTransport/HTTP3 next, tRPC type-safety, direct Supabase SDK, no WebSockets/API sprawl.
 
 ## Memories
+- [3.10.2 Sub-Agent Delegation LOCKED](mem://features/phase-3.10.2-subagent-delegation-LOCKED) — DelegationTree UI, delegation part contract, /rpc/delegate.* routes, agent_delegations tables
 - [Hetzner verified paths LOCKED](mem://features/hetzner-verified-paths-LOCKED) — Host ubuntu-24gb-nbg1-1: exact repo paths + 8 PM2 cwd/exec; bridge is /opt/hostflow-ecosystem/hostflow-server
 - [Phase 3.10.2 Planning Tree SHIPPED](mem://features/phase-3.10.2-planning-tree-LOCKED) — Sherlock audit 200 OK unblocked Rule #9; PlanningTree.tsx + plan.routes.ts + agent_plans SQL
 - [Modern Runtime Stack LOCKED](mem://features/modern-runtime-stack-LOCKED) — Runtime direction: Rust + Bun native, SSE current, WebTransport/HTTP3 next, tRPC type-safety, direct Supabase SDK, no WebSockets/API sprawl.
