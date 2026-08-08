@@ -69,9 +69,12 @@ create table if not exists public.replay_analyses (
   created_at   timestamptz not null default now()
 );
 alter table public.replay_analyses add column if not exists diff_id uuid;
-alter table public.replay_analyses
-  add constraint replay_analyses_confidence_range check (confidence between 0 and 100)
-  not valid;
+do $$ begin
+  alter table public.replay_analyses
+    add constraint replay_analyses_confidence_range check (confidence between 0 and 100)
+    not valid;
+exception when duplicate_object then null; end $$;
+
 create index if not exists replay_analyses_session_idx
   on public.replay_analyses (project_id, session_id, created_at desc);
 
