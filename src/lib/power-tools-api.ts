@@ -5,7 +5,7 @@
  */
 const BRIDGE = import.meta.env.VITE_HOSTFLOW_BRIDGE_URL ?? "";
 
-async function rpc<T>(path: string, init?: RequestInit): Promise<T | null> {
+export async function rpc<T>(path: string, init?: RequestInit): Promise<T | null> {
   if (!BRIDGE) return null;
   try {
     const r = await fetch(`${BRIDGE}${path}`, {

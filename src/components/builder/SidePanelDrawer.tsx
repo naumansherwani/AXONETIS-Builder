@@ -29,6 +29,7 @@ import ToolsPanel from "./panels/ToolsPanel";
 import MarketplacePanel from "./panels/MarketplacePanel";
 import SettingsPanel from "./panels/SettingsPanel";
 import HelpPanel from "./panels/HelpPanel";
+import ReplayPanel from "./panels/ReplayPanel";
 import GenericPanel from "./panels/GenericPanel";
 
 export default function SidePanelDrawer({ side }: { side: "left" | "right" }) {
@@ -120,6 +121,8 @@ function renderPanel(id: string, Icon: typeof X, label: string, hint: string) {
       return <SettingsPanel />;
     case "help":
       return <HelpPanel />;
+    case "replay":
+      return <ReplayPanel />;
     case "terminal":
       return <TerminalRailPanel />;
     case "pipeline":

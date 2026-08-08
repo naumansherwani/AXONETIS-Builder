@@ -24,6 +24,7 @@ import {
   LifeBuoy,
   LineChart,
   Rocket,
+  MonitorPlay,
   ScrollText,
   Shield,
   Settings as SettingsIcon,
@@ -158,6 +159,12 @@ export const RIGHT_RAIL_ITEMS: RailItem[] = [
     label: "Settings",
     icon: SettingsIcon,
     hint: "Model per agent, memory limit, cost thresholds, notifications, theme.",
+  },
+  {
+    id: "replay",
+    label: "Replay",
+    icon: MonitorPlay,
+    hint: "Session replay + Sherlock root-cause analyzer.",
   },
   {
     id: "help",
