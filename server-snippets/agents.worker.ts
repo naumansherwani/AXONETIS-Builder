@@ -117,8 +117,13 @@ async function runAgentReply({ threadId, messageId, agentSlug, projectId, prompt
   // 3. System prompt — agent identity + scope.
   const system = buildSystemPrompt(agentSlug, reg.name, reg.role, memoryTarget);
 
-  // 4. Provider failover chain.
+  // 4. Provider failover chain — Phase 3.10.9: full 12-tool registry attached.
   const attempts = buildAttempts(routing, reg.model_primary, reg.model_fallback);
+  const projectUuidForTools = await resolveProjectUuid(projectId);
+  const tools = buildAgentTools({
+    threadId, messageId, projectId, projectUuid: projectUuidForTools,
+    agentSlug, userId, abortSignal,
+  });
   let replyText = "";
   let usedModel = "unknown";
   let tokensIn = 0;
@@ -132,6 +137,8 @@ async function runAgentReply({ threadId, messageId, agentSlug, projectId, prompt
         model: attempt.model,
         system,
         messages: [...messages, { role: "user", content: prompt }],
+        tools,
+        stopWhen: stepCountIs(50), // LOCKED: agentic loop depth
         abortSignal, // ← Phase 3.9.5 stop wire — user_stop aborts inflight model call
       });
       replyText = out.text;
@@ -145,6 +152,7 @@ async function runAgentReply({ threadId, messageId, agentSlug, projectId, prompt
       console.warn(`[agents.worker] ${attempt.label} failed, falling through:`, err);
     }
   }
+
 
   // If the founder pressed Stop, exit cleanly — cancel endpoint already wrote _Stopped._ marker.
   if (abortSignal.aborted) {
