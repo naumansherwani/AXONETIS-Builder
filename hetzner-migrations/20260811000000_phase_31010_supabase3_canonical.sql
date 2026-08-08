@@ -34,13 +34,28 @@ create table if not exists public.tool_call_registry (
   created_at timestamptz not null default now()
 );
 
--- additive columns for older installs (never drop)
+-- additive columns for older installs (never drop) — full column set,
+-- because an earlier install may have created this table with fewer columns.
+alter table public.tool_call_registry add column if not exists thread_id uuid;
+alter table public.tool_call_registry add column if not exists message_id uuid;
+alter table public.tool_call_registry add column if not exists project_id uuid;
+alter table public.tool_call_registry add column if not exists agent_slug text not null default 'jimmy';
+alter table public.tool_call_registry add column if not exists tool_name text;
+alter table public.tool_call_registry add column if not exists input jsonb not null default '{}'::jsonb;
+alter table public.tool_call_registry add column if not exists output jsonb;
+alter table public.tool_call_registry add column if not exists status text not null default 'running';
 alter table public.tool_call_registry add column if not exists tokens_in integer;
 alter table public.tool_call_registry add column if not exists tokens_out integer;
 alter table public.tool_call_registry add column if not exists cost numeric(12,6) not null default 0;
 alter table public.tool_call_registry add column if not exists model text;
 alter table public.tool_call_registry add column if not exists error text;
+alter table public.tool_call_registry add column if not exists duration_ms integer;
 alter table public.tool_call_registry add column if not exists approved_by uuid;
+alter table public.tool_call_registry add column if not exists created_at timestamptz not null default now();
+alter table public.tool_call_registry add column if not exists started_at timestamptz not null default now();
+alter table public.tool_call_registry add column if not exists finished_at timestamptz;
+update public.tool_call_registry set started_at = created_at where started_at is null;
+
 
 create index if not exists tool_call_registry_thread_idx
   on public.tool_call_registry (thread_id, started_at desc);
@@ -60,7 +75,8 @@ create policy "tool_call_registry readable" on public.tool_call_registry
   for select using (true);
 
 -- Blueprint-named alias (id, agent_id, tool_name, input, output, cost, status, created_at)
-create or replace view public.tool_calls as
+drop view if exists public.tool_calls;
+create view public.tool_calls as
   select id,
          agent_slug   as agent_id,
          tool_name,
@@ -76,7 +92,8 @@ create or replace view public.tool_calls as
 grant select on public.tool_calls to anon, authenticated, service_role;
 
 -- Cost Meter rollup (3.9.7): per project/day tool spend
-create or replace view public.tool_cost_daily as
+drop view if exists public.tool_cost_daily;
+create view public.tool_cost_daily as
   select project_id,
          date_trunc('day', started_at)::date as day,
          count(*)                            as calls,
@@ -115,9 +132,23 @@ create table if not exists public.agent_subagents (
   updated_at timestamptz not null default now()
 );
 
+alter table public.agent_subagents add column if not exists parent_id uuid;
+alter table public.agent_subagents add column if not exists thread_id uuid;
+alter table public.agent_subagents add column if not exists message_id uuid;
+alter table public.agent_subagents add column if not exists project_id text;
 alter table public.agent_subagents add column if not exists delegation_id uuid;
+alter table public.agent_subagents add column if not exists parent_agent text not null default 'jimmy';
+alter table public.agent_subagents add column if not exists agent text not null default 'advisor';
+alter table public.agent_subagents add column if not exists context text;
+alter table public.agent_subagents add column if not exists status text not null default 'queued';
+alter table public.agent_subagents add column if not exists model text;
+alter table public.agent_subagents add column if not exists result text;
+alter table public.agent_subagents add column if not exists tokens integer;
 alter table public.agent_subagents add column if not exists cost numeric(12,6) not null default 0;
+alter table public.agent_subagents add column if not exists duration_ms integer;
 alter table public.agent_subagents add column if not exists depth integer not null default 1;
+alter table public.agent_subagents add column if not exists created_at timestamptz not null default now();
+alter table public.agent_subagents add column if not exists updated_at timestamptz not null default now();
 
 create index if not exists agent_subagents_thread_idx
   on public.agent_subagents (thread_id, created_at desc);
@@ -194,9 +225,23 @@ create table if not exists public.mem_entries (
   created_at timestamptz not null default now()
 );
 
+alter table public.mem_entries add column if not exists agent_id text not null default 'jimmy';
+alter table public.mem_entries add column if not exists project_id text;
+alter table public.mem_entries add column if not exists thread_id uuid;
+alter table public.mem_entries add column if not exists scope text not null default 'semantic';
+alter table public.mem_entries add column if not exists title text;
+alter table public.mem_entries add column if not exists embedding vector(1536);
+alter table public.mem_entries add column if not exists model_version text not null default 'openai/text-embedding-3-small';
+alter table public.mem_entries add column if not exists importance numeric(4,3) not null default 0.5;
+alter table public.mem_entries add column if not exists tokens integer;
+alter table public.mem_entries add column if not exists source text;
+alter table public.mem_entries add column if not exists metadata jsonb not null default '{}'::jsonb;
 alter table public.mem_entries add column if not exists pinned boolean not null default false;
 alter table public.mem_entries add column if not exists expires_at timestamptz;
+alter table public.mem_entries add column if not exists accessed_at timestamptz not null default now();
 alter table public.mem_entries add column if not exists access_count integer not null default 0;
+alter table public.mem_entries add column if not exists created_at timestamptz not null default now();
+alter table public.mem_entries add column if not exists content_hash text generated always as (md5(content)) stored;
 
 -- dedupe: same agent+project must not store identical content twice
 create unique index if not exists mem_entries_dedupe_idx
