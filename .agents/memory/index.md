@@ -34,9 +34,12 @@ ERROR-FIRST LOCKED Jul 2026: Jab tak frontend ↔ backend wiring, PM2, build, en
 PHASE 3.10.1 BLOCKER LOCKED Jul 25 2026: 3.10.2 tab tak forbidden jab tak Tool Abort backend+frontend Hetzner par real working, PM2 fresh errors green, curl smoke + UI cancel pass na hon.
 MODERN RUNTIME LOCKED: Rust + Bun native, SSE now → WebTransport/HTTP3 next, tRPC type-safety, direct Supabase SDK, no WebSockets/API sprawl.
 Additive-only tech: purane phases purani tech (/rpc+SSE) pe frozen, NEW phases nayi tech (tRPC+WebTransport) pe — koi migration/touch nahi.
+TROJAN BY JIMMY LOCKED (Phase 9): zero-entry autonomous CRM — Attract/Nurture/Close/Retain, 72h silence auto follow-up, deal≥80% Sherlock audit. Situation routing: outreach+legal claude-sonnet-4-6 · analysis deepseek-r1 · quick deepseek-v4-flash · bulk gpt-oss-120b. SQL = Supabase 1 (CRM) + Supabase 3 (agent). See mem://features/trojan-by-jimmy-phase9-LOCKED.
 
 ## Memories
+- [TROJAN BY JIMMY Phase 9 LOCKED](mem://features/trojan-by-jimmy-phase9-LOCKED) — Zero-entry CRM 4 stages, model routing table, TROJAN_SYSTEM prompt (live in brain config/models.ts), product pricing pitch list
 - [Agentic human-like + AI swarm LOCKED](mem://features/agentic-humanlike-swarm-LOCKED) — Agents act (plan→tools→verify), Jimmy conductor + Sherlock auditor + 8 advisors swarm, max 5 sub-agents
+
 - [Phase 3.10.9 12-tool registry LOCKED](mem://features/phase-3.10.9-agents-tools-12-LOCKED) — 12/12 tools server impl on old-gen stack, run_sql/deploy needsApproval, stepCountIs(50)
 - [Brain model registry LIVE LOCKED](mem://features/brain-model-registry-live-LOCKED) — server 1 FREE/PAID/FOUNDER tiers + situation map; server 2 = AXOMAIL separate
 - [3.10.2 Sub-Agent Delegation LOCKED](mem://features/phase-3.10.2-subagent-delegation-LOCKED) — DelegationTree UI, delegation part contract, /rpc/delegate.* routes, agent_delegations tables
