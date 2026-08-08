@@ -30,6 +30,10 @@ const PROJECTS_ROOT = process.env.PROJECTS_ROOT || "/opt/axonetis-projects";
 
 export const lspRouter = Router();
 
+// Self-sufficient body parsing: mount order (before/after global express.json)
+// se independent rehta hai, warna req.body undefined aata hai.
+lspRouter.use(express.json({ limit: "4mb" }));
+
 interface Diag {
   path: string;
   line: number;
