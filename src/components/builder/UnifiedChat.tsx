@@ -195,6 +195,8 @@ export default function UnifiedChat() {
   const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(true);
   const [recording, setRecording] = useState(false);
+  const [cancelArmed, setCancelArmed] = useState(false);
+  const voiceStartYRef = useRef<number | null>(null);
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
 
   const messagesRef = useRef<HTMLDivElement>(null);
@@ -803,6 +805,23 @@ export default function UnifiedChat() {
     audioContextRef.current = null;
   }, []);
 
+  /** 10.3 — swipe-down cancel: discard the recording without transcribing. */
+  const cancelVoice = useCallback(() => {
+    const recorder = mediaRecorderRef.current;
+    voiceChunksRef.current = [];
+    if (recorder && recorder.state !== "inactive") {
+      recorder.onstop = () => {
+        recorder.stream.getTracks().forEach((track) => track.stop());
+      };
+      recorder.stop();
+    }
+    mediaRecorderRef.current = null;
+    teardownAudio();
+    setCancelArmed(false);
+    voiceStartYRef.current = null;
+    setComposerNotice("Voice cancelled.");
+  }, [teardownAudio]);
+
   const stopVoice = useCallback(() => {
     const recorder = mediaRecorderRef.current;
     if (!recorder || recorder.state === "inactive") {
@@ -989,6 +1008,11 @@ export default function UnifiedChat() {
         <div className="relative shrink-0 border-t border-border bg-background/75 p-3 backdrop-blur-xl">
           {/* 3.9.1 — voice waveform overlay */}
           <VoiceWaveform analyser={analyser} active={recording} />
+          {recording && cancelArmed && (
+            <div className="pointer-events-none absolute inset-x-3 bottom-full mb-14 rounded-md border border-[#ff6b73]/40 bg-black/80 px-2 py-1 text-center font-mono text-[10px] uppercase tracking-widest text-[#ff9aa2] backdrop-blur">
+              Release to cancel
+            </div>
+          )}
           {/* 3.9.1 — slash + @mention popovers */}
           <AnimatePresence>
             {(slashSuggestions.length > 0 || mentionSuggestions.length > 0) && (
@@ -1151,15 +1175,31 @@ export default function UnifiedChat() {
                         className="h-8 w-8 rounded-lg"
                         onPointerDown={(e) => {
                           e.preventDefault();
+                          e.currentTarget.setPointerCapture?.(e.pointerId);
+                          voiceStartYRef.current = e.clientY;
+                          setCancelArmed(false);
                           void startVoice();
                         }}
-                        onPointerUp={stopVoice}
-                        onPointerLeave={stopVoice}
+                        onPointerMove={(e) => {
+                          if (!recording || voiceStartYRef.current == null) return;
+                          setCancelArmed(e.clientY - voiceStartYRef.current > 48);
+                        }}
+                        onPointerUp={() => {
+                          if (cancelArmed) cancelVoice();
+                          else stopVoice();
+                          voiceStartYRef.current = null;
+                          setCancelArmed(false);
+                        }}
+                        onPointerCancel={cancelVoice}
                       >
-                        <Mic className="h-3.5 w-3.5" />
+                        <Mic
+                          className={`h-3.5 w-3.5 ${cancelArmed ? "text-[#ff6b73]" : recording ? "text-[#E50914]" : ""}`}
+                        />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Hold to talk</TooltipContent>
+                    <TooltipContent>
+                      Hold to talk · swipe down to cancel · Urdu/English/Hindi auto-detect
+                    </TooltipContent>
                   </Tooltip>
                 </div>
               </TooltipProvider>
