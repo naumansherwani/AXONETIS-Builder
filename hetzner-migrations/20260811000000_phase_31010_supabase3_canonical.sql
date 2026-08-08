@@ -132,9 +132,23 @@ create table if not exists public.agent_subagents (
   updated_at timestamptz not null default now()
 );
 
+alter table public.agent_subagents add column if not exists parent_id uuid;
+alter table public.agent_subagents add column if not exists thread_id uuid;
+alter table public.agent_subagents add column if not exists message_id uuid;
+alter table public.agent_subagents add column if not exists project_id text;
 alter table public.agent_subagents add column if not exists delegation_id uuid;
+alter table public.agent_subagents add column if not exists parent_agent text not null default 'jimmy';
+alter table public.agent_subagents add column if not exists agent text not null default 'advisor';
+alter table public.agent_subagents add column if not exists context text;
+alter table public.agent_subagents add column if not exists status text not null default 'queued';
+alter table public.agent_subagents add column if not exists model text;
+alter table public.agent_subagents add column if not exists result text;
+alter table public.agent_subagents add column if not exists tokens integer;
 alter table public.agent_subagents add column if not exists cost numeric(12,6) not null default 0;
+alter table public.agent_subagents add column if not exists duration_ms integer;
 alter table public.agent_subagents add column if not exists depth integer not null default 1;
+alter table public.agent_subagents add column if not exists created_at timestamptz not null default now();
+alter table public.agent_subagents add column if not exists updated_at timestamptz not null default now();
 
 create index if not exists agent_subagents_thread_idx
   on public.agent_subagents (thread_id, created_at desc);
