@@ -149,8 +149,8 @@ export default function ReplayViewer({
   if (!events || events.length < 2) {
     return (
       <div className="rounded-lg border border-white/[0.06] bg-white/[0.015] p-4 text-[11px] text-muted-foreground">
-        Session events available nahi hain (bridge <span className="font-mono">/rpc/rrweb.events</span>{" "}
-        pending ya session khali hai).
+        Session events available nahi hain (bridge{" "}
+        <span className="font-mono">/rpc/rrweb.events</span> pending ya session khali hai).
       </div>
     );
   }
@@ -286,7 +286,9 @@ export default function ReplayViewer({
               <span className="flex-1 truncate text-muted-foreground">{n.url}</span>
               <span
                 className={
-                  (n.status ?? 0) >= 400 ? "shrink-0 text-[#ff6b73]" : "shrink-0 text-emerald-300/80"
+                  (n.status ?? 0) >= 400
+                    ? "shrink-0 text-[#ff6b73]"
+                    : "shrink-0 text-emerald-300/80"
                 }
               >
                 {n.status ?? "—"}
@@ -315,9 +317,7 @@ function OverlayTab({
       type="button"
       onClick={onClick}
       className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] uppercase tracking-wider ${
-        active
-          ? "bg-white/[0.08] text-foreground"
-          : "text-muted-foreground hover:bg-white/[0.05]"
+        active ? "bg-white/[0.08] text-foreground" : "text-muted-foreground hover:bg-white/[0.05]"
       }`}
     >
       {icon}

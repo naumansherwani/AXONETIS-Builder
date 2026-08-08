@@ -62,7 +62,9 @@ export default function ReplayPanel() {
                   type="button"
                   onClick={() => setActive(s)}
                   className={`flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors ${
-                    active?.id === s.id ? "bg-[#E50914]/12 ring-1 ring-[#E50914]/30" : "hover:bg-white/[0.05]"
+                    active?.id === s.id
+                      ? "bg-[#E50914]/12 ring-1 ring-[#E50914]/30"
+                      : "hover:bg-white/[0.05]"
                   }`}
                 >
                   <span className="grid h-8 w-12 shrink-0 place-items-center rounded border border-white/[0.08] bg-black/60">

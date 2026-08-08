@@ -39,7 +39,9 @@ export default function ReplayAnalyzer({
     setBusy(false);
     if (res?.ok) {
       setApplied(true);
-      setNotice(res.diff_id ? `Diff ${res.diff_id.slice(0, 8)} review ke liye ready.` : "Diff created.");
+      setNotice(
+        res.diff_id ? `Diff ${res.diff_id.slice(0, 8)} review ke liye ready.` : "Diff created.",
+      );
     } else {
       setNotice(res?.error ?? "Apply fix endpoint pending (/rpc/replay.applyfix).");
     }
