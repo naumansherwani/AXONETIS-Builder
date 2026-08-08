@@ -36,6 +36,9 @@ MODERN RUNTIME LOCKED: Rust + Bun native, SSE now → WebTransport/HTTP3 next, t
 Additive-only tech: purane phases purani tech (/rpc+SSE) pe frozen, NEW phases nayi tech (tRPC+WebTransport) pe — koi migration/touch nahi.
 
 ## Memories
+- [Agentic human-like + AI swarm LOCKED](mem://features/agentic-humanlike-swarm-LOCKED) — Agents act (plan→tools→verify), Jimmy conductor + Sherlock auditor + 8 advisors swarm, max 5 sub-agents
+- [Phase 3.10.9 12-tool registry LOCKED](mem://features/phase-3.10.9-agents-tools-12-LOCKED) — 12/12 tools server impl on old-gen stack, run_sql/deploy needsApproval, stepCountIs(50)
+- [Brain model registry LIVE LOCKED](mem://features/brain-model-registry-live-LOCKED) — server 1 FREE/PAID/FOUNDER tiers + situation map; server 2 = AXOMAIL separate
 - [3.10.2 Sub-Agent Delegation LOCKED](mem://features/phase-3.10.2-subagent-delegation-LOCKED) — DelegationTree UI, delegation part contract, /rpc/delegate.* routes, agent_delegations tables
 - [Hetzner verified paths LOCKED](mem://features/hetzner-verified-paths-LOCKED) — Host ubuntu-24gb-nbg1-1: exact repo paths + 8 PM2 cwd/exec; bridge is /opt/hostflow-ecosystem/hostflow-server
 - [Phase 3.10.2 Planning Tree SHIPPED](mem://features/phase-3.10.2-planning-tree-LOCKED) — Sherlock audit 200 OK unblocked Rule #9; PlanningTree.tsx + plan.routes.ts + agent_plans SQL
