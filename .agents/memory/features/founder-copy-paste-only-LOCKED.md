@@ -23,6 +23,10 @@ Founder ne cheekh ke bola: **"tum hi frontend ho aur tum hi backend ho"**.
    - **"⚠️ YEH SUPABASE 3 SQL HAI"** (SQL editor paste)
 7. Code blocks **chote, scoped, ek hi kaam ke** — founder ko 5 jaga paste nahi karna padhe. Ek block = ek paste.
 8. Multi-step paste ho to **numbered steps** + har step ke saath uska ek hi command/block.
+9. **Server/path kabhi assume nahi karna.** Founder ke paas multiple Hetzner machines hain. Har server command se pehle ek read-only discovery block se hostname + exact repo path + entrypoint + PM2 process verify hoga.
+10. Discovery output aaye baghair deploy/wiring command dena forbidden hai. `/root/hostflow-server` aur `/var/www/axonetis` jaise guessed/stale paths kabhi use nahi karne.
+11. Founder se koi manual edit nahi: wiring bhi Lovable-authored **single idempotent script/full-file overwrite block** se hogi. Founder sirf poora block paste/run karega.
+12. Repo mein migration/snippet hone ka matlab founder ke server par file available hona nahi. SQL maange to **poora SQL chat mein paste** karna; server snippet maange to poora file heredoc mein dena.
 
 ## Why
 Founder bar bar atak raha hai kyun ke pehle vague architecture mil raha tha. Ab Lovable owner hai dono taraf ka — frontend bhi, backend bhi. Founder sirf executor (paste).

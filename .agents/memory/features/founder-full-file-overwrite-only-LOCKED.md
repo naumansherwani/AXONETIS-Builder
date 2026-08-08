@@ -14,6 +14,8 @@ Founder edits karte waqt mistakes hoti hain. Isliye:
 4. Applies to: `.sql`, `.ts`, `.tsx`, `.js`, `.json`, `.env`, `nginx.conf`, `pm2 ecosystem`, bash scripts, EVERYTHING.
 5. For multi-file changes: send each file in its own complete block with absolute path header.
 6. If file is >500 lines, still send full — split into clearly marked parts only if chat truly cannot fit it.
+7. `git pull` + `cp` tabhi dena jab discovery se source repo aur file ka exact existence prove ho. Warna complete file ko `cat > exact/path <<'EOF'` heredoc se create/overwrite karna.
+8. Multiple Hetzner hosts ki wajah se hostname aur actual repo path verify kiye baghair koi absolute path command mat dena.
 
 **Why:** Founder ne explicitly locked. Edit instructions = bugs. Full overwrite = zero ambiguity.
 
