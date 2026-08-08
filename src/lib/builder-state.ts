@@ -40,7 +40,8 @@ export type BottomTabId =
   | "pipeline"
   | "standup"
   | "settings"
-  | "help";
+  | "help"
+  | "replay";
 
 export type PreviewMode = "single" | "triptych";
 
