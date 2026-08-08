@@ -2,9 +2,12 @@
  * Code panel — LIVE file viewer wired to Supabase 3 `project_files`.
  * File list from fetchProjectFiles(), content from fetchFileContent().
  * Realtime refresh on project_files changes.
+ *
+ * Phase 3.10.8 — inline LSP diagnostics: wavy squiggles on offending lines,
+ * hover cards with the tsc message, one-click Jimmy auto-fix, Problems badge.
  */
 import { useEffect, useMemo, useState } from "react";
-import { FileCode, FileText, Loader2 } from "lucide-react";
+import { AlertTriangle, FileCode, FileText, Loader2, RefreshCw, Wand2, XCircle } from "lucide-react";
 import { PanelSection } from "./PanelChrome";
 import { useBuilder } from "@/lib/builder-state";
 import {
@@ -14,7 +17,10 @@ import {
   formatBytes,
   type ProjectFileRow,
 } from "@/lib/files-api";
+import { useDiagnostics } from "@/hooks/useDiagnostics";
+import { diagnosticsByLine, requestAutoFix, type Diagnostic } from "@/lib/lsp-api";
 import { SUPABASE3_READY } from "@/integrations/supabase3/client";
+import { toast } from "sonner";
 
 export default function CodePanel() {
   const { project } = useBuilder();
@@ -23,6 +29,9 @@ export default function CodePanel() {
   const [content, setContent] = useState<string | null>(null);
   const [listLoading, setListLoading] = useState(true);
   const [contentLoading, setContentLoading] = useState(false);
+  const [fixing, setFixing] = useState<string | null>(null);
+  const diag = useDiagnostics(project);
+
 
   useEffect(() => {
     let alive = true;
