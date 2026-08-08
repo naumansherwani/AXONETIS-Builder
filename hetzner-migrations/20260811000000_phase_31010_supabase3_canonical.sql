@@ -34,13 +34,28 @@ create table if not exists public.tool_call_registry (
   created_at timestamptz not null default now()
 );
 
--- additive columns for older installs (never drop)
+-- additive columns for older installs (never drop) — full column set,
+-- because an earlier install may have created this table with fewer columns.
+alter table public.tool_call_registry add column if not exists thread_id uuid;
+alter table public.tool_call_registry add column if not exists message_id uuid;
+alter table public.tool_call_registry add column if not exists project_id uuid;
+alter table public.tool_call_registry add column if not exists agent_slug text not null default 'jimmy';
+alter table public.tool_call_registry add column if not exists tool_name text;
+alter table public.tool_call_registry add column if not exists input jsonb not null default '{}'::jsonb;
+alter table public.tool_call_registry add column if not exists output jsonb;
+alter table public.tool_call_registry add column if not exists status text not null default 'running';
 alter table public.tool_call_registry add column if not exists tokens_in integer;
 alter table public.tool_call_registry add column if not exists tokens_out integer;
 alter table public.tool_call_registry add column if not exists cost numeric(12,6) not null default 0;
 alter table public.tool_call_registry add column if not exists model text;
 alter table public.tool_call_registry add column if not exists error text;
+alter table public.tool_call_registry add column if not exists duration_ms integer;
 alter table public.tool_call_registry add column if not exists approved_by uuid;
+alter table public.tool_call_registry add column if not exists created_at timestamptz not null default now();
+alter table public.tool_call_registry add column if not exists started_at timestamptz not null default now();
+alter table public.tool_call_registry add column if not exists finished_at timestamptz;
+update public.tool_call_registry set started_at = created_at where started_at is null;
+
 
 create index if not exists tool_call_registry_thread_idx
   on public.tool_call_registry (thread_id, started_at desc);
