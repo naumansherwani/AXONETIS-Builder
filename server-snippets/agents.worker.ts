@@ -30,7 +30,9 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { generateText } from "ai";
+import { generateText, stepCountIs } from "ai";
+import { buildAgentTools } from "./agents.tools.js";
+
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createGroq } from "@ai-sdk/groq";
 import { createOllama } from "ollama-ai-provider-v2";
