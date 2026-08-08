@@ -441,6 +441,23 @@ export function buildAgentTools(ctx: ToolCtx) {
           .in("status", ["queued", "running"]);
         if ((count ?? 0) >= MAX_SUBAGENTS) throw new Error(`sub-agent cap reached (${MAX_SUBAGENTS} live)`);
 
+        // Phase 3.10.10: real execution record (cap + depth enforced by DB trigger too)
+        const { data: sub, error: subErr } = await sb3
+          .from("agent_subagents")
+          .insert({
+            thread_id: ctx.threadId,
+            message_id: ctx.messageId,
+            project_id: ctx.projectId,
+            parent_agent: ctx.agentSlug,
+            agent,
+            task,
+            context: context ?? null,
+            status: "running",
+          })
+          .select("id")
+          .single();
+        if (subErr) throw new Error(subErr.message);
+
         const res = await fetch(`${BRIDGE_SELF_URL}/rpc/delegate.create`, {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -453,8 +470,29 @@ export function buildAgentTools(ctx: ToolCtx) {
           }),
         });
         const text = await res.text();
-        if (!res.ok) throw new Error(`delegate.create ${res.status}: ${text.slice(0, 300)}`);
-        return { ok: true as const, agent, live: (count ?? 0) + 1, delegation: text.slice(0, 2000) };
+        if (!res.ok) {
+          await sb3
+            .from("agent_subagents")
+            .update({ status: "failed", result: text.slice(0, 2000) })
+            .eq("id", sub.id);
+          throw new Error(`delegate.create ${res.status}: ${text.slice(0, 300)}`);
+        }
+        let delegationId: string | null = null;
+        try {
+          delegationId = (JSON.parse(text) as { delegation_id?: string }).delegation_id ?? null;
+        } catch { /* raw text response */ }
+        await sb3
+          .from("agent_subagents")
+          .update({ delegation_id: delegationId, result: text.slice(0, 2000) })
+          .eq("id", sub.id);
+
+        return {
+          ok: true as const,
+          agent,
+          subagent_id: sub.id as string,
+          delegation_id: delegationId,
+          live: (count ?? 0) + 1,
+        };
       }),
     }),
   };
