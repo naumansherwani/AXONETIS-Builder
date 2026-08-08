@@ -155,9 +155,20 @@ function modelsFromEnv(envName: string, fallback: string[]) {
 
 function directSystemPrompt(slug: string) {
   if (slug === "sherlock") {
-    return "You are SherlockReview, AXONETIS AI Builder's strict audit/debug agent. Reply in concise Roman Urdu/Hindi when the founder writes that way. Be practical, identify root cause, and never invent fake backend results.";
+    return "You are SherlockReview, AXONETIS AI Builder's strict audit/debug agent. Founder Muhammad Nauman Sherwani se natural Roman Urdu/Hindi mixed with necessary technical English mein baat karo. Seedha root cause aur verified result do. Generic greeting, corporate intro, filler, repeated offer-to-help, fake backend result, ya English-only reply kabhi nahi. Agar kaam adhura ho to clearly bolo. Founder ke tone aur message length ko mirror karo.";
   }
-  return "You are JimmyBuild Agent for AXONETIS AI Builder. Reply in concise Roman Urdu/Hindi when the founder writes that way. Help build real production features, explain exact next actions, and never pretend a backend action happened if it did not.";
+  return "Tu Jimmy hai — NEXATECT ka lead builder aur Founder Muhammad Nauman Sherwani ka trusted technical partner. Founder se bilkul natural Roman Urdu/Hindi mein baat kar, sirf zaroori technical terms English mein rakh. Seedha jawab ya action se shuru kar; 'Hi there', apna intro, corporate pitch, generic greeting, repeated offer-to-help aur English-only paragraph kabhi mat likh. Founder ke tone aur message length ko mirror kar. Jo verify hua ho sirf woh complete bol; jo pending ho usay pending bol. Over-confident claim, dummy result aur banawati success mana hai. Default reply short rakho; detail sirf founder maange ya technical safety ke liye zaroori ho. Yeh live founder conversation hai, customer support chat nahi.";
+}
+
+function founderCommunicationContract(slug: string) {
+  return [
+    directSystemPrompt(slug),
+    "Response contract (strict): final answer only; no hidden reasoning or self-talk; no generic welcome; no closing question unless a real founder decision is blocked; preserve exact commands, paths, errors, and code identifiers; use clean Markdown when useful.",
+  ].join("\n");
+}
+
+function brainPrompt(slug: string, prompt: string) {
+  return `${founderCommunicationContract(slug)}\n\nFounder ka current message:\n${prompt}`;
 }
 
 async function fetchWithTimeout(
@@ -350,6 +361,8 @@ function extractText(payload: unknown): string {
   if (!payload || typeof payload !== "object") return JSON.stringify(payload);
   const p = payload as Record<string, unknown>;
   const candidates = [
+    p.final_answer,
+    p.finalAnswer,
     p.text,
     p.content,
     p.best,
@@ -846,13 +859,21 @@ function brainChatBody(
   prompt: string,
   extra?: Record<string, unknown>,
 ): Record<string, unknown> {
+  const instructions = founderCommunicationContract(slug);
+  const contractedPrompt = brainPrompt(slug, prompt);
   return {
     agent: slug,
     slug,
-    message: prompt,
-    prompt,
-    content: prompt,
-    messages: [{ role: "user", content: prompt }],
+    message: contractedPrompt,
+    prompt: contractedPrompt,
+    content: contractedPrompt,
+    system: instructions,
+    systemPrompt: instructions,
+    instructions,
+    messages: [
+      { role: "system", content: instructions },
+      { role: "user", content: prompt },
+    ],
     disabledProviders: DISABLED_PROVIDER_IDS,
     excludeProviderIds: DISABLED_PROVIDER_IDS,
     skipProviderIds: DISABLED_PROVIDER_IDS,

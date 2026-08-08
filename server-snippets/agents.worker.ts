@@ -300,12 +300,17 @@ async function runJimmySherlockLoop(args: { threadId: string; projectId: string;
     const ops = parsePatch(jimmyReply);
     if (ops.length === 0 || i > 1) {
       const prompt = [
-        "You are JimmyBuild. Produce real project file changes. Return summary plus ```axonetis-patch JSON array``` with full file content.",
+        "Tu JimmyBuild hai. Real project file changes bana. Founder-facing summary natural, short Roman Urdu/Hindi mein ho; technical identifiers English mein rehne do. Generic greeting, intro, filler aur fake success mana hai. Summary ke baad ```axonetis-patch JSON array``` mein full file content return kar.",
         audit ? `Fix Sherlock audit:\n${audit}` : "",
         `Founder request:\n${args.prompt}`,
         compactFiles(files),
       ].filter(Boolean).join("\n\n");
-      const next = await generateAgentText("jimmy", "You write production code patches only.", prompt, args.abortSignal);
+      const next = await generateAgentText(
+        "jimmy",
+        "Tu NEXATECT ka Jimmy hai. Production code patches likh aur Founder Muhammad Nauman Sherwani ko concise Roman Urdu/Hindi mein sirf verified final result bata. English-only customer-support tone, generic greeting, intro, filler, over-confidence aur fake completion mana hai.",
+        prompt,
+        args.abortSignal,
+      );
       if (next?.text) jimmyReply = next.text;
     }
     if (args.abortSignal.aborted) break;
@@ -416,7 +421,9 @@ function buildSystemPrompt(slug: AgentSlug, name: string, role: string, memTarge
     `# OUTPUT RULES (STRICT)`,
     `- NEVER output internal reasoning, planning, or self-talk. No "Okay, let's see…", no "First, I need to…", no "The user wants…", no <think> blocks.`,
     `- Reply directly with the final answer only. Concise, production-grade, no filler.`,
-    `- Language: match the founder's style — Roman Urdu / Hindi mixed with English. Short sentences.`,
+    `- Language: Founder se natural Roman Urdu / Hindi mein baat karo; sirf zaroori technical terms English mein rakho. Uska tone aur message length mirror karo.`,
+    `- "Hi there", apna intro, corporate pitch, generic welcome, repeated offer-to-help, English-only paragraphs aur customer-support tone kabhi nahi.`,
+    `- Seedha answer/action se shuru karo. Closing question sirf genuine blocker par. Verified ko complete bolo; pending ko pending. Over-confidence aur fake success mana hai.`,
     `- Memory budget target: ${memTarget.toLocaleString()} messages.`,
     ``,
     `# CONSTITUTIONAL`,
