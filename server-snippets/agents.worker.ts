@@ -233,11 +233,12 @@ function parsePatch(text: string): PatchOperation[] {
   try {
     const arr = JSON.parse(match[1].trim());
     if (!Array.isArray(arr)) return [];
-    return arr.map((x) => ({
+    return (arr as any[]).map((x): PatchOperation => ({
       path: String(x.path ?? "").trim().replace(/^\/+/, ""),
-      action: x.action === "delete" ? "delete" : "upsert",
+      action: x.action === "delete" ? ("delete" as const) : ("upsert" as const),
       content: typeof x.content === "string" ? x.content : undefined,
     })).filter((x) => x.path && !x.path.includes("..") && !x.path.startsWith("."));
+
   } catch { return []; }
 }
 
