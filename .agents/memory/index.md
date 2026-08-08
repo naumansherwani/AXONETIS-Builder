@@ -1,6 +1,7 @@
 # Project Memory
 
 ## Core
+SQL LOCKED: saari SQL repo mein — sql/founder/phase-<NN>-<slug>/ (founder) aur sql/awam/ (public, alag server). Chat mein SQL paste nahi, sirf path + run cmd.
 Project: Self-hosted AI agent builder — **AXONETIS AI Builder™**. LIVE at **founderbuilder.axonetis.com** (founder-only, hidden, Caddy + Namecheap). **axonetis.com** root = future PUBLIC marketing site — DO NOT point builder there. FORBIDDEN: aiaxonetis.hostflowai.net, aiaxonetis.nexatect.com, any *.hostflowai.net. Edits founder's existing sites. Backend: self-hosted Supabase on Hetzner. Never mention Supabase. APIs via OpenRouter + Groq.
 Founder: Muhammad Nauman Sherwani. Roman Urdu/Hindi — reply same style, keep short.
 Backend endpoint workflow LOCKED: for hostflowai-server, write exact copy-paste TypeScript endpoint code for founder to run manually. No vague contracts only.
