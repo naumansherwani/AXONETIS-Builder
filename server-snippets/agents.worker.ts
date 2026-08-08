@@ -114,7 +114,11 @@ async function runAgentReply({ threadId, messageId, agentSlug, projectId, prompt
     .eq("thread_id", threadId)
     .order("created_at", { ascending: false })
     .limit(40);
-  const messages = (history ?? []).reverse().map(toCoreMessage).filter(Boolean);
+  const messages = (history ?? [])
+    .reverse()
+    .map(toCoreMessage)
+    .filter((m): m is { role: "assistant" | "user" | "system"; content: string } => m !== null);
+
 
   // 3. System prompt — agent identity + scope.
   const system = buildSystemPrompt(agentSlug, reg.name, reg.role, memoryTarget);
