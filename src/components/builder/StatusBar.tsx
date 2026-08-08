@@ -1,10 +1,12 @@
 import { useBuilder } from "@/lib/builder-state";
 import { PROJECTS } from "@/lib/projects";
 import { SUPABASE3_READY } from "@/integrations/supabase3/client";
+import { useDiagnostics } from "@/hooks/useDiagnostics";
 
 export default function StatusBar() {
   const { project, branch, environment, bridgeStatus } = useBuilder();
   const active = PROJECTS.find((p) => p.id === project)!;
+  const diag = useDiagnostics(project);
 
   return (
     <div className="flex h-6 shrink-0 items-center justify-between border-t border-white/[0.06] bg-background px-3 text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -27,7 +29,29 @@ export default function StatusBar() {
           }
           pulse={bridgeStatus === "handshaking"}
         />
+        {/* Phase 3.10.8 — Problems badge (real tsc diagnostics from Supabase 3) */}
+        <StatusItem
+          label="Problems"
+          value={
+            diag.loading
+              ? "…"
+              : diag.errorCount === 0 && diag.warningCount === 0
+                ? "0"
+                : `${diag.errorCount}E / ${diag.warningCount}W`
+          }
+          tone={
+            diag.loading
+              ? "gray"
+              : diag.errorCount > 0
+                ? "red"
+                : diag.warningCount > 0
+                  ? "amber"
+                  : "emerald"
+          }
+          pulse={diag.scanning}
+        />
       </div>
+
 
       {/* RIGHT: project context (no fake metrics) */}
       <div className="flex items-center gap-4">

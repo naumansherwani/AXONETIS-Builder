@@ -37,7 +37,9 @@ Additive-only tech: purane phases purani tech (/rpc+SSE) pe frozen, NEW phases n
 TROJAN BY JIMMY LOCKED (Phase 9): zero-entry autonomous CRM — Attract/Nurture/Close/Retain, 72h silence auto follow-up, deal≥80% Sherlock audit. Situation routing: outreach+legal claude-sonnet-4-6 · analysis deepseek-r1 · quick deepseek-v4-flash · bulk gpt-oss-120b. SQL = Supabase 1 (CRM) + Supabase 3 (agent). See mem://features/trojan-by-jimmy-phase9-LOCKED.
 
 ## Memories
+- [Phase 3.10.8 LSP diagnostics LOCKED](mem://features/phase-3.10.8-lsp-diagnostics-LOCKED) — project_diagnostics table, /rpc/lsp.diagnostics + lsp.autofix, squiggles/hover/Fix, Problems badge
 - [TROJAN BY JIMMY Phase 9 LOCKED](mem://features/trojan-by-jimmy-phase9-LOCKED) — Zero-entry CRM 4 stages, model routing table, TROJAN_SYSTEM prompt (live in brain config/models.ts), product pricing pitch list
+
 - [Agentic human-like + AI swarm LOCKED](mem://features/agentic-humanlike-swarm-LOCKED) — Agents act (plan→tools→verify), Jimmy conductor + Sherlock auditor + 8 advisors swarm, max 5 sub-agents
 
 - [Phase 3.10.9 12-tool registry LOCKED](mem://features/phase-3.10.9-agents-tools-12-LOCKED) — 12/12 tools server impl on old-gen stack, run_sql/deploy needsApproval, stepCountIs(50)
