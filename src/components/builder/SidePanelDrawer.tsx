@@ -118,9 +118,36 @@ function renderPanel(id: string, Icon: typeof X, label: string, hint: string) {
       return <TerminalRailPanel />;
     case "pipeline":
       return <PipelineRailPanel />;
+    case "standup":
+      return <StandupRailPanel />;
     default:
       return <GenericPanel icon={Icon as never} title={label} hint={hint} />;
   }
+}
+
+function StandupRailPanel() {
+  const open = () => {
+    const fn = (window as unknown as { axonetisOpenTab?: (k: "standup") => void }).axonetisOpenTab;
+    fn?.("standup");
+  };
+  return (
+    <div className="flex h-full flex-col items-center justify-center px-6 py-10 text-center">
+      <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl border border-[#E50914]/30 bg-[#E50914]/[0.06] shadow-[0_0_30px_-10px_rgba(229,9,20,0.6)]">
+        <span className="font-mono text-lg text-[#ff7480]">J</span>
+      </div>
+      <div className="mb-1 text-[14px] font-semibold text-foreground/95">Daily Standup</div>
+      <div className="mb-4 max-w-[240px] text-[11px] leading-relaxed text-muted-foreground">
+        Jimmy ka Roman Urdu standup, 6 stats cards, issue highlight, pause/quota actions + GDPR
+        compliance badge.
+      </div>
+      <button
+        onClick={open}
+        className="rounded-md border border-[#E50914]/30 bg-[#E50914]/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#ff7480] hover:bg-[#E50914]/15"
+      >
+        Open in Workspace
+      </button>
+    </div>
+  );
 }
 
 function PipelineRailPanel() {

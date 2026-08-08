@@ -13,6 +13,7 @@ import {
   Files as FilesIcon,
   Compass,
   KanbanSquare,
+  CalendarClock,
   type LucideIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
@@ -25,6 +26,7 @@ import CommandCenterPanel from "../panels/CommandCenterPanel";
 import TerminalPanel from "./TerminalPanel";
 import GitHubPanel from "./GitHubPanel";
 import PipelinePanel from "../panels/PipelinePanel";
+import StandupPanel from "../panels/StandupPanel";
 
 export type TabKind =
   | "preview"
@@ -35,7 +37,8 @@ export type TabKind =
   | "github"
   | "files"
   | "command"
-  | "pipeline";
+  | "pipeline"
+  | "standup";
 
 export interface TabDef {
   kind: TabKind;
@@ -82,6 +85,13 @@ export const TAB_REGISTRY: Record<TabKind, TabDef> = {
     label: "Pipeline",
     icon: KanbanSquare,
     render: PipelinePanel,
+    closable: true,
+  },
+  standup: {
+    kind: "standup",
+    label: "Standup",
+    icon: CalendarClock,
+    render: StandupPanel,
     closable: true,
   },
   github: { kind: "github", label: "GitHub", icon: GitBranch, render: GitHubPanel, closable: true },

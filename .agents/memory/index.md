@@ -98,3 +98,4 @@ TROJAN BY JIMMY LOCKED (Phase 9): zero-entry autonomous CRM — Attract/Nurture/
 - [3.10.2 Orchestration join LOCKED](mem://features/phase-3.10.2-orchestration-join-LOCKED) — /rpc/orchestrate.* binds Planning Tree + Delegation + Self-Verify to one message; stack reality (no tRPC/WebTransport) locked
 - [Additive-only tech policy LOCKED](mem://constraints/additive-only-tech-policy-LOCKED) — old-gen frozen list, new-gen /trpc + WebTransport on new files only, no refactor proposals
 - [Phase 11.1 Pipeline Dashboard LOCKED](mem://features/phase-11.1-pipeline-dashboard-LOCKED) — outreach_leads + kanban 6 stages, drag-drop, ARR counter, workspace tab "pipeline"
+- [Phase 11.2+11.3 Standup & Compliance LOCKED](mem://features/phase-11.2-11.3-standup-compliance-LOCKED) — Jimmy daily standup panel + GDPR/spam/unsubscribe/Sherlock compliance badge, outreach_campaigns/standups/compliance tables
