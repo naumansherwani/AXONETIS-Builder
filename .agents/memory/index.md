@@ -33,6 +33,7 @@ PHASE 3.10 MASTER ROADMAP LOCKED Jul 14 2026: 11 sub-phases (3.10.1 ToolCallBubb
 ERROR-FIRST LOCKED Jul 2026: Jab tak frontend ↔ backend wiring, PM2, build, env, curl smoke green na hon, next phase bilkul nahi. Broken command ko split/fix karo; no moving ahead.
 PHASE 3.10.1 BLOCKER LOCKED Jul 25 2026: 3.10.2 tab tak forbidden jab tak Tool Abort backend+frontend Hetzner par real working, PM2 fresh errors green, curl smoke + UI cancel pass na hon.
 MODERN RUNTIME LOCKED: Rust + Bun native, SSE now → WebTransport/HTTP3 next, tRPC type-safety, direct Supabase SDK, no WebSockets/API sprawl.
+Additive-only tech: purane phases purani tech (/rpc+SSE) pe frozen, NEW phases nayi tech (tRPC+WebTransport) pe — koi migration/touch nahi.
 
 ## Memories
 - [3.10.2 Sub-Agent Delegation LOCKED](mem://features/phase-3.10.2-subagent-delegation-LOCKED) — DelegationTree UI, delegation part contract, /rpc/delegate.* routes, agent_delegations tables
@@ -86,3 +87,4 @@ MODERN RUNTIME LOCKED: Rust + Bun native, SSE now → WebTransport/HTTP3 next, t
 - [Builder Workflow Rules LOCKED](mem://features/builder-workflow-rules) — 2 repos locked, phase-by-phase pull workflow, founder controls pace, never push to server repo
 - [Jimmy live brain routes LOCKED](mem://features/jimmy-live-brain-routes-LOCKED) — Live /api/founder/jimmy/stream source (raw fetch SSE), model order llama-3.3-70b → hermes-405b → qwen-coder-32b, ws transport requirement, full loop verified + root-user security finding.
 - [3.10.2 Orchestration join LOCKED](mem://features/phase-3.10.2-orchestration-join-LOCKED) — /rpc/orchestrate.* binds Planning Tree + Delegation + Self-Verify to one message; stack reality (no tRPC/WebTransport) locked
+- [Additive-only tech policy LOCKED](mem://constraints/additive-only-tech-policy-LOCKED) — old-gen frozen list, new-gen /trpc + WebTransport on new files only, no refactor proposals
