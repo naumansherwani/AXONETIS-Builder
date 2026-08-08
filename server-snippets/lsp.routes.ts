@@ -15,7 +15,7 @@
  *
  * Env: SUPABASE3_URL, SUPABASE3_SERVICE_ROLE_KEY, PROJECTS_ROOT (default /opt/axonetis-projects)
  */
-import { Router } from "express";
+import express, { Router } from "express";
 import { createClient } from "@supabase/supabase-js";
 import { execFile } from "node:child_process";
 import path from "node:path";
