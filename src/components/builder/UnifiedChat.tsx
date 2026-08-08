@@ -272,6 +272,19 @@ export default function UnifiedChat() {
     textareaRef.current?.focus();
   }, [project, status]);
 
+  // PHASE 12.3 — Help Center "Contact support" prefills the composer with Jimmy.
+  useEffect(() => {
+    const onAsk = (e: Event) => {
+      const text = (e as CustomEvent<{ text?: string }>).detail?.text;
+      if (!text) return;
+      setDraft(text);
+      textareaRef.current?.focus();
+    };
+    window.addEventListener("axonetis:jimmy-ask", onAsk as EventListener);
+    return () => window.removeEventListener("axonetis:jimmy-ask", onAsk as EventListener);
+  }, []);
+
+
   const ingestAgentRow = useCallback((row: AgentMessageRow) => {
     if (seenMessageIdsRef.current.has(row.id)) return;
     seenMessageIdsRef.current.add(row.id);
