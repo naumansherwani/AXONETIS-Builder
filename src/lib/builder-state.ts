@@ -42,7 +42,6 @@ export type BottomTabId =
   | "settings"
   | "help";
 
-
 export type PreviewMode = "single" | "triptych";
 
 export interface VisualEditPick {

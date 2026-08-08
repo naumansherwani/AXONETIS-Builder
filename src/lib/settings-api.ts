@@ -154,7 +154,10 @@ export async function saveSettings(
   if (!SUPABASE3_READY) return { ok: false, settings: next, error: "Supabase 3 not configured" };
   const { error } = await supabase3
     .from("founder_settings")
-    .upsert({ key: SETTINGS_KEY, ...next, updated_at: new Date().toISOString() }, { onConflict: "key" });
+    .upsert(
+      { key: SETTINGS_KEY, ...next, updated_at: new Date().toISOString() },
+      { onConflict: "key" },
+    );
   return error ? { ok: false, settings: next, error: error.message } : { ok: true, settings: next };
 }
 

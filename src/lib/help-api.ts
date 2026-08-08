@@ -26,8 +26,7 @@ export interface HelpSnapshot {
 }
 
 export async function fetchHelpArticles(): Promise<HelpSnapshot> {
-  if (!SUPABASE3_READY)
-    return { articles: [], live: false, error: "Supabase 3 not configured" };
+  if (!SUPABASE3_READY) return { articles: [], live: false, error: "Supabase 3 not configured" };
   const { data, error } = await supabase3
     .from("help_articles")
     .select("*")

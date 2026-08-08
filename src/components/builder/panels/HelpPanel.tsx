@@ -7,12 +7,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, LifeBuoy, Loader2, MessageSquare, RefreshCw, Search } from "lucide-react";
-import {
-  fetchHelpArticles,
-  searchArticles,
-  toEmbedUrl,
-  type HelpArticle,
-} from "@/lib/help-api";
+import { fetchHelpArticles, searchArticles, toEmbedUrl, type HelpArticle } from "@/lib/help-api";
 
 /** Minimal, dependency-free markdown renderer: headings, code, lists, bold, links. */
 function Markdown({ source }: { source: string }) {

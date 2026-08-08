@@ -162,7 +162,9 @@ export default function SettingsPanel() {
             max={4096}
             step={64}
             value={settings.memory_limit_mb}
-            onChange={(e) => setSettings((p) => ({ ...p, memory_limit_mb: Number(e.target.value) }))}
+            onChange={(e) =>
+              setSettings((p) => ({ ...p, memory_limit_mb: Number(e.target.value) }))
+            }
             onMouseUp={(e) =>
               void patch({ memory_limit_mb: Number((e.target as HTMLInputElement).value) })
             }
@@ -193,7 +195,9 @@ export default function SettingsPanel() {
                 step={1}
                 value={String(settings[key])}
                 onChange={(e) => setSettings((p) => ({ ...p, [key]: Number(e.target.value) }))}
-                onBlur={(e) => void patch({ [key]: Number(e.target.value) } as Partial<FounderSettings>)}
+                onBlur={(e) =>
+                  void patch({ [key]: Number(e.target.value) } as Partial<FounderSettings>)
+                }
                 className="flex-1 rounded-md border border-white/[0.08] bg-[#0c0c13] px-2 py-1.5 font-mono text-[11px] text-foreground/90 outline-none focus:border-amber-400/40"
               />
             </label>

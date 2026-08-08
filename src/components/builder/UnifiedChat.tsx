@@ -284,7 +284,6 @@ export default function UnifiedChat() {
     return () => window.removeEventListener("axonetis:jimmy-ask", onAsk as EventListener);
   }, []);
 
-
   const ingestAgentRow = useCallback((row: AgentMessageRow) => {
     if (seenMessageIdsRef.current.has(row.id)) return;
     seenMessageIdsRef.current.add(row.id);
@@ -334,7 +333,17 @@ export default function UnifiedChat() {
         pendingPlaceholderRef.current = null;
         pendingUserMessageIdRef.current = null;
       } else {
-        next.push({ id: row.id, agent, text, meta, toolCalls, diffs, plans, verifications, delegations });
+        next.push({
+          id: row.id,
+          agent,
+          text,
+          meta,
+          toolCalls,
+          diffs,
+          plans,
+          verifications,
+          delegations,
+        });
       }
       return next;
     });
@@ -1310,7 +1319,6 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
 
         {/* 3.10.3 — batch diff approval (Monaco side-by-side + Sherlock verdict) */}
         {msg.diffs && msg.diffs.length > 1 && <DiffBatchReview diffs={msg.diffs} />}
-
 
         {/* meta chips + hover actions */}
         {isAssistant && !msg.thinking && (
