@@ -12,6 +12,12 @@ export type AgentState = "standby" | "jimmy" | "sherlock";
 
 export type BottomTabId =
   | "command"
+  | "vision"
+  | "presence"
+  | "tests"
+  | "browser"
+  | "oneprompt"
+  | "migration"
   | "files"
   | "code"
   | "database"

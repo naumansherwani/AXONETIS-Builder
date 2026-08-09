@@ -18,6 +18,7 @@ import {
   normalizePreviewBridgeEvent,
 } from "@/lib/preview-bridge";
 import { subscribePreviewChanges } from "@/lib/preview-engine";
+import PresenceLayer from "./PresenceLayer";
 
 type Device = "mobile" | "tablet" | "desktop";
 const DEVICE_WIDTH: Record<Device, number> = { mobile: 375, tablet: 768, desktop: 1440 };
@@ -283,7 +284,7 @@ function SingleFrame({
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: "spring", stiffness: 80, damping: 15 }}
-      className={`fb-glass overflow-hidden shadow-[0_30px_120px_-20px_rgba(229,9,20,0.25)] ${device === "desktop" ? "rounded-none border-0" : "rounded-xl"}`}
+      className={`fb-glass relative overflow-hidden shadow-[0_30px_120px_-20px_rgba(229,9,20,0.25)] ${device === "desktop" ? "rounded-none border-0" : "rounded-xl"}`}
       style={{ width: device === "desktop" ? "100%" : width, maxWidth: "100%", height: "100%" }}
     >
       <iframe
@@ -295,6 +296,8 @@ function SingleFrame({
         className="h-full w-full bg-white"
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
       />
+      {/* 10.5 — multiplayer cursors / selections / avatars over the preview */}
+      <PresenceLayer />
     </motion.div>
   );
 }

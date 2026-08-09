@@ -30,6 +30,12 @@ import MarketplacePanel from "./panels/MarketplacePanel";
 import SettingsPanel from "./panels/SettingsPanel";
 import HelpPanel from "./panels/HelpPanel";
 import ReplayPanel from "./panels/ReplayPanel";
+import VisionPanel from "./panels/VisionPanel";
+import PresencePanel from "./panels/PresencePanel";
+import TestsPanel from "./panels/TestsPanel";
+import BrowserAgentPanel from "./panels/BrowserAgentPanel";
+import OnePromptPanel from "./panels/OnePromptPanel";
+import MigrationRunnerPanel from "./panels/MigrationRunnerPanel";
 import GenericPanel from "./panels/GenericPanel";
 
 export default function SidePanelDrawer({ side }: { side: "left" | "right" }) {
@@ -123,6 +129,18 @@ function renderPanel(id: string, Icon: typeof X, label: string, hint: string) {
       return <HelpPanel />;
     case "replay":
       return <ReplayPanel />;
+    case "vision":
+      return <VisionPanel />;
+    case "presence":
+      return <PresencePanel />;
+    case "tests":
+      return <TestsPanel />;
+    case "browser":
+      return <BrowserAgentPanel />;
+    case "oneprompt":
+      return <OnePromptPanel />;
+    case "migration":
+      return <MigrationRunnerPanel />;
     case "terminal":
       return <TerminalRailPanel />;
     case "pipeline":
