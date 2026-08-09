@@ -21,6 +21,7 @@ import { PROJECTS, type ProjectId } from "@/lib/projects";
 import { supabaseLabelFor } from "@/lib/project-workspace";
 import { listActivity, type AgentActivity } from "@/lib/hostflow-api";
 import { getPreviewSession, type PreviewSession } from "@/lib/preview-engine";
+import TelemetryStrip from "../TelemetryStrip";
 
 type Stage = "sandbox" | "staging" | "production";
 const STAGES: Stage[] = ["sandbox", "staging", "production"];
@@ -108,6 +109,8 @@ export default function CommandCenterPanel() {
         </span>
         <span>{PROJECTS.length} projects · ∞ memory</span>
       </div>
+
+      <TelemetryStrip />
 
       <PanelSection title="Ecosystem Telemetry">
         <div className="grid grid-cols-3 gap-2">
