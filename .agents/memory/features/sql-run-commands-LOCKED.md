@@ -29,3 +29,8 @@ bash sql/run-all-founder.sh
 - `.sql` → psql. `.ts` / `.js` / `.sh` → repo file, psql mein **never**.
 - `sql/founder/legacy-phase-03-06/` kabhi nahi chalani.
 - Har code push ke baad Hetzner pull block dena hai (Core rule).
+
+## VERIFIED (Aug 2026)
+`bash sql/run-all-founder.sh` ne 17/17 file `OK` diye → **ALL SQL GREEN ✅**.
+Script hi order sambhalti hai — founder ko koi individual SQL chat se copy-paste **nahi** karni.
+Naya phase aaye to sirf file + `FILES=()` entry, phir wahi ek command dobara. Yeh default hai.
