@@ -105,3 +105,4 @@ TROJAN BY JIMMY LOCKED (Phase 9): zero-entry autonomous CRM — Attract/Nurture/
 - [SQL repo folder structure LOCKED](mem://constraints/sql-repo-folder-structure-LOCKED) — saari SQL repo mein: sql/founder/phase-<NN>-<slug>/ + sql/awam/ alag; hetzner-migrations & db/migrations deleted
 - [Jimmy founder-voice LOCKED](mem://constraints/jimmy-founder-voice-LOCKED) — Builder proxy structural voice guard + rewrite pass; no greeting/intro/status-recap/English-only replies
 - [ANEXOMAIL name + AI boundary LOCKED](mem://constraints/anexomail-name-LOCKED) — ANEXOMAIL™ only, anexomail.com, AI separate product on Server 2. Handoff brief: `docs/ANEXOMAIL-AI-SERVER-BRIEF.md`
+- [Bridge mount + verify command](mem://features/bridge-mount-verify-command) — Ek locked command: server-snippets ke saare routers hostflow-server (8090) par idempotent mount + 14-endpoint status matrix. Deep audit ke 404s ka fix (founder-panel + axon-io routers).
