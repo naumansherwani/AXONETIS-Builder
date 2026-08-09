@@ -70,6 +70,7 @@ create table if not exists public.test_runs (
 alter table public.test_runs add column if not exists actor text not null default 'sherlock';
 alter table public.test_runs add column if not exists duration_ms int;
 alter table public.test_runs add column if not exists log text;
+alter table public.test_runs alter column status set default 'complete';
 grant select on public.test_runs to authenticated;
 grant all on public.test_runs to service_role;
 
