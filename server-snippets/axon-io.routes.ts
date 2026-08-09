@@ -31,7 +31,16 @@ const sb = () =>
 
 const UPLOAD_BUCKET = process.env.AXON_UPLOAD_BUCKET ?? "builder-uploads";
 
+/* ───────────────────── unified health alias ─────────────── */
+/* Bridge exposes /health; ops dashboards use /api/system/health. Same contract. */
+for (const p of ["/api/system/health", "/api/health"]) {
+  router.get(p, (_req, res) => {
+    res.json({ ok: true, service: "hostflow-server", port: 8090, at: new Date().toISOString() });
+  });
+}
+
 /* ───────────────────── bridge health ───────────────────── */
+
 router.get("/api/axon/bridge/health", async (req, res) => {
   const projectId = String(req.query.projectId ?? "");
   const checkedAt = new Date().toISOString();
