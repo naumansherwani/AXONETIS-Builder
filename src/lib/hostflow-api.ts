@@ -235,6 +235,8 @@ export async function streamChatWithAgent(
   handlers: {
     onAck?: (event: Extract<AgentChatStreamEvent, { type: "ack" }>) => void;
     onToken?: (delta: string) => void;
+    /** Server ne final text badla (voice guard / builder loop) — poora text replace karo. */
+    onReplace?: (text: string) => void;
     onDone?: (event: Extract<AgentChatStreamEvent, { type: "done" }>) => void;
     onError?: (error: string) => void;
   },
@@ -298,6 +300,9 @@ export async function streamChatWithAgent(
       } else if (event === "token") {
         const delta = typeof payload.delta === "string" ? payload.delta : "";
         if (delta) handlers.onToken?.(delta);
+      } else if (event === "replace") {
+        const text = typeof payload.text === "string" ? payload.text : "";
+        if (text) handlers.onReplace?.(text);
       } else if (event === "done") {
         handlers.onDone?.({
           type: "done",
