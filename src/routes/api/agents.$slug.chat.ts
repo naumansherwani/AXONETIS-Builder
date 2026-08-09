@@ -257,13 +257,14 @@ async function callGroqFallback(slug: string, prompt: string, signal?: AbortSign
         };
       } | null;
       const text = payload?.choices?.[0]?.message?.content?.trim();
-      if (text)
+      if (text && !violatesFounderVoice(text))
         return {
           text,
           model: `groq:${model}`,
           tokensIn: payload?.usage?.prompt_tokens ?? payload?.usage?.input_tokens,
           tokensOut: payload?.usage?.completion_tokens ?? payload?.usage?.output_tokens,
         };
+      if (text) lastError = `${model}: founder communication contract violated`;
     } catch (err) {
       lastError = `${model}: ${err instanceof Error ? err.message : String(err)}`.slice(0, 280);
     }
@@ -336,13 +337,14 @@ async function callOpenRouterFallback(slug: string, prompt: string, signal?: Abo
         };
       } | null;
       const text = payload?.choices?.[0]?.message?.content?.trim();
-      if (text)
+      if (text && !violatesFounderVoice(text))
         return {
           text,
           model: `openrouter:${model}`,
           tokensIn: payload?.usage?.prompt_tokens ?? payload?.usage?.input_tokens,
           tokensOut: payload?.usage?.completion_tokens ?? payload?.usage?.output_tokens,
         };
+      if (text) lastError = `${model}: founder communication contract violated`;
     } catch (err) {
       lastError = `${model}: ${err instanceof Error ? err.message : String(err)}`.slice(0, 280);
     }
@@ -1099,7 +1101,6 @@ function streamBrainToClient(job: BrainJob) {
                     continue;
                   }
                   assistantText += delta;
-                  send("token", { delta });
                 }
                 const finalText = extractText(payload);
                 if (!delta && finalText && /done|final|complete/i.test(frame)) {
@@ -1114,8 +1115,6 @@ function streamBrainToClient(job: BrainJob) {
               : await r.text().catch(() => "");
             assistantText = extractText(payload);
             meta = { model: extractModel(payload), ...extractUsage(payload) };
-            if (assistantText && !hasProviderKeyFailure(assistantText))
-              send("token", { delta: assistantText });
           }
         } catch (err) {
           rustError =
@@ -1172,8 +1171,7 @@ function streamBrainToClient(job: BrainJob) {
           const looped = await safeRunCoreBuilderLoop(job, assistantText, meta);
           finalText = looped.text;
           finalMeta = looped.meta;
-          if (finalText !== assistantText)
-            send("token", { delta: `\n\n${finalText.replace(assistantText, "").trim()}` });
+          send("token", { delta: finalText });
         }
         const assistantMessageId = finalText
           ? await insertAssistantMessage(job, finalText, finalMeta)
