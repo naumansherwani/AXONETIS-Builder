@@ -63,6 +63,9 @@ import {
 } from "@/lib/agent-stream";
 import { previewRoute, shortModelTag, formatUsd, type RouterPreview } from "@/lib/router-api";
 import { abortToolCall } from "@/lib/tools-api";
+import { ADVISORS, advisorForSlug, detectAdvisorMention } from "@/lib/advisors-api";
+import { AdvisorBadge } from "./AdvisorMentionPicker";
+import WhyTooltip from "./WhyTooltip";
 
 type Agent = "founder" | "jimmy" | "sherlock";
 type Msg = ChatMsg;
@@ -715,8 +718,19 @@ export default function UnifiedChat() {
     const match = draft.match(/(^|\s)@(\w*)$/);
     if (!match) return [];
     const q = `@${match[2].toLowerCase()}`;
-    return MENTIONS.filter((m) => m.tag.startsWith(q));
+    const base = MENTIONS.filter((m) => m.tag.startsWith(q));
+    // 10.12 — industry advisors join the same picker (no duplicate popover).
+    const advisors = ADVISORS.filter((a) => `@${a.slug}`.startsWith(q)).map((a) => ({
+      tag: `@${a.slug}`,
+      agent: "jimmy" as UnifiedAgentSlug,
+      hint: `${a.domain} · ${a.tagline}`,
+      advisorSlug: a.slug,
+    }));
+    return [...base, ...advisors];
   }, [draft]);
+
+  /** 10.12 — which advisor the current draft routes to (badge in composer). */
+  const routedAdvisor = useMemo(() => detectAdvisorMention(draft), [draft]);
 
   const applySlash = useCallback(
     (cmd: string) => {
@@ -1048,11 +1062,23 @@ export default function UnifiedChat() {
                     onClick={() => applyMention(mn.tag)}
                     className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-accent/40"
                   >
-                    <span
-                      className={`grid h-5 w-5 place-items-center rounded text-[9px] font-bold ${AGENT_META[mn.agent].chip} ring-1 ${AGENT_META[mn.agent].ring}`}
-                    >
-                      {AGENT_META[mn.agent].initial}
-                    </span>
+                    {"advisorSlug" in mn && advisorForSlug(mn.advisorSlug as string) ? (
+                      <span
+                        className="grid h-5 w-5 place-items-center rounded text-[9px] font-bold text-black"
+                        style={{
+                          background: advisorForSlug(mn.advisorSlug as string)!.color,
+                          boxShadow: `0 0 12px -4px ${advisorForSlug(mn.advisorSlug as string)!.color}`,
+                        }}
+                      >
+                        {advisorForSlug(mn.advisorSlug as string)!.glyph}
+                      </span>
+                    ) : (
+                      <span
+                        className={`grid h-5 w-5 place-items-center rounded text-[9px] font-bold ${AGENT_META[mn.agent].chip} ring-1 ${AGENT_META[mn.agent].ring}`}
+                      >
+                        {AGENT_META[mn.agent].initial}
+                      </span>
+                    )}
                     <span className="font-mono text-[11px] font-semibold text-foreground">
                       {mn.tag}
                     </span>
@@ -1089,6 +1115,11 @@ export default function UnifiedChat() {
                 <XIcon className="h-3 w-3 text-muted-foreground" />
               </button>
             </motion.div>
+          )}
+          {routedAdvisor && (
+            <div className="mb-1.5 flex items-center gap-2 px-1">
+              <AdvisorBadge advisor={routedAdvisor} thinking={isLoading} />
+            </div>
           )}
           <PromptInput
             className="rounded-lg"
@@ -1397,6 +1428,9 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
                   ? `$${msg.meta.savedVsDefaultUsd.toFixed(5)}`
                   : `$${msg.meta.savedVsDefaultUsd.toFixed(4)}`}
               </span>
+            )}
+            {isAssistant && !msg.thinking && (
+              <WhyTooltip messageId={msg.id} fallbackModel={msg.meta?.model ?? null} />
             )}
             <div className="ml-auto flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
               <Tooltip>
