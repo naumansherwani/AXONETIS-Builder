@@ -111,6 +111,10 @@ function normalizeMessages(messages: unknown) {
   });
 }
 
+function violatesFounderVoice(text: string) {
+  return /\bhi there\b|\bjimmy here\b|\bready to help\b|\bwhat can i (?:assist|help)\b|\bhow can i (?:assist|help)\b|ready ho ja(?:o|ye)|kya aap kuch specific verify|agla step bata(?:o|ayein)/i.test(text);
+}
+
 router.post("/jimmy/stream", async (req, res) => {
   const { messages, projectId } = req.body ?? {};
   if (!messages || !projectId) {
@@ -134,9 +138,10 @@ router.post("/jimmy/stream", async (req, res) => {
         maxSteps: 50,
       });
 
-      for await (const chunk of result.textStream) {
-        res.write(`data: ${JSON.stringify({ type: "text", text: chunk, model: modelId })}\n\n`);
-      }
+      let fullText = "";
+      for await (const chunk of result.textStream) fullText += chunk;
+      if (violatesFounderVoice(fullText)) throw new Error("Founder communication contract violated");
+      res.write(`data: ${JSON.stringify({ type: "text", text: fullText, model: modelId })}\n\n`);
       res.write(`data: ${JSON.stringify({ type: "done", model: modelId })}\n\n`);
       res.end();
       return;

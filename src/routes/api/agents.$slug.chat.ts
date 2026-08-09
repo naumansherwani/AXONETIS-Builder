@@ -102,6 +102,13 @@ function hasProviderKeyFailure(text: string | null | undefined) {
   return /all providers failed|no key|missing.*key|provider.*failed/i.test(text);
 }
 
+function violatesFounderVoice(text: string | null | undefined) {
+  if (!text) return false;
+  return /\bhi there\b|\bjimmy here\b|\bready to help\b|\bwhat can i (?:assist|help)\b|\bhow can i (?:assist|help)\b|ready ho ja(?:o|ye)|kya aap kuch specific verify|agla step bata(?:o|ayein)/i.test(
+    text,
+  );
+}
+
 function providerEnv(...names: string[]) {
   for (const name of names) {
     const value = process.env[name]?.trim();
@@ -951,7 +958,7 @@ async function runBrainAndInsert(job: BrainJob) {
 
   if (signal?.aborted) return;
 
-  if (hasProviderKeyFailure(rustError ?? assistantText)) {
+  if (hasProviderKeyFailure(rustError ?? assistantText) || violatesFounderVoice(assistantText)) {
     const direct = await runDirectFallback(slug, prompt, signal);
     if (direct && "text" in direct && direct.text) {
       assistantText = direct.text;
@@ -1131,7 +1138,7 @@ function streamBrainToClient(job: BrainJob) {
           return;
         }
 
-        if (hasProviderKeyFailure(rustError ?? assistantText)) {
+        if (hasProviderKeyFailure(rustError ?? assistantText) || violatesFounderVoice(assistantText)) {
           const direct = await runDirectFallback(job.slug, job.prompt, job.signal);
           if (direct && "text" in direct && direct.text) {
             assistantText = direct.text;
