@@ -13,17 +13,21 @@ Woh file **SQL nahi hai**. Uski jagah:
 Repo mein already maujood: `server-snippets/rpc.routes.ts`. Bas copy karo,
 psql mein mat daalo.
 
-## Saari pending SQL — ek command
+## Saari pending SQL — LOCKED do command
+
+**1)** order padho:
 
 ```bash
-cd /var/www/axonetis && git pull && bash sql/run-all-founder.sh
+cat /var/www/axonetis/sql/README-RUN-ORDER.md
 ```
 
-Password chahiye ho to:
+**2)** run karo (hamesha **Supabase 3** DB URL ke saath — bina iske script local
+127.0.0.1 pe girti hai aur password maangti hai):
 
 ```bash
-AXONETIS_DB_URL='postgresql://postgres:APNA_PASSWORD@127.0.0.1:5432/postgres' \
-  bash sql/run-all-founder.sh
+cd /var/www/axonetis && git pull && \
+AXONETIS_DB_URL='postgresql://postgres:SUPABASE3_DB_PASSWORD@db.itoejjzjjprjnrhygjal.supabase.co:5432/postgres' \
+bash sql/run-all-founder.sh
 ```
 
 ## Order (script isi order mein chalati hai)

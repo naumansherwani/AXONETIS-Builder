@@ -336,10 +336,39 @@ create table if not exists public.agent_activity (
   status text not null default 'online' check (status in ('online','thinking','idle','offline','error')),
   created_at timestamptz not null default now()
 );
-alter table public.agent_activity drop constraint if exists agent_activity_status_check;
-alter table public.agent_activity
-  add constraint agent_activity_status_check
-  check (status in ('online','thinking','idle','offline','error','cancelled'));
+-- status column legacy DB mein enum (agent_status) ho sakta hai, naye mein text.
+-- Dono case handle: enum ho to missing labels enum mein add karo, text ho to check constraint.
+do $$
+declare
+  v_type text;
+  v_enum text;
+  lbl text;
+begin
+  select c.data_type, c.udt_name into v_type, v_enum
+  from information_schema.columns c
+  where c.table_schema = 'public' and c.table_name = 'agent_activity' and c.column_name = 'status';
+
+  if v_type is null then
+    return;
+  end if;
+
+  alter table public.agent_activity drop constraint if exists agent_activity_status_check;
+
+  if v_type = 'USER-DEFINED' then
+    foreach lbl in array array['online','thinking','idle','offline','error','cancelled'] loop
+      if not exists (
+        select 1 from pg_enum e join pg_type t on t.oid = e.enumtypid
+        where t.typname = v_enum and e.enumlabel = lbl
+      ) then
+        execute format('alter type public.%I add value %L', v_enum, lbl);
+      end if;
+    end loop;
+  else
+    alter table public.agent_activity
+      add constraint agent_activity_status_check
+      check (status in ('online','thinking','idle','offline','error','cancelled'));
+  end if;
+end $$;
 create index if not exists idx_agent_activity_project on public.agent_activity(project_id, created_at desc);
 create index if not exists idx_agent_activity_agent on public.agent_activity(agent_slug, created_at desc);
 grant select, insert, update, delete on public.agent_activity to authenticated;
