@@ -52,8 +52,8 @@ const PROJECT_REPOS: Record<string, string> = {
 const PROJECT_URLS: Record<string, string> = {
   hostflowai: "https://nexatect.com",
   anexomail: "https://founderworkspace.anexomail.com",
-  rapidpay: "https://anexvotaipay.com",
-  anexvotaipay: "https://anexvotaipay.com",
+  rapidpay: "https://anexvotpay.com",
+  anexvotaipay: "https://anexvotpay.com",
   founderbuilder: "https://founderbuilder.axonetis.com",
 };
 

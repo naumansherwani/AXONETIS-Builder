@@ -32,7 +32,7 @@ export const PROJECTS: ProjectDef[] = [
     id: "rapidpay",
     name: "ANEXVOT AI PAY™",
     shortName: "ANEXVOT",
-    previewUrl: "https://anexvotaipay.com",
+    previewUrl: "https://anexvotpay.com",
     accent: "#7c3aed",
   },
 
