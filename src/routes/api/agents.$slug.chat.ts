@@ -1021,7 +1021,7 @@ function brainChatBody(
 
 
 async function runBrainAndInsert(job: BrainJob) {
-  const { supabase, slug, prompt, threadId, userMessageId, brainURLs, signal } = job;
+  const { supabase, slug, prompt, projectId, threadId, userMessageId, brainURLs, signal } = job;
   let assistantText = "";
   let rustPayload: unknown = null;
   let rustError: string | null = null;
