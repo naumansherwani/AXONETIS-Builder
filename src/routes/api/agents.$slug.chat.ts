@@ -974,23 +974,17 @@ async function insertAssistantMessage(job: BrainJob, assistantText: string, meta
  */
 function brainChatPaths(slug: string, opts?: { stream?: boolean }) {
   if (slug === "sherlock") {
+    // Brain has ONLY /sherlock/stream + /sherlock/audit. No /sherlock/orchestrate.
     return opts?.stream
-      ? [
-          "/api/founder/sherlock/stream",
-          "/api/founder/sherlock/audit",
-          "/api/founder/sherlock/orchestrate",
-        ]
-      : [
-          "/api/founder/sherlock/audit",
-          "/api/founder/sherlock/stream",
-          "/api/founder/sherlock/orchestrate",
-        ];
+      ? ["/api/founder/sherlock/stream", "/api/founder/sherlock/audit"]
+      : ["/api/founder/sherlock/audit", "/api/founder/sherlock/stream"];
   }
   return [
     "/api/founder/jimmy/stream",
     `/api/agents/${slug}/chat`,
   ];
 }
+
 
 /**
  * Superset request body accepted by every Brain founder route.
