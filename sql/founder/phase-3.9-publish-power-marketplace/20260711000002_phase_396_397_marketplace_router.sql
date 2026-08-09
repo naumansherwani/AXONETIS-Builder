@@ -15,7 +15,8 @@ begin;
 -- ─────────────────────────────────────────────────────────────
 insert into public.projects (slug, name, short_name, preview_url, accent, description)
 values
-  ('hostflowai',      'HostFlow AI™',          'HostFlow',  'https://hostflowai.net',          '#E50914', 'NEXATECT HostFlow product workspace'),
+  ('hostflowai',      'NEXATECT™ Global',       'NEXATECT',  'https://nexatect.com',            '#E50914', 'NEXATECT global workspace'),
+  ('anexomail',       'ANEXOMAIL™ Workspace',  'ANEXOMAIL', 'https://founderworkspace.anexomail.com', '#0891b2', 'ANEXOMAIL founder workspace'),
   ('rapidpay',        'ANEXVOT AI PAY™',       'ANEXVOT',   'https://anexvotaipay.com',        '#7c3aed', 'NEXATECT ANEXVOT AI Pay product workspace'),
   ('anexvotaipay',    'ANEXVOT AI PAY™',       'ANEXVOT',   'https://anexvotaipay.com',        '#7c3aed', 'NEXATECT ANEXVOT AI Pay alias workspace'),
   ('founderbuilder',  'AXONETIS AI Builder™',  'AXONETIS',  'https://founderbuilder.axonetis.com', '#1a0933', 'AXONETIS builder workspace')

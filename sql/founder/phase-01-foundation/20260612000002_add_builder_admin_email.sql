@@ -1,6 +1,6 @@
 -- =====================================================================
 -- AXONETIS — Phase 1 patch: add hostflowaibuilder@gmail.com as founder/admin
--- Target: Hetzner Supabase 3 (aiaxonetis.nexatect.com)
+-- Target: self-hosted Hetzner Core 3
 -- Safe to re-run (idempotent).
 -- =====================================================================
 

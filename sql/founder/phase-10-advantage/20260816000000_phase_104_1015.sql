@@ -2,24 +2,32 @@
 -- Idempotent. Run once in Supabase 3 SQL editor.
 
 -- 10.4 Screenshot Vision -----------------------------------------------------
-create table if not exists public.vision_uploads (
+create table if not exists public.vision_shots (
   id uuid primary key default gen_random_uuid(),
   project_id text not null,
-  file_path text,
+  filename text not null,
+  mime text not null default 'image/png',
+  data_url text not null,
+  bytes bigint,
   width int, height int,
-  status text not null default 'uploaded',
+  analyzed_at timestamptz,
   created_at timestamptz not null default now()
 );
-create table if not exists public.vision_suggestions (
+grant select on public.vision_shots to authenticated;
+grant all on public.vision_shots to service_role;
+
+create table if not exists public.vision_analyses (
   id uuid primary key default gen_random_uuid(),
-  upload_id uuid references public.vision_uploads(id) on delete cascade,
+  shot_id uuid references public.vision_shots(id) on delete cascade,
   project_id text not null,
-  idx int not null default 0,
-  title text, detail text, target_file text, patch text,
-  box jsonb,
-  applied boolean not null default false,
+  model text,
+  summary text,
+  elements jsonb not null default '[]'::jsonb,
+  suggestions jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now()
 );
+grant select on public.vision_analyses to authenticated;
+grant all on public.vision_analyses to service_role;
 
 -- 10.5 Multiplayer presence --------------------------------------------------
 create table if not exists public.presence_activity (
@@ -32,45 +40,60 @@ create table if not exists public.presence_activity (
 );
 
 -- 10.6 AI test generator -----------------------------------------------------
-create table if not exists public.project_tests (
+create table if not exists public.test_files (
   id uuid primary key default gen_random_uuid(),
   project_id text not null,
-  file_path text not null,
-  source text not null default 'generated',
+  path text not null,
+  origin text not null default 'generated',
   status text not null default 'pending',
-  coverage numeric,
+  total int not null default 0,
+  passed int not null default 0,
+  failed int not null default 0,
   duration_ms int,
-  last_run_at timestamptz,
-  created_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  unique(project_id, path)
 );
+grant select on public.test_files to authenticated;
+grant all on public.test_files to service_role;
 create table if not exists public.test_runs (
   id uuid primary key default gen_random_uuid(),
   project_id text not null,
-  test_id uuid references public.project_tests(id) on delete cascade,
-  status text not null,
+  test_id uuid references public.test_files(id) on delete cascade,
+  status text not null default 'complete',
   passed int default 0, failed int default 0,
   coverage numeric,
-  output text,
+  actor text not null default 'sherlock',
+  duration_ms int,
+  log text,
   created_at timestamptz not null default now()
 );
+grant select on public.test_runs to authenticated;
+grant all on public.test_runs to service_role;
 
 -- 10.8 Browser-use agent -----------------------------------------------------
 create table if not exists public.browser_sessions (
   id uuid primary key default gen_random_uuid(),
   project_id text not null,
   url text not null,
+  goal text,
   status text not null default 'running',
   supervised boolean not null default true,
   created_at timestamptz not null default now(),
   ended_at timestamptz
 );
+grant select on public.browser_sessions to authenticated;
+grant all on public.browser_sessions to service_role;
 create table if not exists public.browser_actions (
   id uuid primary key default gen_random_uuid(),
   session_id uuid references public.browser_sessions(id) on delete cascade,
+  project_id text not null,
   kind text not null,
   detail text,
+  selector text,
   created_at timestamptz not null default now()
 );
+grant select on public.browser_actions to authenticated;
+grant all on public.browser_actions to service_role;
 
 -- 10.10 One-prompt full-stack ------------------------------------------------
 create table if not exists public.fullstack_builds (
@@ -78,21 +101,29 @@ create table if not exists public.fullstack_builds (
   project_id text not null,
   prompt text not null,
   status text not null default 'planning',
+  phase text not null default 'planning',
   live_url text,
   eta_seconds int,
+  duration_ms int,
   created_at timestamptz not null default now(),
   finished_at timestamptz
 );
+grant select on public.fullstack_builds to authenticated;
+grant all on public.fullstack_builds to service_role;
 create table if not exists public.fullstack_tasks (
   id uuid primary key default gen_random_uuid(),
+  project_id text not null,
   build_id uuid references public.fullstack_builds(id) on delete cascade,
   idx int not null default 0,
   title text not null,
-  worker int not null default 0,
+  worker int,
+  state text not null default 'queued',
   status text not null default 'queued',
   progress int not null default 0,
   created_at timestamptz not null default now()
 );
+grant select on public.fullstack_tasks to authenticated;
+grant all on public.fullstack_tasks to service_role;
 
 -- 10.11 Auto-migration runner ------------------------------------------------
 create table if not exists public.migration_backups (
@@ -175,9 +206,9 @@ alter table public.outreach_leads add column if not exists mrr_usd numeric;
 alter table public.outreach_leads add column if not exists closed_at timestamptz;
 
 -- Indexes -------------------------------------------------------------------
-create index if not exists vision_suggestions_project_idx on public.vision_suggestions(project_id, created_at desc);
+create index if not exists vision_analyses_project_idx on public.vision_analyses(project_id, created_at desc);
 create index if not exists presence_activity_project_idx on public.presence_activity(project_id, created_at desc);
-create index if not exists project_tests_project_idx on public.project_tests(project_id);
+create index if not exists test_files_project_idx on public.test_files(project_id);
 create index if not exists browser_actions_session_idx on public.browser_actions(session_id, created_at);
 create index if not exists fullstack_tasks_build_idx on public.fullstack_tasks(build_id, idx);
 create index if not exists schema_migrations_log_project_idx on public.schema_migrations_log(project_id, applied_at desc);
@@ -189,7 +220,7 @@ do $$
 declare t text;
 begin
   foreach t in array array[
-    'vision_uploads','vision_suggestions','presence_activity','project_tests','test_runs',
+    'vision_shots','vision_analyses','presence_activity','test_files','test_runs',
     'browser_sessions','browser_actions','fullstack_builds','fullstack_tasks',
     'migration_backups','schema_migrations_log','advisor_answers','project_envs',
     'sandbox_files','sandbox_rows'
