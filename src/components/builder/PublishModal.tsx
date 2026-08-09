@@ -259,9 +259,6 @@ export default function PublishModal({ open, onClose }: { open: boolean; onClose
               </div>
             </div>
 
-
-
-
             {/* Visibility — Founder builder: Private only (locked) */}
             <div className="space-y-2 border-t border-white/[0.06] bg-white/[0.02] px-5 py-4">
               <div className="flex items-center justify-between">

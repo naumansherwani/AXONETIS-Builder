@@ -66,7 +66,10 @@ export async function runTests(projectId: string, file?: string): Promise<TestRu
 export function statusTone(status: TestStatus): { label: string; className: string } {
   switch (status) {
     case "pass":
-      return { label: "PASS", className: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" };
+      return {
+        label: "PASS",
+        className: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
+      };
     case "fail":
       return { label: "FAIL", className: "border-[#E50914]/40 bg-[#E50914]/10 text-[#ff7480]" };
     case "running":

@@ -42,7 +42,11 @@ const EMPTY: DiagnosticsSnapshot = {
   scannedAt: null,
 };
 
-function summarize(rows: Diagnostic[], scannedAt: string | null, live: boolean): DiagnosticsSnapshot {
+function summarize(
+  rows: Diagnostic[],
+  scannedAt: string | null,
+  live: boolean,
+): DiagnosticsSnapshot {
   return {
     live,
     diagnostics: rows,

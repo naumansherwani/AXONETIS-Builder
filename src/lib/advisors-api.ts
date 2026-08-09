@@ -91,7 +91,10 @@ export function findAdvisor(slug: string | null | undefined): Advisor | null {
 }
 
 /** Returns the active @mention token at the caret, or null. */
-export function mentionQueryAt(text: string, caret: number): { query: string; start: number } | null {
+export function mentionQueryAt(
+  text: string,
+  caret: number,
+): { query: string; start: number } | null {
   const upto = text.slice(0, caret);
   const m = /(^|\s)@([a-zA-Z]*)$/.exec(upto);
   if (!m) return null;

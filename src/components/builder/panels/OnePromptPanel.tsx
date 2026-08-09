@@ -30,7 +30,11 @@ export default function OnePromptPanel() {
   const [buildId, setBuildId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<BuildTask[]>([]);
   const [workers, setWorkers] = useState<WorkerState[]>(emptyWorkers());
-  const [deploy, setDeploy] = useState<BuildDeploy>({ etaSeconds: null, url: null, phase: "planning" });
+  const [deploy, setDeploy] = useState<BuildDeploy>({
+    etaSeconds: null,
+    url: null,
+    phase: "planning",
+  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const closeRef = useRef<(() => void) | null>(null);
@@ -39,7 +43,8 @@ export default function OnePromptPanel() {
 
   // local countdown ticker between server deploy events
   useEffect(() => {
-    if (deploy.etaSeconds === null || deploy.phase === "live" || deploy.phase === "cancelled") return;
+    if (deploy.etaSeconds === null || deploy.phase === "live" || deploy.phase === "cancelled")
+      return;
     const t = window.setInterval(() => {
       setDeploy((d) =>
         d.etaSeconds === null ? d : { ...d, etaSeconds: Math.max(0, d.etaSeconds - 1) },
@@ -112,7 +117,11 @@ export default function OnePromptPanel() {
               disabled={busy || !prompt.trim()}
               className="inline-flex items-center gap-1.5 rounded border border-[#E50914]/30 bg-[#E50914]/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#ff7480] hover:bg-[#E50914]/15 disabled:opacity-50"
             >
-              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+              {busy ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Sparkles className="h-3 w-3" />
+              )}
               build it
             </button>
           )}
@@ -161,9 +170,7 @@ export default function OnePromptPanel() {
               <div className="h-1 overflow-hidden rounded-full bg-white/[0.08]">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${
-                    w.busy
-                      ? "bg-gradient-to-r from-[#E50914] to-[#ff7480]"
-                      : "bg-white/20"
+                    w.busy ? "bg-gradient-to-r from-[#E50914] to-[#ff7480]" : "bg-white/20"
                   }`}
                   style={{ width: `${Math.max(0, Math.min(100, w.progress))}%` }}
                 />
@@ -185,7 +192,9 @@ export default function OnePromptPanel() {
                 <span className="w-4 shrink-0 text-right font-mono text-[9.5px] text-muted-foreground/70">
                   {t.index}
                 </span>
-                <span className={`min-w-0 flex-1 text-[10.5px] leading-relaxed ${STATE_TONE[t.state]}`}>
+                <span
+                  className={`min-w-0 flex-1 text-[10.5px] leading-relaxed ${STATE_TONE[t.state]}`}
+                >
                   {t.title}
                 </span>
                 {t.worker && (

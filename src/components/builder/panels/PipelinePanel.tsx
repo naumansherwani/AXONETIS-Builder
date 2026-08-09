@@ -192,7 +192,9 @@ export default function PipelinePanel() {
         })}
       </div>
 
-      <AnimatePresence>{selected && <LeadModal lead={selected} onClose={() => setSelected(null)} />}</AnimatePresence>
+      <AnimatePresence>
+        {selected && <LeadModal lead={selected} onClose={() => setSelected(null)} />}
+      </AnimatePresence>
     </div>
   );
 }

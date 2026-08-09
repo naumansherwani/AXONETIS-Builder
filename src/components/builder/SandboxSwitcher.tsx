@@ -74,7 +74,11 @@ export default function SandboxSwitcher() {
     setBusy(true);
     const res = await resetSandbox(project);
     setBusy(false);
-    setNote(res?.ok ? "Sandbox reset ho gaya." : (res?.error ?? "Reset fail — /rpc/sandbox.reset pending."));
+    setNote(
+      res?.ok
+        ? "Sandbox reset ho gaya."
+        : (res?.error ?? "Reset fail — /rpc/sandbox.reset pending."),
+    );
     setModal(false);
     setWord("");
     const s = await fetchSandboxStatus(project);

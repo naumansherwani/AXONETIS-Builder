@@ -7,7 +7,15 @@
  * hover cards with the tsc message, one-click Jimmy auto-fix, Problems badge.
  */
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, FileCode, FileText, Loader2, RefreshCw, Wand2, XCircle } from "lucide-react";
+import {
+  AlertTriangle,
+  FileCode,
+  FileText,
+  Loader2,
+  RefreshCw,
+  Wand2,
+  XCircle,
+} from "lucide-react";
 import { PanelSection } from "./PanelChrome";
 import { useBuilder } from "@/lib/builder-state";
 import {
@@ -31,7 +39,6 @@ export default function CodePanel() {
   const [contentLoading, setContentLoading] = useState(false);
   const [fixing, setFixing] = useState<string | null>(null);
   const diag = useDiagnostics(project);
-
 
   useEffect(() => {
     let alive = true;
@@ -78,13 +85,11 @@ export default function CodePanel() {
   const ext = selected?.split(".").pop() ?? "";
   const Icon = ["md", "txt", "mdx"].includes(ext) ? FileText : FileCode;
   const lineDiags = useMemo(
-    () => (selected ? diagnosticsByLine(diag.diagnostics, selected) : new Map<number, Diagnostic[]>()),
+    () =>
+      selected ? diagnosticsByLine(diag.diagnostics, selected) : new Map<number, Diagnostic[]>(),
     [diag.diagnostics, selected],
   );
-  const fileErrors = useMemo(
-    () => [...lineDiags.values()].flat(),
-    [lineDiags],
-  );
+  const fileErrors = useMemo(() => [...lineDiags.values()].flat(), [lineDiags]);
 
   async function autoFix(d: Diagnostic) {
     const key = `${d.path}:${d.line}:${d.code}`;
@@ -126,7 +131,6 @@ export default function CodePanel() {
         </span>
       }
     >
-
       {!SUPABASE3_READY ? (
         <Empty
           title="Supabase 3 offline"
@@ -216,7 +220,9 @@ export default function CodePanel() {
                                     <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-amber-400" />
                                   )}
                                   <div className="min-w-0 flex-1">
-                                    <div className="text-[10px] text-foreground/85">{d.message}</div>
+                                    <div className="text-[10px] text-foreground/85">
+                                      {d.message}
+                                    </div>
                                     <div className="mt-0.5 font-mono text-[9px] text-muted-foreground/60">
                                       {d.code} · {d.line}:{d.column}
                                     </div>
@@ -324,4 +330,3 @@ function Empty({ title, hint }: { title: string; hint: string }) {
     </div>
   );
 }
-

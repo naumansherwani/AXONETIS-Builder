@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, FileDiff } from "lucide-react";
 import MonacoDiffView from "./MonacoDiffView";
 
-
 export default function MonacoDiffModal({
   open,
   onClose,
@@ -62,7 +61,6 @@ export default function MonacoDiffModal({
             <div className="flex-1 overflow-hidden">
               <MonacoDiffView oldValue={oldValue} newValue={newValue} language={language} />
             </div>
-
           </motion.div>
         </motion.div>
       )}

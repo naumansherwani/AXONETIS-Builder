@@ -151,7 +151,6 @@ export function extractStructured(row: AgentMessageRow): {
             ? rec.sherlock
             : undefined,
       });
-
     } else if (rec.type === "plan") {
       const plan = parsePlanPart(rec);
       if (plan) plans.push(plan);
@@ -269,7 +268,8 @@ function parsePlanPart(
     const nr = n as Record<string, unknown>;
     const title = typeof nr.title === "string" ? nr.title : "";
     if (!title) return;
-    const st = typeof nr.status === "string" && statuses.includes(nr.status) ? nr.status : "pending";
+    const st =
+      typeof nr.status === "string" && statuses.includes(nr.status) ? nr.status : "pending";
     const kd = typeof nr.kind === "string" && kinds.includes(nr.kind) ? nr.kind : "task";
     nodes.push({
       id: String(nr.id ?? `pn-${i}`),

@@ -52,7 +52,6 @@ export default function StatusBar() {
         />
       </div>
 
-
       {/* RIGHT: project context (no fake metrics) */}
       <div className="flex items-center gap-4">
         <span className="font-mono text-muted-foreground/70">

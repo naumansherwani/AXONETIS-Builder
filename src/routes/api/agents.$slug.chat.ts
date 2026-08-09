@@ -154,7 +154,10 @@ function isFillerLine(line: string) {
 function stripFounderVoiceFiller(text: string) {
   const lines = text.split("\n");
   while (lines.length && (!lines[0]!.trim() || isFillerLine(lines[0]!))) lines.shift();
-  while (lines.length && (!lines[lines.length - 1]!.trim() || isFillerLine(lines[lines.length - 1]!)))
+  while (
+    lines.length &&
+    (!lines[lines.length - 1]!.trim() || isFillerLine(lines[lines.length - 1]!))
+  )
     lines.pop();
   return lines.join("\n").trim();
 }
@@ -219,7 +222,6 @@ async function enforceFounderVoice(
   const stripped = stripFounderVoiceFiller(candidate);
   return { text: stripped || candidate };
 }
-
 
 function providerEnv(...names: string[]) {
   for (const name of names) {
@@ -617,7 +619,6 @@ function resolveBrainURLs() {
   ]);
 }
 
-
 function projectSlugCandidates(projectId: string) {
   const aliases: Record<string, string[]> = {
     hostflowai: ["hostflowai", "nexatect", "founderbuilder", "axonetis"],
@@ -856,11 +857,11 @@ async function runCoreBuilderLoop(job: BrainJob, firstReply: string, firstMeta?:
     }
     audit = verdict.text;
 
-    await insertAssistantMessage(
-      { ...job, slug: "sherlock" },
-      `Loop ${iteration}/3 — ${audit}`,
-      { model: verdict.model, tokensIn: verdict.tokensIn, tokensOut: verdict.tokensOut },
-    );
+    await insertAssistantMessage({ ...job, slug: "sherlock" }, `Loop ${iteration}/3 — ${audit}`, {
+      model: verdict.model,
+      tokensIn: verdict.tokensIn,
+      tokensOut: verdict.tokensOut,
+    });
 
     if (/^\s*APPROVED\b/i.test(audit)) {
       await insertAgentRun(job, {
@@ -876,10 +877,11 @@ async function runCoreBuilderLoop(job: BrainJob, firstReply: string, firstMeta?:
 
   const cleanReply = stripPatchBlock(jimmyReply);
   const summary = [
-    cleanReply || (appliedAll.length ? "Project files update ho gayi hain." : "Requested change apply nahi hui."),
-    appliedAll.length
-      ? `\nApplied files:\n${appliedAll.map((x) => `- ${x}`).join("\n")}`
-      : "",
+    cleanReply ||
+      (appliedAll.length
+        ? "Project files update ho gayi hain."
+        : "Requested change apply nahi hui."),
+    appliedAll.length ? `\nApplied files:\n${appliedAll.map((x) => `- ${x}`).join("\n")}` : "",
     audit ? `\nSherlock final:\n${audit}` : "",
   ]
     .join("\n")
@@ -979,12 +981,8 @@ function brainChatPaths(slug: string, opts?: { stream?: boolean }) {
       ? ["/api/founder/sherlock/stream", "/api/founder/sherlock/audit"]
       : ["/api/founder/sherlock/audit", "/api/founder/sherlock/stream"];
   }
-  return [
-    "/api/founder/jimmy/stream",
-    `/api/agents/${slug}/chat`,
-  ];
+  return ["/api/founder/jimmy/stream", `/api/agents/${slug}/chat`];
 }
-
 
 /**
  * Superset request body accepted by every Brain founder route.
@@ -1017,7 +1015,6 @@ function brainChatBody(
   };
 }
 
-
 async function runBrainAndInsert(job: BrainJob) {
   const { supabase, slug, prompt, projectId, threadId, userMessageId, brainURLs, signal } = job;
   let assistantText = "";
@@ -1041,10 +1038,8 @@ async function runBrainAndInsert(job: BrainJob) {
           signal: ctrl.signal,
         });
         if (!r.ok) {
-          const msg = `Brain ${brainURL}${path} ${r.status}: ${await r.text().catch(() => "")}`.slice(
-            0,
-            500,
-          );
+          const msg =
+            `Brain ${brainURL}${path} ${r.status}: ${await r.text().catch(() => "")}`.slice(0, 500);
           // 404/405 = wrong path on this brain, try the next candidate path.
           // A 404 must never mask a real error already collected from :8080.
           if (r.status === 404 || r.status === 405) {
@@ -1056,7 +1051,6 @@ async function runBrainAndInsert(job: BrainJob) {
             break;
           }
         } else {
-
           rustPayload = await r.json().catch(() => null);
           assistantText = extractText(rustPayload);
           meta = { model: extractModel(rustPayload), ...extractUsage(rustPayload) };
@@ -1081,7 +1075,6 @@ async function runBrainAndInsert(job: BrainJob) {
     }
     if (signal?.aborted || assistantText) break;
   }
-
 
   if (signal?.aborted) return;
 
@@ -1166,7 +1159,6 @@ function streamBrainToClient(job: BrainJob) {
                 if (!retryable || !rustError) rustError = msg;
                 r = null;
                 if (!retryable) break;
-
               } catch (err) {
                 rustError =
                   err instanceof Error && err.name === "AbortError"
@@ -1180,7 +1172,6 @@ function streamBrainToClient(job: BrainJob) {
             }
             if (r?.ok || job.signal?.aborted) break;
           }
-
 
           if (!r) {
             throw new Error(rustError ?? "Brain unavailable");
@@ -1314,12 +1305,7 @@ function streamBrainToClient(job: BrainJob) {
         let finalMeta = meta;
         if (assistantText) {
           const looped = await safeRunCoreBuilderLoop(job, assistantText, meta);
-          const voiced = await enforceFounderVoice(
-            job.slug,
-            job.prompt,
-            looped.text,
-            job.signal,
-          );
+          const voiced = await enforceFounderVoice(job.slug, job.prompt, looped.text, job.signal);
           finalText = voiced.text;
           finalMeta = voiced.meta ?? looped.meta;
           if (!streamedText) {
@@ -1404,7 +1390,7 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
             userId = await resolveFounderUserId(supabase, founderSession);
           } else {
             // Preview-host bypass — mirrors _authenticated/route.tsx.
-          // Production still enforces the founder GitHub session.
+            // Production still enforces the founder GitHub session.
             const host = new URL(request.url).hostname;
             const isPreview =
               host === "localhost" ||

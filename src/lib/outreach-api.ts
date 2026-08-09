@@ -81,7 +81,10 @@ export async function fetchPipeline(): Promise<PipelineSnapshot> {
   return { leads: (data ?? []).map((r) => normalize(r as Record<string, unknown>)), live: true };
 }
 
-export async function moveLead(id: string, stage: PipelineStage): Promise<{ ok: boolean; error?: string }> {
+export async function moveLead(
+  id: string,
+  stage: PipelineStage,
+): Promise<{ ok: boolean; error?: string }> {
   if (!SUPABASE3_READY) return { ok: false, error: "Supabase 3 not configured" };
   const { error } = await supabase3
     .from("outreach_leads")
@@ -206,7 +209,13 @@ export function computeStats(leads: Lead[]): StandupStats {
 
 export async function fetchStandup(): Promise<StandupSnapshot> {
   if (!SUPABASE3_READY)
-    return { standup: null, campaign: null, stats: EMPTY_STATS, live: false, error: "Supabase 3 not configured" };
+    return {
+      standup: null,
+      campaign: null,
+      stats: EMPTY_STATS,
+      live: false,
+      error: "Supabase 3 not configured",
+    };
 
   const [standupRes, campaignRes, pipeline] = await Promise.all([
     supabase3
@@ -369,7 +378,11 @@ export function subscribeCompliance(onChange: () => void): () => void {
   if (!SUPABASE3_READY || typeof window === "undefined") return () => {};
   const channel = supabase3
     .channel("outreach_compliance_live")
-    .on("postgres_changes", { event: "*", schema: "public", table: "outreach_compliance" }, onChange)
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "outreach_compliance" },
+      onChange,
+    )
     .subscribe();
   return () => {
     void supabase3.removeChannel(channel);

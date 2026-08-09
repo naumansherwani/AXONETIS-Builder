@@ -69,7 +69,11 @@ export default function AdvisorMentionPicker({
                   <span className="text-[11.5px] font-medium text-foreground/95">@{a.slug}</span>
                   <span
                     className="rounded border px-1 py-[1px] text-[8.5px] font-semibold uppercase tracking-wider"
-                    style={{ color: a.color, borderColor: `${a.color}55`, background: `${a.color}14` }}
+                    style={{
+                      color: a.color,
+                      borderColor: `${a.color}55`,
+                      background: `${a.color}14`,
+                    }}
                   >
                     {a.domain}
                   </span>

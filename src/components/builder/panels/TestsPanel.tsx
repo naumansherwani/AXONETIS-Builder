@@ -27,7 +27,14 @@ function CoverageRing({ value }: { value: number }) {
   return (
     <div className="relative grid place-items-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(255,255,255,0.08)" strokeWidth={stroke} fill="none" />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          stroke="rgba(255,255,255,0.08)"
+          strokeWidth={stroke}
+          fill="none"
+        />
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -38,7 +45,10 @@ function CoverageRing({ value }: { value: number }) {
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={c - (pct / 100) * c}
-          style={{ filter: `drop-shadow(0 0 6px ${tone})`, transition: "stroke-dashoffset .6s ease" }}
+          style={{
+            filter: `drop-shadow(0 0 6px ${tone})`,
+            transition: "stroke-dashoffset .6s ease",
+          }}
         />
       </svg>
       <span className="absolute font-mono text-[13px] font-semibold" style={{ color: tone }}>
@@ -108,12 +118,15 @@ export default function TestsPanel() {
       setState((s) => ({
         files: res.files,
         coverage: res.coverage,
-        runs: [...(s?.runs ?? []), {
-          at: new Date().toISOString(),
-          passed: res.files.reduce((n, f) => n + f.passed, 0),
-          failed: res.files.reduce((n, f) => n + f.failed, 0),
-          actor: "founder" as const,
-        }].slice(-24),
+        runs: [
+          ...(s?.runs ?? []),
+          {
+            at: new Date().toISOString(),
+            passed: res.files.reduce((n, f) => n + f.passed, 0),
+            failed: res.files.reduce((n, f) => n + f.failed, 0),
+            actor: "founder" as const,
+          },
+        ].slice(-24),
       }));
     },
     [project],
@@ -217,8 +230,18 @@ export default function TestsPanel() {
         </div>
       ) : (
         <>
-          <FileList title={`Auto-generated · ${generated.length}`} files={generated} running={running} onRun={doRun} />
-          <FileList title={`Manual · ${manual.length}`} files={manual} running={running} onRun={doRun} />
+          <FileList
+            title={`Auto-generated · ${generated.length}`}
+            files={generated}
+            running={running}
+            onRun={doRun}
+          />
+          <FileList
+            title={`Manual · ${manual.length}`}
+            files={manual}
+            running={running}
+            onRun={doRun}
+          />
         </>
       )}
     </div>
@@ -247,7 +270,10 @@ function FileList({
           {files.map((f) => {
             const tone = statusTone(running === f.path ? "running" : f.status);
             return (
-              <li key={f.id} className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-white/[0.04]">
+              <li
+                key={f.id}
+                className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-white/[0.04]"
+              >
                 <span className="min-w-0 flex-1 truncate font-mono text-[10.5px] text-foreground/85">
                   {f.path}
                 </span>

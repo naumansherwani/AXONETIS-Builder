@@ -50,15 +50,7 @@ function Gauge({
   );
 }
 
-function Spark({
-  values,
-  tone,
-  height = 34,
-}: {
-  values: number[];
-  tone: string;
-  height?: number;
-}) {
+function Spark({ values, tone, height = 34 }: { values: number[]; tone: string; height?: number }) {
   const points = useMemo(() => sparkline(values, 240, height), [values, height]);
   if (values.length < 2) {
     return (
@@ -69,7 +61,13 @@ function Spark({
   }
   return (
     <svg viewBox={`0 0 240 ${height}`} className="h-[34px] w-full" preserveAspectRatio="none">
-      <polyline points={points} fill="none" stroke={tone} strokeWidth="1.5" strokeLinejoin="round" />
+      <polyline
+        points={points}
+        fill="none"
+        stroke={tone}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -99,8 +97,7 @@ export default function TelemetryStrip() {
         setSystem(s);
       },
       onAi: (p) => setAi((prev) => [...prev, p].slice(-MAX_POINTS)),
-      onCost: (p) =>
-        setCost((prev) => [...prev.filter((x) => x.day !== p.day), p].slice(-30)),
+      onCost: (p) => setCost((prev) => [...prev.filter((x) => x.day !== p.day), p].slice(-30)),
       onRevenue: (p) =>
         setRevenue((prev) => [...prev.filter((x) => x.day !== p.day), p].slice(-30)),
       onUsers: (n) => setUsers(n),
