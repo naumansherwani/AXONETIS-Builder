@@ -28,6 +28,10 @@ const ALLOWED_SLUGS = new Set(["jimmy", "sherlock"]);
 const RUST_TIMEOUT_MS = 45_000;
 const BRAIN_ATTEMPT_TIMEOUT_MS = 15_000;
 const DIRECT_FALLBACK_TIMEOUT_MS = 30_000;
+/** Heartbeat interval — client watchdog ko zinda rakhta hai jab brain silent ho. */
+const SSE_PING_MS = 5_000;
+/** Absolute cap — is ke baad stream har haal mein close hoti hai (koi infinite "connect…" nahi). */
+const SSE_HARD_DEADLINE_MS = 180_000;
 const MAX_SHERLOCK_LOOPS = 3;
 const DISABLED_PROVIDER_IDS = ["J-bk-deepseek-v31-fr", "S-bk-llama-70b-fr"];
 const DEFAULT_MODEL = "anthropic/claude-3.5-sonnet";
