@@ -68,7 +68,7 @@ done
 
 echo
 echo "== VERIFY Phase 10 (expected: 0 rows MISSING)"
-psql "$DB" -f sql/founder/phase-10-advantage/VERIFY_phase_10.sql 2>&1 | grep -i 'MISSING' || echo "no MISSING rows"
+psql "$DB" -t -A -f sql/founder/phase-10-advantage/VERIFY_phase_10.sql 2>&1 | grep -i '|MISSING' || echo "no MISSING rows ✅"
 
 echo
 if [ "$FAIL" -eq 0 ]; then echo "ALL SQL GREEN ✅"; else echo "Kuch file fail hui — upar ka FAIL block bhejo ❌"; fi
