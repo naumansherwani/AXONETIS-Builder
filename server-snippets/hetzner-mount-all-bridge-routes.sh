@@ -52,7 +52,7 @@ ROUTERS=(
   plan.routes.ts verify.routes.ts delegate.routes.ts orchestrate.routes.ts
   lsp.routes.ts tests.routes.ts vision.routes.ts browser.routes.ts
   fullstack.routes.ts migration.routes.ts replay.routes.ts
-  versions.routes.ts dual-brain.routes.ts jimmy.routes.ts
+  versions.routes.ts dual-brain.routes.ts
 )
 COPIED=()
 for f in "${ROUTERS[@]}"; do
@@ -87,6 +87,30 @@ node -e "require.resolve('@types/multer')" 2>/dev/null || {
 
 # ── 4. idempotent mount (NO duplicate) ──────────────────────────────────────
 log "4) Mount in $ENTRY — idempotent, duplicate guard"
+# jimmy.routes.ts Brain-only route hai. Purane mega-mount versions ne isay
+# Bridge mein import/mount kar diya tha; startup se pehle woh stale wiring hatao.
+python3 - "$ENTRY" <<'PY'
+import re, sys
+
+entry = sys.argv[1]
+src = open(entry, encoding="utf-8").read()
+orig = src
+
+src = re.sub(
+    r'^import\s+\w+\s+from\s+["\']\.\/routes\/jimmy\.routes(?:\.js)?["\'];\s*\n?',
+    '',
+    src,
+    flags=re.M,
+)
+src = re.sub(r'^\s*app\.use\(\s*jimmyRouter\s*\);\s*\n?', '', src, flags=re.M)
+
+if src != orig:
+    open(entry, "w", encoding="utf-8").write(src)
+    print("  removed stale Brain-only jimmy route from Bridge")
+else:
+    print("  no stale Jimmy bridge wiring found")
+PY
+
 python3 - "$ENTRY" "${COPIED[@]}" <<'PY'
 import re, sys
 entry, *files = sys.argv[1:]
