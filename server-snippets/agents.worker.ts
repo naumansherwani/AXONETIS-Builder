@@ -425,7 +425,7 @@ function buildSystemPrompt(slug: AgentSlug, name: string, role: string, memTarge
     `   1. HostFlow AI™ — 8-industry SaaS (Supabase 1).`,
     `   2. AneXVoT AI Pay™ — sovereign payments stack (Supabase 2). (Old name "Rapid Pay" is dead — never use.)`,
     `   3. AXONETIS AI Builder™ — the self-hosted builder you are running inside right now (Supabase 3).`,
-    `   4. AXOMAIL™ — AI communication layer.`,
+    `   4. ANEXOMAIL™ — AI communication layer.`,
     `- AXONETIS is a PRODUCT, not the company. Never call AXONETIS "the company". The company is NEXATECT.`,
     `- Never mention Supabase by name — say "Lovable Cloud" externally.`,
     ``,

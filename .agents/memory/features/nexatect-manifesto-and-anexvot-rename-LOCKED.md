@@ -1,6 +1,6 @@
 ---
 name: NEXATECT Manifesto + AneXVoT AI Pay Rename LOCKED
-description: Jun 18 2026 — Rapid Pay renamed to AneXVoT AI Pay™ (Autonomous Next-Generation Velocity Orchestration Treasury) due to copyright. Full HostFlow AI NEXATECT™ manifesto locked: 4 pillars (AANRIS, AXONETIS, AXOMAIL, AneXVoT AI Pay). Use for website/whitepaper.
+description: Jun 18 2026 — Rapid Pay renamed to AneXVoT AI Pay™ (Autonomous Next-Generation Velocity Orchestration Treasury) due to copyright. Full HostFlow AI NEXATECT™ manifesto locked: 4 pillars (AANRIS, AXONETIS, ANEXOMAIL, AneXVoT AI Pay). Use for website/whitepaper.
 type: feature
 ---
 
@@ -21,7 +21,7 @@ All product docs, code, UI strings, memory references → replace "Rapid Pay" wi
 Powered by:
   • AANRIS™         — Runtime Intelligence
   • AXONETIS™       — Autonomous Creation & Execution
-  • AXOMAIL™        — Autonomous Communication
+  • ANEXOMAIL™        — Autonomous Communication
   • AneXVoT AI Pay™ — Autonomous Treasury & Revenue
 
 Together they form a sovereign ecosystem where intelligence,
@@ -37,7 +37,7 @@ work as a unified autonomous digital workforce.
 |--------|--------|--------|
 | **AANRIS™** | Runtime Intelligence — live ops brain, monitoring, decisions | `aanris-runtime` pm2 |
 | **AXONETIS™** | Autonomous Creation & Execution — Builder, code, deploy | `axonetis-builder` + `axonetis-rust-human` pm2 |
-| **AXOMAIL™** | Autonomous Communication — email/notify/customer comms | (planned) |
+| **ANEXOMAIL™** | Autonomous Communication — email/notify/customer comms | (planned) |
 | **AneXVoT AI Pay™** | Autonomous Treasury & Revenue — payments, ledger, payouts | (was Rapid Pay stack) |
 
 ## Server Baseline (matches live pm2 list Jun 18 2026)
@@ -48,4 +48,4 @@ work as a unified autonomous digital workforce.
 - ❌ Never say "Rapid Pay" in new product copy, UI, or docs — always **AneXVoT AI Pay™**.
 - ✅ Manifesto block above = canonical source for website hero / whitepaper / pitch deck.
 - ✅ Workflow path always written as: **Intelligence → Execution → Revenue → Treasury**.
-- ✅ All 4 pillars trademarked: AANRIS™, AXONETIS™, AXOMAIL™, AneXVoT AI Pay™ under HostFlow AI NEXATECT™.
+- ✅ All 4 pillars trademarked: AANRIS™, AXONETIS™, ANEXOMAIL™, AneXVoT AI Pay™ under HostFlow AI NEXATECT™.

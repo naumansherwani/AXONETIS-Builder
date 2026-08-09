@@ -11,7 +11,7 @@ NEXATECT™ Sovereign Core
 │
 ├── AANRIS™         (Self-Healing Runtime)
 ├── AXONETIS™       (Autonomous Builder)
-├── AXOMAIL™        (Sovereign Communication)
+├── ANEXOMAIL™        (Sovereign Communication)
 ├── ANEXVOT™ AI Pay (Treasury Core)
 │
 └── Industry Network
@@ -37,5 +37,5 @@ NEXATECT™ Sovereign Core
 |---|---|---|---|
 | AXONETIS™ Builder | `axonetis-rust-human` | id 11 | 🟢 LIVE (SSE Phase B done) |
 | AANRIS™ Runtime | `aanris-rust` | TBD | ⏳ Queued |
-| AXOMAIL™ Comms | `axomail-rust` | TBD | ⏳ Queued |
+| ANEXOMAIL™ Comms | `anexomail-rust` | TBD | ⏳ Queued |
 | ANEXVOT™ AI Pay | `anexvot-rust` | TBD | ⏳ Queued (was Rapid Pay) |

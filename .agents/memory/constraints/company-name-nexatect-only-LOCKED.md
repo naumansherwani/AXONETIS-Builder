@@ -12,7 +12,7 @@ type: constraint
 - Domain: **nexatect.com**.
 - Registration: **United Kingdom** (founder Muhammad Nauman Sherwani will register the Ltd company).
 - "AI NEXATECT" is **WRONG** — every occurrence in code, system prompts, memory files, marketing copy, or chat must be corrected to "NEXATECT".
-- The "AI" lives in the products (HostFlow AI™, AneXVoT AI Pay™, AXONETIS AI Builder™, AXOMAIL™), NOT in the company name.
+- The "AI" lives in the products (HostFlow AI™, AneXVoT AI Pay™, AXONETIS AI Builder™, ANEXOMAIL™), NOT in the company name.
 
 ## Why
 
@@ -29,5 +29,5 @@ type: constraint
 
 ## Cross-refs
 
-- mem://features/nexatect-domain-tree-LOCKED — domain tree (axonetis.com, anexvotaipay.com, aiaxomail.com all sit under nexatect.com parent).
+- mem://features/nexatect-domain-tree-LOCKED — domain tree (axonetis.com, anexvotaipay.com, anexomail.com all sit under nexatect.com parent).
 - mem://features/nexatect-manifesto-and-anexvot-rename-LOCKED — 4-pillar manifesto.

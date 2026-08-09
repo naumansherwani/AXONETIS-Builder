@@ -1,6 +1,6 @@
 ---
 name: Brain model registry LIVE (server 1) LOCKED
-description: Live model tiers in /opt/hostflowai-brain/backend/src/routes/founder/jimmy.ts — FREE_MODELS (gemma-4 :free), PAID_MODELS (deepseek-v4-flash, gemini-2.5-flash), FOUNDER_MODELS (hermes-405b, deepseek-v4-pro, deepseek-r1, gemini-3.6-flash, claude-sonnet-4-5) + situation map. Server 2 = AXOMAIL, separate.
+description: Live model tiers in /opt/hostflowai-brain/backend/src/routes/founder/jimmy.ts — FREE_MODELS (gemma-4 :free), PAID_MODELS (deepseek-v4-flash, gemini-2.5-flash), FOUNDER_MODELS (hermes-405b, deepseek-v4-pro, deepseek-r1, gemini-3.6-flash, claude-sonnet-4-5) + situation map. Server 2 = ANEXOMAIL, separate.
 type: feature
 ---
 
@@ -28,4 +28,4 @@ EMAIL/VISION/MULTILANG `gemini-2.5-flash` · CODE/REASONING/FAST `deepseek-v4-fl
 
 ## Hosts
 - **Server 1** = AXONETIS/NEXATECT brain (this registry).
-- **Server 2** = AXOMAIL — separate machine, separate registry, never mix.
+- **Server 2** = ANEXOMAIL — separate machine, separate registry, never mix.
