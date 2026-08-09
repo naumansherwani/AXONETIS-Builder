@@ -101,3 +101,4 @@ TROJAN BY JIMMY LOCKED (Phase 9): zero-entry autonomous CRM — Attract/Nurture/
 - [Phase 11.1 Pipeline Dashboard LOCKED](mem://features/phase-11.1-pipeline-dashboard-LOCKED) — outreach_leads + kanban 6 stages, drag-drop, ARR counter, workspace tab "pipeline"
 - [Phase 11.2+11.3 Standup & Compliance LOCKED](mem://features/phase-11.2-11.3-standup-compliance-LOCKED) — Jimmy daily standup panel + GDPR/spam/unsubscribe/Sherlock compliance badge, outreach_campaigns/standups/compliance tables
 - [SQL repo folder structure LOCKED](mem://constraints/sql-repo-folder-structure-LOCKED) — saari SQL repo mein: sql/founder/phase-<NN>-<slug>/ + sql/awam/ alag; hetzner-migrations & db/migrations deleted
+- [Jimmy founder-voice LOCKED](mem://constraints/jimmy-founder-voice-LOCKED) — Builder proxy structural voice guard + rewrite pass; no greeting/intro/status-recap/English-only replies
