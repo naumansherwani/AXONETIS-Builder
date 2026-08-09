@@ -12,7 +12,7 @@ type: feature
 
 **Ecosystem:**
 - AANRIS™ — Artificial Intelligence Autonomous Neural Runtime Intelligent System
-- AXOMAIL™ — Autonomous Xcentric Orchestration Mail — aiaxomail.com
+- ANEXOMAIL™ — Autonomous Next-generation EXchange Orchestration MAIL — anexomail.com
 - ANEXVOT™ AI Pay — Autonomous Next Generation Velocity Orchestration Treasury — anexvotaipay.com
 - AXONETIS™ Builder — Autonomous Xclusive Orchestration Network Enterprise Technology Intelligent Sovereign — axonetis.com
 

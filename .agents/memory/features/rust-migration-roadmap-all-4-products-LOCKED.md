@@ -1,6 +1,6 @@
 ---
 name: Rust Migration Roadmap — All 4 NEXATECT Products LOCKED
-description: Jun 18 2026. Founder lock — saaray 4 products (HostFlow AI, AXONETIS Builder, AneXVoT AI Pay, AXOMAIL) bari bari Rust pe migrate honge. NO API/Webhook/WebSocket/Python. Jimmy+Sherlock AI Human style conversations.
+description: Jun 18 2026. Founder lock — saaray 4 products (HostFlow AI, AXONETIS Builder, AneXVoT AI Pay, ANEXOMAIL) bari bari Rust pe migrate honge. NO API/Webhook/WebSocket/Python. Jimmy+Sherlock AI Human style conversations.
 type: feature
 ---
 
@@ -15,7 +15,7 @@ Founder lock (Jun 18 2026): har project bari bari, ek time pe ek, Rust runtime p
 | 1 | **AXONETIS AI Builder™** (Jimmy + Sherlock brain) | 🟢 IN PROGRESS — Rust live, SSE Phase B done | `axonetis-rust-human` (pm2 id 11) |
 | 2 | **HostFlow AI™** (8 industry advisors website + brain) | ⏳ Next after Builder Phase B UI wired | new `hostflowai-rust` crate |
 | 3 | **AneXVoT AI Pay™** (treasury/payments) | ⏳ Queued | new `anexvot-rust` crate |
-| 4 | **AXOMAIL™** (autonomous comms) | ⏳ Queued | new `axomail-rust` crate |
+| 4 | **ANEXOMAIL™** (autonomous comms) | ⏳ Queued | new `anexomail-rust` crate |
 
 Rule: pichla product 100% Rust pe stable hone ke baad hi agla shuru hoga.
 

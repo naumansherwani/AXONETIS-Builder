@@ -10,7 +10,7 @@ type: constraint
 NEXATECT™ — The Sovereign Autonomous Technology Ecosystem
 └── A Product of NEXATECT™
     ├── AANRIS™                     (Runtime Intelligence)
-    ├── AXOMAIL™                    → aiaxomail.com
+    ├── ANEXOMAIL™                    → anexomail.com
     ├── ANEXVOT™ AI Pay             → anexvotaipay.com
     └── AXONETIS™ Builder
           ├── founderbuilder.axonetis.com   ← LIVE builder app (founder-only, hidden)
@@ -19,7 +19,7 @@ NEXATECT™ — The Sovereign Autonomous Technology Ecosystem
 
 ## Hard rules
 - Parent brand always **NEXATECT™** (uppercase, ™).
-- Product casing: AANRIS™, AXOMAIL™, ANEXVOT™ AI Pay, AXONETIS™ Builder.
+- Product casing: AANRIS™, ANEXOMAIL™, ANEXVOT™ AI Pay, AXONETIS™ Builder.
 - **Builder URL = `founderbuilder.axonetis.com`** — configured in Caddyfile + Namecheap DNS. Founder-only/hidden.
 - **`axonetis.com` root = future PUBLIC marketing site.** Do NOT point the builder app there.
 - **FORBIDDEN domains** (never write in code, docs, chat, memory):
