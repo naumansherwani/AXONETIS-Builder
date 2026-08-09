@@ -20,8 +20,12 @@ const PROJECT_PREVIEW_URLS: Record<string, { sandbox: string; production: string
     production: "https://rapidpay.nexatect.com",
   },
   founderbuilder: {
-    sandbox: "https://sandbox.aiaxonetis.nexatect.com",
-    production: "https://aiaxonetis.nexatect.com",
+    sandbox: "https://sandbox.founderbuilder.axonetis.com",
+    production: "https://founderbuilder.axonetis.com",
+  },
+  anexomail: {
+    sandbox: "https://sandbox.founderworkspace.anexomail.com",
+    production: "https://founderworkspace.anexomail.com",
   },
 };
 

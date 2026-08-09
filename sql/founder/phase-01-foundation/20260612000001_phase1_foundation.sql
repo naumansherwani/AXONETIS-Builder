@@ -1,6 +1,6 @@
 -- ============================================================================
 -- AXONETIS AI Builder™ — Phase 1 Foundation
--- Target: Supabase 3 (self-hosted Hetzner) — aiaxonetis.nexatect.com
+-- Target: self-hosted Hetzner Core 3
 -- Architecture: Supabase = source of truth · TS contracts · Node/Bun runtime ·
 --               OpenRouter (primary) · Groq (failover)
 -- Aligned with verified server repo `hostflow-server`:

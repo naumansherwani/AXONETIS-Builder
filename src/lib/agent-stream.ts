@@ -305,6 +305,22 @@ function parsePlanPart(
 export function cleanAgentText(raw: string): string {
   let text = (raw ?? "").trim();
   if (!text) return "";
+  // SSE lifecycle envelopes are transport control messages, never chat copy.
+  if (text.startsWith("{")) {
+    try {
+      const control = JSON.parse(text) as Record<string, unknown>;
+      if (
+        (control.type === "done" || control.type === "ack") &&
+        !control.final_answer &&
+        !control.text &&
+        !control.content
+      ) {
+        return "";
+      }
+    } catch {
+      /* not JSON */
+    }
+  }
   // JSON wrapper from router workers: {"agent":"jimmy","final_answer":"...","candidates":[...]}
   if (text.startsWith("{") && text.includes("final_answer")) {
     try {

@@ -74,9 +74,9 @@ Note: old cloud `*.supabase.co` DB URL is rejected/ignored. Script uses AXONETIS
 
 Verify each endpoint:
 ```bash
-curl -s "https://aiaxonetis.hostflowai.net/rpc/publish.state?projectId=founderbuilder"
-curl -sX POST https://aiaxonetis.hostflowai.net/rpc/sql.validate -H 'content-type: application/json' -d '{"sql":"select 1"}'
-curl -sN https://aiaxonetis.hostflowai.net/rpc/deploys.status?projectId=test
+curl -s "https://founderbuilder.axonetis.com/rpc/publish.state?projectId=founderbuilder"
+curl -sX POST https://founderbuilder.axonetis.com/rpc/sql.validate -H 'content-type: application/json' -d '{"sql":"select 1"}'
+curl -sN https://founderbuilder.axonetis.com/rpc/deploys.status?projectId=test
 ```
 
 ---

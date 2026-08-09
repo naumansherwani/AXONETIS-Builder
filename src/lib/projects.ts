@@ -3,7 +3,7 @@
  * Each project = one of the founder's products. Preview URL drives the iframe.
  * Phase 1: static registry. Phase 2+: read from Supabase 3 `projects` table.
  */
-export type ProjectId = "hostflowai" | "rapidpay" | "founderbuilder";
+export type ProjectId = "hostflowai" | "rapidpay" | "founderbuilder" | "anexomail";
 
 export interface ProjectDef {
   id: ProjectId;
@@ -16,10 +16,17 @@ export interface ProjectDef {
 export const PROJECTS: ProjectDef[] = [
   {
     id: "hostflowai",
-    name: "HostFlow AI™",
-    shortName: "HostFlow",
-    previewUrl: "https://hostflowai.net",
+    name: "NEXATECT™ Global",
+    shortName: "NEXATECT",
+    previewUrl: "https://nexatect.com",
     accent: "#E50914",
+  },
+  {
+    id: "anexomail",
+    name: "ANEXOMAIL™ Workspace",
+    shortName: "ANEXOMAIL",
+    previewUrl: "https://founderworkspace.anexomail.com",
+    accent: "#0891b2",
   },
   {
     id: "rapidpay",

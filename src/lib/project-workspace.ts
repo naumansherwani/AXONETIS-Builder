@@ -1,7 +1,7 @@
 /**
  * Phase 7 — Multi-Project Builder isolation layer.
  *
- * Every project (HostFlow AI, ANEXVOT AI PAY, AXONETIS Builder…) gets its own
+ * Every project (NEXATECT Global, ANEXOMAIL, ANEXVOT AI PAY, AXONETIS Builder…) gets its own
  * independent workspace: chat history, branch, environment, preview env,
  * Sherlock fix-loop counter. State is keyed by `projectId` and persisted
  * to localStorage so switching projects round-trips cleanly.
@@ -126,8 +126,9 @@ export function clearWorkspace(projectId: ProjectId) {
 }
 
 /** Supabase instance routed per project (display-only — server enforces). */
-export function supabaseLabelFor(projectId: ProjectId): "Supabase 1" | "Supabase 2" | "Supabase 3" {
-  if (projectId === "hostflowai") return "Supabase 1";
-  if (projectId === "rapidpay") return "Supabase 2";
-  return "Supabase 3";
+export function supabaseLabelFor(projectId: ProjectId): "Core 1" | "Core 2" | "Core 3" | "Mail Core" {
+  if (projectId === "anexomail") return "Mail Core";
+  if (projectId === "hostflowai") return "Core 1";
+  if (projectId === "rapidpay") return "Core 2";
+  return "Core 3";
 }

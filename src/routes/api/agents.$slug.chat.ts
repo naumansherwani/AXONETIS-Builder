@@ -103,11 +103,11 @@ function hasProviderKeyFailure(text: string | null | undefined) {
 }
 
 const GREETING_LINE_RE =
-  /^\s*(?:hi+|hello+|hey+|greetings|salam|salaam|assalam[\s-]?o?[\s-]?alaikum|as-?salamu\s+alaikum)\b/i;
+  /^\s*(?:hi+|hello+|hey+|greetings|salam|salaam|wa[\s-]+alaikum(?:[\s-]+as[\s-]*salam)?|assalam[\s-]?o?[\s-]?alaikum|as-?salamu\s+alaikum)\b/i;
 const SELF_INTRO_RE =
   /\b(?:jimmy|sherlock(?:review)?)\s+(?:here|hoon|hun)\b|\bi(?:'m| am)\s+(?:jimmy|sherlock)\b|\blead builder (?:at|of|for)\b/i;
 const OFFER_FILLER_RE =
-  /(?:what(?:'s| is)\s+(?:the\s+)?priority|what can i (?:assist|help)|how can i (?:assist|help)|let me know (?:what|if|when)|ready (?:to help|for (?:today|your|the)|ho ja(?:o|ye))|kya aap kuch specific|agla step bata(?:o|ayein)|anything else i can)/i;
+  /(?:what(?:'s| is)\s+(?:the\s+)?priority|what can i (?:assist|help)|how can i (?:assist|help)|let me know (?:what|if|when)|ready (?:to help|for (?:today|your|the)|ho ja(?:o|ye))|kya aap kuch specific|agla step bata(?:o|ayein)|anything else i can|message received|har tarah ki technical madad|poori koshish kar(?:unga|oon ga)|zaroor bata(?:iye|ein)|aage badhane ke liye tayyar)/i;
 const STATUS_RECAP_RE =
   /(?:runtime is stable|showing normal ops|still deferred|audit ready on demand|ready for today'?s build update|build update)/i;
 const ROMAN_URDU_RE =
@@ -199,14 +199,21 @@ async function enforceFounderVoice(
     signal,
   );
   if (rewritten && "text" in rewritten && rewritten.text) {
-    return {
-      text: rewritten.text,
-      meta: {
-        model: rewritten.model,
-        tokensIn: rewritten.tokensIn,
-        tokensOut: rewritten.tokensOut,
-      },
-    };
+    const rewrittenText = stripFounderVoiceFiller(rewritten.text);
+    if (
+      rewrittenText &&
+      !violatesFounderVoice(rewrittenText) &&
+      !mismatchedLanguage(prompt, rewrittenText)
+    ) {
+      return {
+        text: rewrittenText,
+        meta: {
+          model: rewritten.model,
+          tokensIn: rewritten.tokensIn,
+          tokensOut: rewritten.tokensOut,
+        },
+      };
+    }
   }
 
   const stripped = stripFounderVoiceFiller(candidate);
@@ -269,7 +276,7 @@ function directSystemPrompt(slug: string) {
   if (slug === "sherlock") {
     return "You are SherlockReview, AXONETIS AI Builder's strict audit/debug agent. Founder Muhammad Nauman Sherwani se natural Roman Urdu/Hindi mixed with necessary technical English mein baat karo. Seedha root cause aur verified result do. Generic greeting, corporate intro, filler, repeated offer-to-help, fake backend result, ya English-only reply kabhi nahi. Agar kaam adhura ho to clearly bolo. Founder ke tone aur message length ko mirror karo.";
   }
-  return "Tu Jimmy hai — NEXATECT ka lead builder aur Founder Muhammad Nauman Sherwani ka trusted technical partner. Founder se bilkul natural Roman Urdu/Hindi mein baat kar, sirf zaroori technical terms English mein rakh. Seedha jawab ya action se shuru kar; 'Hi there', apna intro, corporate pitch, generic greeting, repeated offer-to-help aur English-only paragraph kabhi mat likh. Founder ke tone aur message length ko mirror kar. Jo verify hua ho sirf woh complete bol; jo pending ho usay pending bol. Over-confident claim, dummy result aur banawati success mana hai. Default reply short rakho; detail sirf founder maange ya technical safety ke liye zaroori ho. Yeh live founder conversation hai, customer support chat nahi.";
+  return "Tu Jimmy hai — NEXATECT™ Global ka CEO-level lead coder aur Founder Muhammad Nauman Sherwani ka trusted execution partner. NEXATECT parent company hai; AXONETIS Builder mein public users ki websites/software build hotay hain; Sherlock deputy hai aur sirf real code change ke baad audit karta hai; ANEXOMAIL advanced workspace hai; ANEXVOT AI Pay future treasury product hai. Founder se bilkul natural Roman Urdu/Hindi mein baat kar, sirf zaroori technical terms English mein rakh. Seedha jawab ya action se shuru kar; salam ka jawab, apna intro, corporate pitch, generic greeting, repeated offer-to-help aur English-only paragraph kabhi mat likh. Founder ke tone aur message length ko mirror kar. Normal conversation mein audit, build loop, status recap ya tool execution mat chala. Jo verify hua ho sirf woh complete bol; jo pending ho usay pending bol. Over-confident claim, dummy result aur banawati success mana hai. Default reply short rakho; detail sirf founder maange ya technical safety ke liye zaroori ho. Yeh live founder conversation hai, customer support chat nahi.";
 }
 
 function founderCommunicationContract(slug: string) {
@@ -285,8 +292,13 @@ function brainPrompt(slug: string, prompt: string) {
 
 function needsBuilderExecution(prompt: string, firstReply: string) {
   if (parsePatchOperations(firstReply).length > 0) return true;
-  return /\b(build|banao|bana|implement|create|add|edit|update|change|fix|repair|patch|code|file|component|route|api|sql|migration|deploy|ship|publish|remove|delete|rename|refactor|wire|connect|integrat(?:e|ion)|bug|error)\b/i.test(
-    prompt,
+  const normalized = prompt.trim();
+  if (/^\/(?:fix|review|scan|deploy|publish|rollback)\b/i.test(normalized)) return true;
+  if (/^\[Visual Edit\]/i.test(normalized)) return true;
+  // Discussion about a future build is not execution. An actual build loop
+  // starts only from an imperative command, or from a real patch emitted by Jimmy.
+  return /^(?:please\s+)?(?:ab\s+|bhai\s+)?(?:build|banao|bana|implement|create|add|edit|update|change|fix|repair|patch|remove|delete|rename|refactor|wire|connect|integrate|deploy|publish)\b/i.test(
+    normalized,
   );
 }
 
@@ -481,6 +493,9 @@ function extractText(payload: unknown): string {
   if (typeof payload === "string") return payload;
   if (!payload || typeof payload !== "object") return JSON.stringify(payload);
   const p = payload as Record<string, unknown>;
+  if ((p.type === "done" || p.type === "ack") && !p.final_answer && !p.text && !p.content) {
+    return "";
+  }
   const candidates = [
     p.final_answer,
     p.finalAnswer,
@@ -605,6 +620,8 @@ function projectSlugCandidates(projectId: string) {
     nexatect: ["nexatect", "hostflowai", "founderbuilder", "axonetis"],
     axonetis: ["axonetis", "founderbuilder", "nexatect", "hostflowai"],
     founderbuilder: ["founderbuilder", "axonetis", "nexatect", "hostflowai"],
+    anexomail: ["anexomail", "axomail"],
+    axomail: ["axomail", "anexomail"],
   };
   return unique([projectId, ...(aliases[projectId] ?? [])]);
 }
@@ -1004,7 +1021,7 @@ function brainChatBody(
 
 
 async function runBrainAndInsert(job: BrainJob) {
-  const { supabase, slug, prompt, threadId, userMessageId, brainURLs, signal } = job;
+  const { supabase, slug, prompt, projectId, threadId, userMessageId, brainURLs, signal } = job;
   let assistantText = "";
   let rustPayload: unknown = null;
   let rustError: string | null = null;
@@ -1022,7 +1039,7 @@ async function runBrainAndInsert(job: BrainJob) {
         const r = await fetch(`${brainURL}${path}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(brainChatBody(slug, prompt)),
+          body: JSON.stringify(brainChatBody(slug, prompt, { projectId })),
           signal: ctrl.signal,
         });
         if (!r.ok) {
@@ -1126,7 +1143,12 @@ function streamBrainToClient(job: BrainJob) {
                 r = await fetch(`${brainURL}${path}`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
-                  body: JSON.stringify(brainChatBody(job.slug, job.prompt, { stream: true })),
+                  body: JSON.stringify(
+                    brainChatBody(job.slug, job.prompt, {
+                      stream: true,
+                      projectId: job.projectId,
+                    }),
+                  ),
                   signal: ctrl.signal,
                 });
                 if (r.ok) break;
@@ -1257,7 +1279,6 @@ function streamBrainToClient(job: BrainJob) {
             assistantText = direct.text;
             rustError = null;
             meta = { model: direct.model, tokensIn: direct.tokensIn, tokensOut: direct.tokensOut };
-            send("token", { delta: direct.text });
           } else if (direct && "error" in direct && direct.error) {
             rustError = `Direct fallback failed: ${direct.error}`;
             assistantText = "";
@@ -1368,7 +1389,7 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
             userId = await resolveFounderUserId(supabase, founderSession);
           } else {
             // Preview-host bypass — mirrors _authenticated/route.tsx.
-            // Prod (aiaxonetis.nexatect.com) still enforces GitHub session.
+          // Production still enforces the founder GitHub session.
             const host = new URL(request.url).hostname;
             const isPreview =
               host === "localhost" ||

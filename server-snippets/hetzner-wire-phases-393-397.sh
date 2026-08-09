@@ -5,7 +5,7 @@ set -Eeuo pipefail
 # No manual nano/edit required. Safe re-run: creates backups and avoids duplicate route mounts.
 
 BUILDER_DIR="${BUILDER_DIR:-/var/www/axonetis}"
-DOMAIN="${AXONETIS_DOMAIN:-https://aiaxonetis.hostflowai.net}"
+DOMAIN="${AXONETIS_DOMAIN:-https://founderbuilder.axonetis.com}"
 STAMP="$(date +%Y%m%d%H%M%S)"
 
 log() { printf '\n\033[1;36m%s\033[0m\n' "$*"; }

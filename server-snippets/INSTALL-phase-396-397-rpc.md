@@ -1,6 +1,6 @@
 # INSTALL — Phase 3.9.6 + 3.9.7 (Marketplace + Global Router)
 
-Founder-only Hetzner deploy on `aiaxonetis.hostflowai.net`.
+Founder-only Hetzner deploy on `founderbuilder.axonetis.com`.
 NO DUPLICATE — everything appends to existing files from 3.9.3/3.9.4.
 
 ## Zero-manual command (recommended)
@@ -85,15 +85,15 @@ cd /var/www/axonetis && git pull && bun install && bun run build \
 
 ```bash
 # Router preview
-curl -sX POST https://aiaxonetis.hostflowai.net/rpc/router.preview \
+curl -sX POST https://founderbuilder.axonetis.com/rpc/router.preview \
   -H 'content-type: application/json' \
   -d '{"prompt":"fix the button color","agent":"jimmy"}'
 
 # Marketplace list
-curl -s https://aiaxonetis.hostflowai.net/rpc/marketplace.list | jq '.agents | length'
+curl -s https://founderbuilder.axonetis.com/rpc/marketplace.list | jq '.agents | length'
 
 # Install seo-scout on a project
-curl -sX POST https://aiaxonetis.hostflowai.net/rpc/marketplace.install \
+curl -sX POST https://founderbuilder.axonetis.com/rpc/marketplace.install \
   -H 'content-type: application/json' \
   -d '{"projectId":"axonetis","slug":"seo-scout"}'
 ```
