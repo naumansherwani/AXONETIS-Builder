@@ -67,6 +67,9 @@ create table if not exists public.test_runs (
   log text,
   created_at timestamptz not null default now()
 );
+alter table public.test_runs add column if not exists actor text not null default 'sherlock';
+alter table public.test_runs add column if not exists duration_ms int;
+alter table public.test_runs add column if not exists log text;
 grant select on public.test_runs to authenticated;
 grant all on public.test_runs to service_role;
 
@@ -81,6 +84,7 @@ create table if not exists public.browser_sessions (
   created_at timestamptz not null default now(),
   ended_at timestamptz
 );
+alter table public.browser_sessions add column if not exists goal text;
 grant select on public.browser_sessions to authenticated;
 grant all on public.browser_sessions to service_role;
 create table if not exists public.browser_actions (
@@ -92,6 +96,8 @@ create table if not exists public.browser_actions (
   selector text,
   created_at timestamptz not null default now()
 );
+alter table public.browser_actions add column if not exists project_id text;
+alter table public.browser_actions add column if not exists selector text;
 grant select on public.browser_actions to authenticated;
 grant all on public.browser_actions to service_role;
 
@@ -108,6 +114,8 @@ create table if not exists public.fullstack_builds (
   created_at timestamptz not null default now(),
   finished_at timestamptz
 );
+alter table public.fullstack_builds add column if not exists phase text not null default 'planning';
+alter table public.fullstack_builds add column if not exists duration_ms int;
 grant select on public.fullstack_builds to authenticated;
 grant all on public.fullstack_builds to service_role;
 create table if not exists public.fullstack_tasks (
@@ -122,6 +130,9 @@ create table if not exists public.fullstack_tasks (
   progress int not null default 0,
   created_at timestamptz not null default now()
 );
+alter table public.fullstack_tasks add column if not exists project_id text;
+alter table public.fullstack_tasks add column if not exists state text not null default 'queued';
+alter table public.fullstack_tasks alter column worker drop not null;
 grant select on public.fullstack_tasks to authenticated;
 grant all on public.fullstack_tasks to service_role;
 
