@@ -39,19 +39,22 @@ export function getSupabase3(): SupabaseClient {
   if (!instance) {
     const isBrowser = typeof window !== "undefined";
     const hasWebSocket = typeof globalThis.WebSocket !== "undefined";
-    instance = createClient(URL || "https://placeholder.supabase.co", ANON_KEY || "placeholder-anon-key", {
-      auth: {
-        persistSession: isBrowser,
-        autoRefreshToken: isBrowser,
-        detectSessionInUrl: isBrowser,
-        storageKey: "fb.supabase3.auth",
+    instance = createClient(
+      URL || "https://placeholder.supabase.co",
+      ANON_KEY || "placeholder-anon-key",
+      {
+        auth: {
+          persistSession: isBrowser,
+          autoRefreshToken: isBrowser,
+          detectSessionInUrl: isBrowser,
+          storageKey: "fb.supabase3.auth",
+        },
+        ...(hasWebSocket ? {} : { realtime: { transport: ServerWebSocketStub } }),
       },
-      ...(hasWebSocket ? {} : { realtime: { transport: ServerWebSocketStub } }),
-    });
+    );
   }
   return instance;
 }
-
 
 /** Lazy proxy — behaves like a SupabaseClient but only constructs on first use. */
 export const supabase3: SupabaseClient = new Proxy({} as SupabaseClient, {

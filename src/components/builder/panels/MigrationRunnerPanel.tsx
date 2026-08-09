@@ -30,7 +30,9 @@ const VERDICT_TONE: Record<MigrationDryRun["verdict"], string> = {
 
 export default function MigrationRunnerPanel() {
   const { project } = useBuilder();
-  const [sql, setSql] = useState("-- alter table public.projects add column if not exists tagline text;\n");
+  const [sql, setSql] = useState(
+    "-- alter table public.projects add column if not exists tagline text;\n",
+  );
   const [tables, setTables] = useState<SchemaTable[]>([]);
   const [dry, setDry] = useState<MigrationDryRun | null>(null);
   const [decision, setDecision] = useState<"pending" | "approved" | "rejected">("pending");
@@ -122,7 +124,12 @@ export default function MigrationRunnerPanel() {
               onMount={(_editor, monaco) => {
                 monaco.languages.registerCompletionItemProvider("sql", {
                   provideCompletionItems: (
-                    model: { getWordUntilPosition: (p: { lineNumber: number; column: number }) => { startColumn: number; endColumn: number } },
+                    model: {
+                      getWordUntilPosition: (p: { lineNumber: number; column: number }) => {
+                        startColumn: number;
+                        endColumn: number;
+                      };
+                    },
                     position: { lineNumber: number; column: number },
                   ) => {
                     const word = model.getWordUntilPosition(position);
@@ -153,7 +160,11 @@ export default function MigrationRunnerPanel() {
             disabled={busy !== null}
             className="inline-flex items-center gap-1.5 rounded border border-white/12 bg-white/[0.04] px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-foreground/85 hover:bg-white/[0.08] disabled:opacity-50"
           >
-            {busy === "dry" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
+            {busy === "dry" ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Play className="h-3 w-3" />
+            )}
             dry-run
           </button>
           <button

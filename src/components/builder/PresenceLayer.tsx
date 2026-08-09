@@ -103,7 +103,12 @@ export default function PresenceLayer() {
           style={{ left: `${p.x * 100}%`, top: `${p.y * 100}%` }}
         >
           <svg width="14" height="18" viewBox="0 0 14 18" fill="none">
-            <path d="M1 1l11 6.5-4.6 1.2L9 15.5 1 1z" fill={p.color} stroke="#000" strokeWidth="0.8" />
+            <path
+              d="M1 1l11 6.5-4.6 1.2L9 15.5 1 1z"
+              fill={p.color}
+              stroke="#000"
+              strokeWidth="0.8"
+            />
           </svg>
           <span
             className="ml-2 -mt-1 inline-block whitespace-nowrap rounded px-1.5 py-0.5 text-[9.5px] font-semibold text-black"

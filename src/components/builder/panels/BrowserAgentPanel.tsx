@@ -49,7 +49,9 @@ export default function BrowserAgentPanel() {
     setUrl(shape.url);
     const remote = await validateUrl(shape.url);
     setChecking(false);
-    setValid(remote ? { ok: remote.ok, reason: remote.reason } : { ok: true, reason: "shape only" });
+    setValid(
+      remote ? { ok: remote.ok, reason: remote.reason } : { ok: true, reason: "shape only" },
+    );
   }, [url]);
 
   const start = useCallback(async () => {
@@ -123,14 +125,16 @@ export default function BrowserAgentPanel() {
               disabled={checking || !url.trim()}
               className="inline-flex items-center gap-1 rounded border border-white/12 bg-white/[0.04] px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-foreground/85 hover:bg-white/[0.08] disabled:opacity-50"
             >
-              {checking ? <Loader2 className="h-3 w-3 animate-spin" /> : <Globe className="h-3 w-3" />}
+              {checking ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Globe className="h-3 w-3" />
+              )}
               check
             </button>
           </div>
           {valid && (
-            <p
-              className={`text-[10px] ${valid.ok ? "text-emerald-300" : "text-[#ff7480]"}`}
-            >
+            <p className={`text-[10px] ${valid.ok ? "text-emerald-300" : "text-[#ff7480]"}`}>
               {valid.ok ? `reachable${valid.reason ? ` (${valid.reason})` : ""}` : valid.reason}
             </p>
           )}

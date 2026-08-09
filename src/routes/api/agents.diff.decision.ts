@@ -20,8 +20,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 
-
-
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -59,7 +57,6 @@ export const Route = createFileRoute("/api/agents/diff/decision")({
         const supabase = createClient(url, key, { auth: { persistSession: false } });
 
         const status = decision === "approve" ? "approved" : "rejected";
-
 
         const { error } = await supabase
           .from("agent_diffs")

@@ -99,7 +99,10 @@ export default function WhyTooltip({
               {expandMemory && (data?.memory.length ?? 0) > 0 && (
                 <ul className="mb-2 space-y-1">
                   {data!.memory.map((m) => (
-                    <li key={m.id} className="rounded border border-white/[0.06] bg-white/[0.02] p-1.5">
+                    <li
+                      key={m.id}
+                      className="rounded border border-white/[0.06] bg-white/[0.02] p-1.5"
+                    >
                       <div className="text-[10px] font-medium text-foreground/90">{m.title}</div>
                       <div className="mt-0.5 line-clamp-2 text-[9.5px] text-muted-foreground">
                         {m.snippet}
@@ -146,7 +149,10 @@ export default function WhyTooltip({
                       <li key={s.id} className="relative">
                         <span
                           className="absolute -left-[17px] top-[5px] h-2 w-2 rounded-full"
-                          style={{ background: stepTone(s.kind), boxShadow: `0 0 8px ${stepTone(s.kind)}` }}
+                          style={{
+                            background: stepTone(s.kind),
+                            boxShadow: `0 0 8px ${stepTone(s.kind)}`,
+                          }}
                         />
                         <div className="text-[10px] font-medium text-foreground/90">{s.label}</div>
                         {s.detail && (

@@ -126,7 +126,9 @@ export function clearWorkspace(projectId: ProjectId) {
 }
 
 /** Supabase instance routed per project (display-only — server enforces). */
-export function supabaseLabelFor(projectId: ProjectId): "Core 1" | "Core 2" | "Core 3" | "Mail Core" {
+export function supabaseLabelFor(
+  projectId: ProjectId,
+): "Core 1" | "Core 2" | "Core 3" | "Mail Core" {
   if (projectId === "anexomail") return "Mail Core";
   if (projectId === "hostflowai") return "Core 1";
   if (projectId === "rapidpay") return "Core 2";

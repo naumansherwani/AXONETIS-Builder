@@ -954,7 +954,8 @@ export default function UnifiedChat() {
                     No messages yet
                   </div>
                   <div className="max-w-[280px] text-[11px] leading-relaxed text-muted-foreground">
-                    Jimmy se baat karo ya build command do. Sherlock sirf code change ke baad audit karega.
+                    Jimmy se baat karo ya build command do. Sherlock sirf code change ke baad audit
+                    karega.
                   </div>
                 </div>
               ) : (
@@ -1274,10 +1275,10 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
   const displayText = msg.thinking ? msg.text : cleanAgentText(msg.text);
   const hasStructuredContent = Boolean(
     msg.plans?.length ||
-      msg.verifications?.length ||
-      msg.delegations?.length ||
-      msg.toolCalls?.length ||
-      msg.diffs?.length,
+    msg.verifications?.length ||
+    msg.delegations?.length ||
+    msg.toolCalls?.length ||
+    msg.diffs?.length,
   );
 
   if (!displayText && !hasStructuredContent) return null;

@@ -57,10 +57,7 @@ export function isSupportedImage(file: File): boolean {
   return /^image\/(png|jpe?g|webp|gif|avif)$/i.test(file.type);
 }
 
-export function fileToDataUrl(
-  file: File,
-  onProgress?: (pct: number) => void,
-): Promise<string> {
+export function fileToDataUrl(file: File, onProgress?: (pct: number) => void): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onprogress = (e) => {
@@ -117,15 +114,7 @@ export async function applySuggestion(
   });
 }
 
-const ELEMENT_TONES = [
-  "#E50914",
-  "#a855f7",
-  "#22d3ee",
-  "#34d399",
-  "#fbbf24",
-  "#f472b6",
-  "#60a5fa",
-];
+const ELEMENT_TONES = ["#E50914", "#a855f7", "#22d3ee", "#34d399", "#fbbf24", "#f472b6", "#60a5fa"];
 
 export function elementColor(index: number): string {
   return ELEMENT_TONES[index % ELEMENT_TONES.length];

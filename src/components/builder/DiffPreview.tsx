@@ -23,7 +23,6 @@ export interface DiffPart {
   sherlock?: "pass" | "fail" | "retry";
 }
 
-
 type Row = { kind: "same" | "add" | "del"; text: string };
 
 /** Small LCS-based line diff. Good enough for chat-inline previews. */
@@ -59,8 +58,6 @@ function computeDiff(oldStr: string, newStr: string): Row[] {
   while (j < m) rows.push({ kind: "add", text: b[j++] });
   return rows;
 }
-
-
 
 export default function DiffPreview({ diff }: { diff: DiffPart }) {
   const [open, setOpen] = useState(true);

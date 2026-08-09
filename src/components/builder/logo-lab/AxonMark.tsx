@@ -119,36 +119,15 @@ export default function AxenMark({
         ))}
 
         {/* Firing signal pulses — 3 alternating dendrites travel vertex → core */}
-        {[0, 2, 4].map((i) => {
+        {[0, 2, 4, 1, 3, 5].map((i) => {
           const [x, y] = VERTS[i];
+          const dotR = active ? 2.6 : 2;
           return (
             <motion.circle
               key={`p-${i}`}
-              r={active ? 2.6 : 2}
+              r={dotR}
               fill={c.core}
-              initial={false}
-              animate={{
-                cx: [x, 50],
-                cy: [y, 50],
-                opacity: active ? [0, 1, 0] : [0, 0.6, 0],
-              }}
-              transition={{
-                duration: pulseDur,
-                repeat: Infinity,
-                ease: "easeIn",
-                delay: (i / 6) * pulseDur,
-              }}
-            />
-          );
-        })}
-        {[1, 3, 5].map((i) => {
-          const [x, y] = VERTS[i];
-          return (
-            <motion.circle
-              key={`p2-${i}`}
-              r={active ? 2.6 : 2}
-              fill={c.core}
-              initial={false}
+              initial={{ cx: x, cy: y, r: dotR, opacity: 0 }}
               animate={{
                 cx: [x, 50],
                 cy: [y, 50],
@@ -168,8 +147,9 @@ export default function AxenMark({
         <motion.circle
           cx="50"
           cy="50"
-          r="7"
+          r={active ? 6 : 5.5}
           fill={c.halo}
+          initial={{ r: active ? 6 : 5.5, opacity: 0.55 }}
           animate={{ r: active ? [6, 10, 6] : [5.5, 7.5, 5.5], opacity: [0.55, 1, 0.55] }}
           transition={{ duration: pulseDur, repeat: Infinity, ease: "easeInOut" }}
         />
