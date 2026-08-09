@@ -103,11 +103,11 @@ function hasProviderKeyFailure(text: string | null | undefined) {
 }
 
 const GREETING_LINE_RE =
-  /^\s*(?:hi+|hello+|hey+|greetings|salam|salaam|assalam[\s-]?o?[\s-]?alaikum|as-?salamu\s+alaikum)\b/i;
+  /^\s*(?:hi+|hello+|hey+|greetings|salam|salaam|wa[\s-]+alaikum(?:[\s-]+as[\s-]*salam)?|assalam[\s-]?o?[\s-]?alaikum|as-?salamu\s+alaikum)\b/i;
 const SELF_INTRO_RE =
   /\b(?:jimmy|sherlock(?:review)?)\s+(?:here|hoon|hun)\b|\bi(?:'m| am)\s+(?:jimmy|sherlock)\b|\blead builder (?:at|of|for)\b/i;
 const OFFER_FILLER_RE =
-  /(?:what(?:'s| is)\s+(?:the\s+)?priority|what can i (?:assist|help)|how can i (?:assist|help)|let me know (?:what|if|when)|ready (?:to help|for (?:today|your|the)|ho ja(?:o|ye))|kya aap kuch specific|agla step bata(?:o|ayein)|anything else i can)/i;
+  /(?:what(?:'s| is)\s+(?:the\s+)?priority|what can i (?:assist|help)|how can i (?:assist|help)|let me know (?:what|if|when)|ready (?:to help|for (?:today|your|the)|ho ja(?:o|ye))|kya aap kuch specific|agla step bata(?:o|ayein)|anything else i can|message received|har tarah ki technical madad|poori koshish kar(?:unga|oon ga)|zaroor bata(?:iye|ein)|aage badhane ke liye tayyar)/i;
 const STATUS_RECAP_RE =
   /(?:runtime is stable|showing normal ops|still deferred|audit ready on demand|ready for today'?s build update|build update)/i;
 const ROMAN_URDU_RE =
@@ -199,14 +199,21 @@ async function enforceFounderVoice(
     signal,
   );
   if (rewritten && "text" in rewritten && rewritten.text) {
-    return {
-      text: rewritten.text,
-      meta: {
-        model: rewritten.model,
-        tokensIn: rewritten.tokensIn,
-        tokensOut: rewritten.tokensOut,
-      },
-    };
+    const rewrittenText = stripFounderVoiceFiller(rewritten.text);
+    if (
+      rewrittenText &&
+      !violatesFounderVoice(rewrittenText) &&
+      !mismatchedLanguage(prompt, rewrittenText)
+    ) {
+      return {
+        text: rewrittenText,
+        meta: {
+          model: rewritten.model,
+          tokensIn: rewritten.tokensIn,
+          tokensOut: rewritten.tokensOut,
+        },
+      };
+    }
   }
 
   const stripped = stripFounderVoiceFiller(candidate);
@@ -613,6 +620,8 @@ function projectSlugCandidates(projectId: string) {
     nexatect: ["nexatect", "hostflowai", "founderbuilder", "axonetis"],
     axonetis: ["axonetis", "founderbuilder", "nexatect", "hostflowai"],
     founderbuilder: ["founderbuilder", "axonetis", "nexatect", "hostflowai"],
+    anexomail: ["anexomail", "axomail"],
+    axomail: ["axomail", "anexomail"],
   };
   return unique([projectId, ...(aliases[projectId] ?? [])]);
 }
@@ -1030,7 +1039,7 @@ async function runBrainAndInsert(job: BrainJob) {
         const r = await fetch(`${brainURL}${path}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(brainChatBody(slug, prompt)),
+          body: JSON.stringify(brainChatBody(slug, prompt, { projectId })),
           signal: ctrl.signal,
         });
         if (!r.ok) {
@@ -1134,7 +1143,12 @@ function streamBrainToClient(job: BrainJob) {
                 r = await fetch(`${brainURL}${path}`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
-                  body: JSON.stringify(brainChatBody(job.slug, job.prompt, { stream: true })),
+                  body: JSON.stringify(
+                    brainChatBody(job.slug, job.prompt, {
+                      stream: true,
+                      projectId: job.projectId,
+                    }),
+                  ),
                   signal: ctrl.signal,
                 });
                 if (r.ok) break;

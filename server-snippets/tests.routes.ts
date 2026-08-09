@@ -1,6 +1,6 @@
 /**
  * Phase 10.6 — AI Test Generator bridge routes (hostflow-server, port 8090).
- * Mount:  app.use(testsRoutes)   in src/routes/index.ts
+ * Mount:  app.use(testsRoutes)   in src/index.ts (the Express entrypoint)
  *
  *   GET  /rpc/tests.list?projectId               → { files, coverage, runs }
  *   POST /rpc/tests.generate { projectId, path } → { ok, files }

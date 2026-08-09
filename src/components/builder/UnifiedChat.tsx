@@ -42,7 +42,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useBuilder } from "@/lib/builder-state";
 import {
   cancelAgentStream,
-  chatWithAgent,
   sendBuilderCommand,
   streamChatWithAgent,
   transcribeVoice,
@@ -301,7 +300,8 @@ export default function UnifiedChat() {
       return;
     const slug = (row.agent_slug ?? "jimmy") as AgentSlug;
     if (!UNIFIED_CHAT_SLUGS.has(slug)) return;
-    const text = extractText(row) || "(empty reply)";
+    const text = extractText(row);
+    if (!text) return;
     const { toolCalls, diffs, plans, verifications, delegations } = extractStructured(row);
     const agent: Agent = slug === "sherlock" ? "sherlock" : "jimmy";
     const meta = {
@@ -1230,10 +1230,20 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
     : null;
   const connectPlaceholder =
     msg.text === "Live stream connect…" || msg.text === "Audit stream connect…";
+  const displayText = msg.thinking ? msg.text : cleanAgentText(msg.text);
+  const hasStructuredContent = Boolean(
+    msg.plans?.length ||
+      msg.verifications?.length ||
+      msg.delegations?.length ||
+      msg.toolCalls?.length ||
+      msg.diffs?.length,
+  );
+
+  if (!displayText && !hasStructuredContent) return null;
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(msg.text);
+      await navigator.clipboard.writeText(displayText);
       setCopied(true);
       setTimeout(() => setCopied(false), 1400);
     } catch {
@@ -1272,7 +1282,7 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
             {msg.text}
           </Shimmer>
         ) : (
-          <MessageResponse>{msg.text}</MessageResponse>
+          <MessageResponse>{displayText}</MessageResponse>
         )}
 
         {/* 3.10.2 — Jimmy Planning Tree (Goal → Tasks → Verification) */}

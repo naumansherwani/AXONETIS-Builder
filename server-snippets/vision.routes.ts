@@ -1,6 +1,6 @@
 /**
  * Phase 10.4 — Screenshot Vision bridge routes (hostflow-server, port 8090).
- * Mount:  app.use(visionRoutes)   in src/routes/index.ts
+ * Mount:  app.use(visionRoutes)   in src/index.ts (the Express entrypoint)
  *
  *   POST /rpc/vision.upload   { projectId, filename, mime, dataUrl } → VisionShot
  *   GET  /rpc/vision.list?projectId                                 → { shots }

@@ -1,6 +1,6 @@
 /**
  * Phase 10.8 — Browser-Use Agent bridge routes (hostflow-server, port 8090).
- * Mount:  app.use(browserRoutes)   in src/routes/index.ts
+ * Mount:  app.use(browserRoutes)   in src/index.ts (the Express entrypoint)
  *
  *   POST /rpc/browser.validate { url }                  → { ok, url, reason? }
  *   POST /rpc/browser.start    { projectId, url, goal } → { sessionId }

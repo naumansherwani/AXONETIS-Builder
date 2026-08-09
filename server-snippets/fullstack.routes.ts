@@ -1,6 +1,6 @@
 /**
  * Phase 10.10 — One-Prompt Full-Stack bridge routes (hostflow-server, port 8090).
- * Mount:  app.use(fullstackRoutes)   in src/routes/index.ts
+ * Mount:  app.use(fullstackRoutes)   in src/index.ts (the Express entrypoint)
  *
  *   POST /rpc/fullstack.begin  { projectId, prompt } → { buildId, tasks }
  *   GET  /rpc/fullstack.stream?projectId&buildId     → SSE task|worker|deploy|done
