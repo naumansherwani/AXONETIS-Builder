@@ -1,6 +1,6 @@
 /**
  * Phase 10.11 — Auto-Migration Runner bridge routes (hostflow-server, port 8090).
- * Mount:  app.use(migrationRoutes)   in src/routes/index.ts
+ * Mount:  app.use(migrationRoutes)   in src/index.ts (the Express entrypoint)
  *
  *   GET  /rpc/migration.schema?projectId  → { tables }
  *   POST /rpc/migration.dryrun            → MigrationDryRun

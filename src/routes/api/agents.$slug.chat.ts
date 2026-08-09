@@ -269,7 +269,7 @@ function directSystemPrompt(slug: string) {
   if (slug === "sherlock") {
     return "You are SherlockReview, AXONETIS AI Builder's strict audit/debug agent. Founder Muhammad Nauman Sherwani se natural Roman Urdu/Hindi mixed with necessary technical English mein baat karo. Seedha root cause aur verified result do. Generic greeting, corporate intro, filler, repeated offer-to-help, fake backend result, ya English-only reply kabhi nahi. Agar kaam adhura ho to clearly bolo. Founder ke tone aur message length ko mirror karo.";
   }
-  return "Tu Jimmy hai — NEXATECT ka lead builder aur Founder Muhammad Nauman Sherwani ka trusted technical partner. Founder se bilkul natural Roman Urdu/Hindi mein baat kar, sirf zaroori technical terms English mein rakh. Seedha jawab ya action se shuru kar; 'Hi there', apna intro, corporate pitch, generic greeting, repeated offer-to-help aur English-only paragraph kabhi mat likh. Founder ke tone aur message length ko mirror kar. Jo verify hua ho sirf woh complete bol; jo pending ho usay pending bol. Over-confident claim, dummy result aur banawati success mana hai. Default reply short rakho; detail sirf founder maange ya technical safety ke liye zaroori ho. Yeh live founder conversation hai, customer support chat nahi.";
+  return "Tu Jimmy hai — NEXATECT™ Global ka CEO-level lead coder aur Founder Muhammad Nauman Sherwani ka trusted execution partner. NEXATECT parent company hai; AXONETIS Builder mein public users ki websites/software build hotay hain; Sherlock deputy hai aur sirf real code change ke baad audit karta hai; ANEXOMAIL advanced workspace hai; ANEXVOT AI Pay future treasury product hai. Founder se bilkul natural Roman Urdu/Hindi mein baat kar, sirf zaroori technical terms English mein rakh. Seedha jawab ya action se shuru kar; salam ka jawab, apna intro, corporate pitch, generic greeting, repeated offer-to-help aur English-only paragraph kabhi mat likh. Founder ke tone aur message length ko mirror kar. Normal conversation mein audit, build loop, status recap ya tool execution mat chala. Jo verify hua ho sirf woh complete bol; jo pending ho usay pending bol. Over-confident claim, dummy result aur banawati success mana hai. Default reply short rakho; detail sirf founder maange ya technical safety ke liye zaroori ho. Yeh live founder conversation hai, customer support chat nahi.";
 }
 
 function founderCommunicationContract(slug: string) {
@@ -285,8 +285,13 @@ function brainPrompt(slug: string, prompt: string) {
 
 function needsBuilderExecution(prompt: string, firstReply: string) {
   if (parsePatchOperations(firstReply).length > 0) return true;
-  return /\b(build|banao|bana|implement|create|add|edit|update|change|fix|repair|patch|code|file|component|route|api|sql|migration|deploy|ship|publish|remove|delete|rename|refactor|wire|connect|integrat(?:e|ion)|bug|error)\b/i.test(
-    prompt,
+  const normalized = prompt.trim();
+  if (/^\/(?:fix|review|scan|deploy|publish|rollback)\b/i.test(normalized)) return true;
+  if (/^\[Visual Edit\]/i.test(normalized)) return true;
+  // Discussion about a future build is not execution. An actual build loop
+  // starts only from an imperative command, or from a real patch emitted by Jimmy.
+  return /^(?:please\s+)?(?:ab\s+|bhai\s+)?(?:build|banao|bana|implement|create|add|edit|update|change|fix|repair|patch|remove|delete|rename|refactor|wire|connect|integrate|deploy|publish)\b/i.test(
+    normalized,
   );
 }
 
@@ -481,6 +486,9 @@ function extractText(payload: unknown): string {
   if (typeof payload === "string") return payload;
   if (!payload || typeof payload !== "object") return JSON.stringify(payload);
   const p = payload as Record<string, unknown>;
+  if ((p.type === "done" || p.type === "ack") && !p.final_answer && !p.text && !p.content) {
+    return "";
+  }
   const candidates = [
     p.final_answer,
     p.finalAnswer,
@@ -1257,7 +1265,6 @@ function streamBrainToClient(job: BrainJob) {
             assistantText = direct.text;
             rustError = null;
             meta = { model: direct.model, tokensIn: direct.tokensIn, tokensOut: direct.tokensOut };
-            send("token", { delta: direct.text });
           } else if (direct && "error" in direct && direct.error) {
             rustError = `Direct fallback failed: ${direct.error}`;
             assistantText = "";
@@ -1368,7 +1375,7 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
             userId = await resolveFounderUserId(supabase, founderSession);
           } else {
             // Preview-host bypass — mirrors _authenticated/route.tsx.
-            // Prod (aiaxonetis.nexatect.com) still enforces GitHub session.
+          // Production still enforces the founder GitHub session.
             const host = new URL(request.url).hostname;
             const isPreview =
               host === "localhost" ||

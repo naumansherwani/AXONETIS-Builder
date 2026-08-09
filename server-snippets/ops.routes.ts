@@ -1,6 +1,6 @@
 /**
  * Phase 10.12 + 10.13 + 10.14 + 10.15 — Ops bridge routes (hostflow-server, 8090).
- * Mount:  app.use(opsRoutes)   in src/routes/index.ts
+ * Mount:  app.use(opsRoutes)   in src/index.ts (the Express entrypoint)
  *
  *  10.12  POST /rpc/advisor.route      { projectId, advisor, prompt } → AdvisorAnswer
  *  10.13  GET  /rpc/sandbox.status?projectId                         → SandboxStatus
