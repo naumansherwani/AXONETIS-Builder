@@ -3,7 +3,7 @@
  * Sources: snapshots (file_versions) + deployments + rollback_history.
  * Falls back to seed data when bridge / supabase3 not configured.
  */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PanelSection, Row } from "./PanelChrome";
 import {
   RotateCcw,
