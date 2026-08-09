@@ -130,7 +130,7 @@ export default function VersionsPanel() {
   const [checkoutBusy, setCheckoutBusy] = useState<string | null>(null);
   const [checkoutNote, setCheckoutNote] = useState<string | null>(null);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     const [s, d, h, dom] = await Promise.all([
       fetchSnapshots(project, 50),
       fetchDeployments(project),
@@ -141,11 +141,11 @@ export default function VersionsPanel() {
     if (d.length) setDeps(d);
     if (h.length) setHistory(h);
     if (dom) setDomains(dom);
-  };
+  }, [project]);
 
   useEffect(() => {
     void refresh();
-  }, [project]);
+  }, [refresh]);
 
   const onRollback = async (scope: "file" | "deployment", id: string) => {
     setBusy(id);
