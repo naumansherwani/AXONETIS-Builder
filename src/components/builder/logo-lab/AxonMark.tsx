@@ -168,8 +168,9 @@ export default function AxenMark({
         <motion.circle
           cx="50"
           cy="50"
-          r="7"
+          r={active ? 6 : 5.5}
           fill={c.halo}
+          initial={{ r: active ? 6 : 5.5, opacity: 0.55 }}
           animate={{ r: active ? [6, 10, 6] : [5.5, 7.5, 5.5], opacity: [0.55, 1, 0.55] }}
           transition={{ duration: pulseDur, repeat: Infinity, ease: "easeInOut" }}
         />
