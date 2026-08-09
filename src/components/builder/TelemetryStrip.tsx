@@ -10,7 +10,7 @@ import { useBuilder } from "@/lib/builder-state";
 import {
   fetchTelemetry,
   openTelemetryStream,
-  sparklinePath,
+  sparkline,
   type AiLoadPoint,
   type CostPoint,
   type RevenuePoint,
@@ -59,7 +59,7 @@ function Spark({
   tone: string;
   height?: number;
 }) {
-  const path = useMemo(() => sparklinePath(values, 240, height), [values, height]);
+  const points = useMemo(() => sparkline(values, 240, height), [values, height]);
   if (values.length < 2) {
     return (
       <div className="grid h-[34px] place-items-center text-[9.5px] text-muted-foreground/70">
@@ -69,7 +69,7 @@ function Spark({
   }
   return (
     <svg viewBox={`0 0 240 ${height}`} className="h-[34px] w-full" preserveAspectRatio="none">
-      <path d={path} fill="none" stroke={tone} strokeWidth="1.5" strokeLinejoin="round" />
+      <polyline points={points} fill="none" stroke={tone} strokeWidth="1.5" strokeLinejoin="round" />
     </svg>
   );
 }
