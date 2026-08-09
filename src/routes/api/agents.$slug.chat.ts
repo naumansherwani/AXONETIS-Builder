@@ -1239,6 +1239,9 @@ function streamBrainToClient(job: BrainJob) {
                     continue;
                   }
                   assistantText += delta;
+                  // Live token forwarding — founder ko turant text dikhe, end tak wait na ho.
+                  streamedText += delta;
+                  send("token", { delta });
                 }
                 const finalText = extractText(payload);
                 if (!delta && finalText && /done|final|complete/i.test(frame)) {
