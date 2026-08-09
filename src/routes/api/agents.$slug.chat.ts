@@ -601,18 +601,22 @@ function unique(values: string[]) {
 
 function resolveBrainURLs() {
   const configured = [
-    process.env.RUST_BRAIN_URL,
-    process.env.AXONETIS_RUST_BRAIN_URL,
     process.env.HOSTFLOWAI_BRAIN_URL,
     process.env.HOSTFLOW_BRAIN_URL,
+    process.env.RUST_BRAIN_URL,
+    process.env.AXONETIS_RUST_BRAIN_URL,
   ].flatMap((value) => (value ?? "").split(","));
 
+  // Founder agent routes (/api/founder/*) live ONLY on the Node brain :8080.
+  // The Rust compute brain :8088 has no founder routes → always 404, so it is
+  // tried last and never becomes the reported error while :8080 is reachable.
   return unique([
+    "http://127.0.0.1:8080",
     ...configured.map((value) => value.trim().replace(/\/$/, "")),
     "http://127.0.0.1:8088",
-    "http://127.0.0.1:8080",
   ]);
 }
+
 
 function projectSlugCandidates(projectId: string) {
   const aliases: Record<string, string[]> = {
@@ -970,23 +974,17 @@ async function insertAssistantMessage(job: BrainJob, assistantText: string, meta
  */
 function brainChatPaths(slug: string, opts?: { stream?: boolean }) {
   if (slug === "sherlock") {
+    // Brain has ONLY /sherlock/stream + /sherlock/audit. No /sherlock/orchestrate.
     return opts?.stream
-      ? [
-          "/api/founder/sherlock/stream",
-          "/api/founder/sherlock/audit",
-          "/api/founder/sherlock/orchestrate",
-        ]
-      : [
-          "/api/founder/sherlock/audit",
-          "/api/founder/sherlock/stream",
-          "/api/founder/sherlock/orchestrate",
-        ];
+      ? ["/api/founder/sherlock/stream", "/api/founder/sherlock/audit"]
+      : ["/api/founder/sherlock/audit", "/api/founder/sherlock/stream"];
   }
   return [
     "/api/founder/jimmy/stream",
     `/api/agents/${slug}/chat`,
   ];
 }
+
 
 /**
  * Superset request body accepted by every Brain founder route.
@@ -1043,17 +1041,22 @@ async function runBrainAndInsert(job: BrainJob) {
           signal: ctrl.signal,
         });
         if (!r.ok) {
-          rustError = `Brain ${brainURL}${path} ${r.status}: ${await r.text().catch(() => "")}`.slice(
+          const msg = `Brain ${brainURL}${path} ${r.status}: ${await r.text().catch(() => "")}`.slice(
             0,
             500,
           );
-          // 404/405 = wrong path on this brain, try the next candidate path
-          if (r.status !== 404 && r.status !== 405) {
+          // 404/405 = wrong path on this brain, try the next candidate path.
+          // A 404 must never mask a real error already collected from :8080.
+          if (r.status === 404 || r.status === 405) {
+            if (!rustError) rustError = msg;
+          } else {
+            rustError = msg;
             clearTimeout(timer);
             signal?.removeEventListener("abort", abort);
             break;
           }
         } else {
+
           rustPayload = await r.json().catch(() => null);
           assistantText = extractText(rustPayload);
           meta = { model: extractModel(rustPayload), ...extractUsage(rustPayload) };
@@ -1152,14 +1155,17 @@ function streamBrainToClient(job: BrainJob) {
                   signal: ctrl.signal,
                 });
                 if (r.ok) break;
-                rustError =
+                const msg =
                   `Brain ${brainURL}${path} ${r.status}: ${await r.text().catch(() => "")}`.slice(
                     0,
                     500,
                   );
                 const retryable = r.status === 404 || r.status === 405;
+                // never let a 404 from a brain without founder routes mask a real error
+                if (!retryable || !rustError) rustError = msg;
                 r = null;
                 if (!retryable) break;
+
               } catch (err) {
                 rustError =
                   err instanceof Error && err.name === "AbortError"
