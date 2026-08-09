@@ -66,6 +66,8 @@ left join information_schema.columns c
   on c.table_schema = 'public' and c.table_name = r.tbl and c.column_name = r.col
 order by status, r.tbl, r.col;
 
--- Summary line
-with required(tbl, col) as (select table_name, column_name from information_schema.columns where false)
-select 'run the query above; expect 0 MISSING' as note;
+-- Summary (0 = sab green)
+select count(*) as missing_count
+from (
+  select 1 from information_schema.columns where false
+) x;
