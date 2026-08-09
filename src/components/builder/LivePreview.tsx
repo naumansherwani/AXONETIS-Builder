@@ -18,6 +18,7 @@ import {
   normalizePreviewBridgeEvent,
 } from "@/lib/preview-bridge";
 import { subscribePreviewChanges } from "@/lib/preview-engine";
+import PresenceLayer from "./PresenceLayer";
 
 type Device = "mobile" | "tablet" | "desktop";
 const DEVICE_WIDTH: Record<Device, number> = { mobile: 375, tablet: 768, desktop: 1440 };
@@ -295,6 +296,8 @@ function SingleFrame({
         className="h-full w-full bg-white"
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
       />
+      {/* 10.5 — multiplayer cursors / selections / avatars over the preview */}
+      <PresenceLayer />
     </motion.div>
   );
 }
