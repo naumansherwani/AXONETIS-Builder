@@ -21,6 +21,7 @@ import {
 import { supabase3, SUPABASE3_READY } from "@/integrations/supabase3/client";
 import AxenMark from "./logo-lab/AxonMark";
 import PublishModal from "./PublishModal";
+import SandboxSwitcher from "./SandboxSwitcher";
 import { supabaseLabelFor } from "@/lib/project-workspace";
 
 /**
@@ -172,6 +173,9 @@ export default function TopBar() {
 
       {/* RIGHT — Quick actions / Publish / User */}
       <div className="flex shrink-0 items-center gap-2.5">
+        <div className="hidden lg:flex">
+          <SandboxSwitcher />
+        </div>
         <button
           onClick={() => setPaletteOpen(true)}
           className="hidden h-10 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 text-xs text-muted-foreground transition-colors hover:border-white/[0.18] hover:bg-white/[0.04] hover:text-foreground md:flex"

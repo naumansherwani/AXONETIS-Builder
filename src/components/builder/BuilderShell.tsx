@@ -15,6 +15,7 @@ import CommandPalette from "./CommandPalette";
 import SideRail from "./SideRail";
 import SidePanelDrawer from "./SidePanelDrawer";
 import MorePill from "./MorePill";
+import { SandboxBanner } from "./SandboxSwitcher";
 import { LEFT_RAIL_ITEMS, RIGHT_RAIL_ITEMS } from "./rail-items";
 import HorizontalSplit from "./HorizontalSplit";
 import type { BridgeStatus, PreviewBridgeEvent } from "@/lib/preview-bridge";
@@ -150,6 +151,7 @@ export default function BuilderShell() {
 
         <div className="relative z-10 flex h-full flex-col">
           <TopBar />
+          <SandboxBanner />
 
           <div className="flex min-h-0 flex-1">
             <SideRail side="left" items={LEFT_RAIL_ITEMS} label="Navigate" />
