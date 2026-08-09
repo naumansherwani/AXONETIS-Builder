@@ -128,7 +128,10 @@ const resolveAgent = (prompt: string): UnifiedAgentSlug => {
   // mention Sherlock while explaining company context; that must not silently
   // hand the whole turn to the audit agent. Sherlock runs only when explicitly
   // addressed or invoked through one of his commands.
-  return /^\s*\/(?:scan|fix|explain|review)\b/i.test(prompt) ? "sherlock" : "jimmy";
+  return /^\s*(?:(?:hi|hello|salam)\s+)?sherlock\b/i.test(prompt) ||
+    /^\s*\/(?:scan|fix|explain|review)\b/i.test(prompt)
+    ? "sherlock"
+    : "jimmy";
 };
 
 const AGENT_META: Record<
