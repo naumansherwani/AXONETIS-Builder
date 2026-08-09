@@ -124,10 +124,12 @@ const resolveAgent = (prompt: string): UnifiedAgentSlug => {
   const p = prompt.toLowerCase();
   if (p.includes("@sherlock")) return "sherlock";
   if (p.includes("@jimmy")) return "jimmy";
-  return p.includes("sherlock") ||
-    p.includes("/scan") ||
-    p.includes("/fix") ||
-    p.includes("/review")
+  // Jimmy is the default conversational/build agent. A founder message can
+  // mention Sherlock while explaining company context; that must not silently
+  // hand the whole turn to the audit agent. Sherlock runs only when explicitly
+  // addressed or invoked through one of his commands.
+  return /^\s*(?:(?:hi|hello|salam)\s+)?sherlock\b/i.test(prompt) ||
+    /^\s*\/(?:scan|fix|explain|review)\b/i.test(prompt)
     ? "sherlock"
     : "jimmy";
 };
