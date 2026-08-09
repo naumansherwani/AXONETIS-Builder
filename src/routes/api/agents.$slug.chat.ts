@@ -1041,17 +1041,22 @@ async function runBrainAndInsert(job: BrainJob) {
           signal: ctrl.signal,
         });
         if (!r.ok) {
-          rustError = `Brain ${brainURL}${path} ${r.status}: ${await r.text().catch(() => "")}`.slice(
+          const msg = `Brain ${brainURL}${path} ${r.status}: ${await r.text().catch(() => "")}`.slice(
             0,
             500,
           );
-          // 404/405 = wrong path on this brain, try the next candidate path
-          if (r.status !== 404 && r.status !== 405) {
+          // 404/405 = wrong path on this brain, try the next candidate path.
+          // A 404 must never mask a real error already collected from :8080.
+          if (r.status === 404 || r.status === 405) {
+            if (!rustError) rustError = msg;
+          } else {
+            rustError = msg;
             clearTimeout(timer);
             signal?.removeEventListener("abort", abort);
             break;
           }
         } else {
+
           rustPayload = await r.json().catch(() => null);
           assistantText = extractText(rustPayload);
           meta = { model: extractModel(rustPayload), ...extractUsage(rustPayload) };
