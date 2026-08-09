@@ -428,11 +428,43 @@ export default function UnifiedChat() {
       const ctrl = new AbortController();
       abortRef.current = ctrl;
 
+      // Silence watchdog — agar brain 90s tak kuch na bheje to bubble ko readable
+      // error bana do; "connect…" par hamesha ke liye atkna mana hai.
+      let watchdog = 0;
+      const clearWatchdog = () => {
+        if (watchdog) window.clearTimeout(watchdog);
+        watchdog = 0;
+      };
+      const bumpWatchdog = () => {
+        clearWatchdog();
+        watchdog = window.setTimeout(() => {
+          if (pendingPlaceholderRef.current !== placeholderId) return;
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === placeholderId && (m.thinking || !m.text.trim())
+                ? {
+                    ...m,
+                    text: `${targetAgent === "sherlock" ? "Sherlock" : "Jimmy"} brain ne 90s tak koi token nahi bheja — stream timeout. Brain logs check karo, phir dobara bhejo.`,
+                    thinking: false,
+                  }
+                : m,
+            ),
+          );
+          pendingPlaceholderRef.current = null;
+          streamIdRef.current = null;
+          setStatus("ready");
+          setComposerNotice("Stream timeout — brain silent raha.");
+          ctrl.abort();
+        }, 90_000);
+      };
+      bumpWatchdog();
+
       void streamChatWithAgent(
         targetAgent,
         { projectId: project, threadId, prompt: `${prompt}${attachmentNote}`, streamId },
         {
           onAck: (ack) => {
+            bumpWatchdog();
             if (!threadId && ack.threadId) setThreadId(ack.threadId);
             if (ack.userMessageId) pendingUserMessageIdRef.current = ack.userMessageId;
             setComposerNotice(
@@ -442,6 +474,7 @@ export default function UnifiedChat() {
             );
           },
           onToken: (delta) => {
+            bumpWatchdog();
             setMessages((prev) =>
               prev.map((m) => {
                 if (m.id !== placeholderId) return m;
@@ -453,7 +486,14 @@ export default function UnifiedChat() {
               }),
             );
           },
+          onReplace: (text) => {
+            bumpWatchdog();
+            setMessages((prev) =>
+              prev.map((m) => (m.id === placeholderId ? { ...m, text, thinking: true } : m)),
+            );
+          },
           onDone: (done) => {
+            clearWatchdog();
             if (done.assistantMessageId) seenMessageIdsRef.current.add(done.assistantMessageId);
             const cleaned = cleanAgentText(done.assistantText ?? "");
             setMessages((prev) =>
@@ -516,6 +556,7 @@ export default function UnifiedChat() {
           );
         })
         .finally(() => {
+          clearWatchdog();
           abortRef.current = null;
           if (pendingPlaceholderRef.current !== placeholderId) {
             streamIdRef.current = null;
