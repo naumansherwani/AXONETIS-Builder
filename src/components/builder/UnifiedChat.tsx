@@ -63,7 +63,7 @@ import {
 } from "@/lib/agent-stream";
 import { previewRoute, shortModelTag, formatUsd, type RouterPreview } from "@/lib/router-api";
 import { abortToolCall } from "@/lib/tools-api";
-import { ADVISORS, advisorForSlug, detectAdvisorMention } from "@/lib/advisors-api";
+import { ADVISORS, findAdvisor, detectMentionedAdvisor } from "@/lib/advisors-api";
 import { AdvisorBadge } from "./AdvisorMentionPicker";
 import WhyTooltip from "./WhyTooltip";
 
@@ -730,7 +730,7 @@ export default function UnifiedChat() {
   }, [draft]);
 
   /** 10.12 — which advisor the current draft routes to (badge in composer). */
-  const routedAdvisor = useMemo(() => detectAdvisorMention(draft), [draft]);
+  const routedAdvisor = useMemo(() => detectMentionedAdvisor(draft), [draft]);
 
   const applySlash = useCallback(
     (cmd: string) => {
@@ -1062,15 +1062,15 @@ export default function UnifiedChat() {
                     onClick={() => applyMention(mn.tag)}
                     className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-accent/40"
                   >
-                    {"advisorSlug" in mn && advisorForSlug(mn.advisorSlug as string) ? (
+                    {"advisorSlug" in mn && findAdvisor(mn.advisorSlug as string) ? (
                       <span
                         className="grid h-5 w-5 place-items-center rounded text-[9px] font-bold text-black"
                         style={{
-                          background: advisorForSlug(mn.advisorSlug as string)!.color,
-                          boxShadow: `0 0 12px -4px ${advisorForSlug(mn.advisorSlug as string)!.color}`,
+                          background: findAdvisor(mn.advisorSlug as string)!.color,
+                          boxShadow: `0 0 12px -4px ${findAdvisor(mn.advisorSlug as string)!.color}`,
                         }}
                       >
-                        {advisorForSlug(mn.advisorSlug as string)!.glyph}
+                        {findAdvisor(mn.advisorSlug as string)!.glyph}
                       </span>
                     ) : (
                       <span
@@ -1118,7 +1118,7 @@ export default function UnifiedChat() {
           )}
           {routedAdvisor && (
             <div className="mb-1.5 flex items-center gap-2 px-1">
-              <AdvisorBadge advisor={routedAdvisor} thinking={isLoading} />
+              <AdvisorBadge advisor={routedAdvisor} thinking={busy} />
             </div>
           )}
           <PromptInput
