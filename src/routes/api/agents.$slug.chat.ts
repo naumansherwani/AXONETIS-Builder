@@ -1247,7 +1247,11 @@ function streamBrainToClient(job: BrainJob) {
           return;
         }
 
-        if (hasProviderKeyFailure(rustError ?? assistantText) || violatesFounderVoice(assistantText)) {
+        if (
+          hasProviderKeyFailure(rustError ?? assistantText) ||
+          violatesFounderVoice(assistantText) ||
+          mismatchedLanguage(job.prompt, assistantText)
+        ) {
           const direct = await runDirectFallback(job.slug, job.prompt, job.signal);
           if (direct && "text" in direct && direct.text) {
             assistantText = direct.text;
@@ -1279,8 +1283,14 @@ function streamBrainToClient(job: BrainJob) {
         let finalMeta = meta;
         if (assistantText) {
           const looped = await safeRunCoreBuilderLoop(job, assistantText, meta);
-          finalText = looped.text;
-          finalMeta = looped.meta;
+          const voiced = await enforceFounderVoice(
+            job.slug,
+            job.prompt,
+            looped.text,
+            job.signal,
+          );
+          finalText = voiced.text;
+          finalMeta = voiced.meta ?? looped.meta;
           send("token", { delta: finalText });
         }
         const assistantMessageId = finalText
