@@ -102,12 +102,117 @@ function hasProviderKeyFailure(text: string | null | undefined) {
   return /all providers failed|no key|missing.*key|provider.*failed/i.test(text);
 }
 
+const GREETING_LINE_RE =
+  /^\s*(?:hi+|hello+|hey+|greetings|salam|salaam|assalam[\s-]?o?[\s-]?alaikum|as-?salamu\s+alaikum)\b/i;
+const SELF_INTRO_RE =
+  /\b(?:jimmy|sherlock(?:review)?)\s+(?:here|hoon|hun)\b|\bi(?:'m| am)\s+(?:jimmy|sherlock)\b|\blead builder (?:at|of|for)\b/i;
+const OFFER_FILLER_RE =
+  /(?:what(?:'s| is)\s+(?:the\s+)?priority|what can i (?:assist|help)|how can i (?:assist|help)|let me know (?:what|if|when)|ready (?:to help|for (?:today|your|the)|ho ja(?:o|ye))|kya aap kuch specific|agla step bata(?:o|ayein)|anything else i can)/i;
+const STATUS_RECAP_RE =
+  /(?:runtime is stable|showing normal ops|still deferred|audit ready on demand|ready for today'?s build update|build update)/i;
+const ROMAN_URDU_RE =
+  /\b(?:hai|hain|hoga|hogi|hogay|kero|karo|karna|karni|nahi|nahin|bhai|mujhe|tumhe|tumhari|tum|kya|abhi|phir|shuru|acha|theek|banao|bana|banaya|chalao|dekho|batao|bolo|kiya|liye|wala|wali|se|ka|ke|ki)\b/gi;
+
+function romanUrduScore(text: string) {
+  return (text.match(ROMAN_URDU_RE) ?? []).length;
+}
+
+function mismatchedLanguage(prompt: string, text: string | null | undefined) {
+  if (!text) return false;
+  const body = text.trim();
+  if (body.length < 40) return false;
+  return romanUrduScore(prompt) >= 3 && romanUrduScore(body) === 0;
+}
+
 function violatesFounderVoice(text: string | null | undefined) {
   if (!text) return false;
-  return /\bhi there\b|\bjimmy here\b|\bready to help\b|\bwhat can i (?:assist|help)\b|\bhow can i (?:assist|help)\b|ready ho ja(?:o|ye)|kya aap kuch specific verify|agla step bata(?:o|ayein)/i.test(
-    text,
+  const body = text.trim();
+  if (!body) return false;
+  const firstLine = body.split("\n", 1)[0] ?? "";
+  if (GREETING_LINE_RE.test(firstLine)) return true;
+  if (SELF_INTRO_RE.test(body)) return true;
+  if (OFFER_FILLER_RE.test(body)) return true;
+  if (STATUS_RECAP_RE.test(body)) return true;
+  if (/\bhi there\b/i.test(body)) return true;
+  const trademarks = (body.match(/™/g) ?? []).length;
+  if (trademarks >= 2 && body.length < 900) return true;
+  return false;
+}
+
+function isFillerLine(line: string) {
+  const s = line.trim();
+  if (!s) return false;
+  return (
+    GREETING_LINE_RE.test(s) ||
+    SELF_INTRO_RE.test(s) ||
+    OFFER_FILLER_RE.test(s) ||
+    STATUS_RECAP_RE.test(s)
   );
 }
+
+/** Cheap deterministic cleanup: drop greeting/offer filler at the edges. */
+function stripFounderVoiceFiller(text: string) {
+  const lines = text.split("\n");
+  while (lines.length && (!lines[0]!.trim() || isFillerLine(lines[0]!))) lines.shift();
+  while (lines.length && (!lines[lines.length - 1]!.trim() || isFillerLine(lines[lines.length - 1]!)))
+    lines.pop();
+  return lines.join("\n").trim();
+}
+
+function founderVoiceRewritePrompt(slug: string, prompt: string, draft: string) {
+  return [
+    founderCommunicationContract(slug),
+    "",
+    "TASK: neeche diya gaya DRAFT founder communication contract todta hai (greeting / self-intro / status recap / offer-to-help / English-only). Usay dobara likho founder ke apne style mein: natural Roman Urdu/Hindi, seedha point se shuru, koi greeting nahi, koi intro nahi, koi 'what's the priority' type sawaal nahi. Technical facts, commands, paths, code aur error text bilkul waise hi rakho. Sirf rewritten jawab do — koi explanation ya quotes nahi.",
+    "",
+    `FOUNDER MESSAGE:\n${prompt}`,
+    "",
+    `DRAFT:\n${draft}`,
+  ].join("\n");
+}
+
+/**
+ * Final gate before anything reaches the founder: strip filler, and if the text
+ * still breaks the contract, force a rewrite through the direct model chain.
+ */
+async function enforceFounderVoice(
+  slug: string,
+  prompt: string,
+  text: string,
+  signal?: AbortSignal,
+): Promise<{ text: string; meta?: CompletionMeta }> {
+  if (!text?.trim()) return { text };
+  if (text.startsWith("⚠️")) return { text };
+
+  let candidate = text;
+  if (violatesFounderVoice(candidate)) {
+    const stripped = stripFounderVoiceFiller(candidate);
+    if (stripped && !violatesFounderVoice(stripped)) candidate = stripped;
+  }
+  if (!violatesFounderVoice(candidate) && !mismatchedLanguage(prompt, candidate)) {
+    return { text: candidate };
+  }
+
+  const rewritten = await runDirectFallback(
+    slug,
+    founderVoiceRewritePrompt(slug, prompt, text),
+    signal,
+  );
+  if (rewritten && "text" in rewritten && rewritten.text) {
+    return {
+      text: rewritten.text,
+      meta: {
+        model: rewritten.model,
+        tokensIn: rewritten.tokensIn,
+        tokensOut: rewritten.tokensOut,
+      },
+    };
+  }
+
+  const stripped = stripFounderVoiceFiller(candidate);
+  return { text: stripped || candidate };
+}
+
 
 function providerEnv(...names: string[]) {
   for (const name of names) {
