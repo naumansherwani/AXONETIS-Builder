@@ -102,6 +102,15 @@ EXECUTION CONTRACT:
 - Sherlock audit baad mein karta hai; failed audit ko success mat bolo.
 - Project ID: ${projectId}`;
 
+function normalizeMessages(messages: unknown) {
+  if (!Array.isArray(messages)) return [];
+  return messages.filter((message) => {
+    if (!message || typeof message !== "object") return false;
+    const role = (message as { role?: unknown }).role;
+    return role === "user" || role === "assistant";
+  });
+}
+
 router.post("/jimmy/stream", async (req, res) => {
   const { messages, projectId } = req.body ?? {};
   if (!messages || !projectId) {
@@ -120,7 +129,7 @@ router.post("/jimmy/stream", async (req, res) => {
       const result = streamText({
         model: openrouter(modelId),
         system: JIMMY_SYSTEM(projectId),
-        messages,
+        messages: normalizeMessages(messages),
         tools: { write_file, read_file, git_commit },
         maxSteps: 50,
       });

@@ -76,6 +76,11 @@ type ProjectFileSnapshot = { path: string; content: string | null };
 type PatchOperation = { path: string; action?: "upsert" | "delete"; content?: string };
 const MAX_SHERLOCK_LOOPS = 3;
 
+function needsBuilderExecution(prompt: string, reply: string) {
+  if (parsePatch(reply).length > 0) return true;
+  return /\b(build|banao|bana|implement|create|add|edit|update|change|fix|repair|patch|code|file|component|route|api|sql|migration|deploy|ship|publish|remove|delete|rename|refactor|wire|connect|integrat(?:e|ion)|bug|error)\b/i.test(prompt);
+}
+
 // ── Public entrypoint ────────────────────────────────────────────────
 export function enqueueAgentReply(args: EnqueueArgs): void {
   // Fire-and-forget; errors logged + written as a sherlock-style activity row.
@@ -174,9 +179,11 @@ async function runAgentReply({ threadId, messageId, agentSlug, projectId, prompt
   if (!replyText) throw lastErr ?? new Error("All providers failed");
 
   if (agentSlug === "jimmy") {
-    const looped = await runJimmySherlockLoop({ threadId, projectId, prompt, jimmyReply: replyText, userId, usedModel, abortSignal });
-    replyText = looped.replyText;
-    if (abortSignal.aborted) return; // loop bailed out — activity already logged
+    if (needsBuilderExecution(prompt, replyText)) {
+      const looped = await runJimmySherlockLoop({ threadId, projectId, prompt, jimmyReply: replyText, userId, usedModel, abortSignal });
+      replyText = looped.replyText;
+      if (abortSignal.aborted) return; // loop bailed out — activity already logged
+    }
   }
 
   // 5. Insert assistant message — Realtime broadcasts to UnifiedChat.
@@ -327,15 +334,19 @@ async function runJimmySherlockLoop(args: { threadId: string; projectId: string;
     ].join("\n\n");
     const verdict = await generateAgentText("sherlock", "You are SherlockReview. Be strict and concise.", auditPrompt, args.abortSignal);
     if (args.abortSignal.aborted) break;
-    audit = verdict?.text ?? "CHANGES_REQUIRED — audit unavailable";
+    if (!verdict?.text) {
+      console.warn(`[agent-loop] Sherlock audit unavailable at loop ${i}`);
+      break;
+    }
+    audit = verdict.text;
     await supabase.from("agent_thread_messages").insert({ thread_id: args.threadId, role: "agent", agent_slug: "sherlock", parts: [{ type: "text", text: `Loop ${i}/3 — ${audit}` }], model: verdict?.model ?? "unknown" });
     if (/^\s*APPROVED\b/i.test(audit)) break;
   }
 
   return {
     replyText: [
-      stripPatch(jimmyReply) || "Jimmy ne project_files update kar diye.",
-      appliedAll.length ? `\nApplied files:\n${appliedAll.map((x) => `- ${x}`).join("\n")}` : "\nNo patch applied.",
+      stripPatch(jimmyReply) || (appliedAll.length ? "Project files update ho gayi hain." : "Requested change apply nahi hui."),
+      appliedAll.length ? `\nApplied files:\n${appliedAll.map((x) => `- ${x}`).join("\n")}` : "",
       audit ? `\nSherlock final:\n${audit}` : "",
       args.abortSignal.aborted ? "\n_Stopped._" : "",
     ].join("\n").trim(),
