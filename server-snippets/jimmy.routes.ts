@@ -102,6 +102,19 @@ EXECUTION CONTRACT:
 - Sherlock audit baad mein karta hai; failed audit ko success mat bolo.
 - Project ID: ${projectId}`;
 
+function normalizeMessages(messages: unknown) {
+  if (!Array.isArray(messages)) return [];
+  return messages.filter((message) => {
+    if (!message || typeof message !== "object") return false;
+    const role = (message as { role?: unknown }).role;
+    return role === "user" || role === "assistant";
+  });
+}
+
+function violatesFounderVoice(text: string) {
+  return /\bhi there\b|\bjimmy here\b|\bready to help\b|\bwhat can i (?:assist|help)\b|\bhow can i (?:assist|help)\b|ready ho ja(?:o|ye)|kya aap kuch specific verify|agla step bata(?:o|ayein)/i.test(text);
+}
+
 router.post("/jimmy/stream", async (req, res) => {
   const { messages, projectId } = req.body ?? {};
   if (!messages || !projectId) {
@@ -120,14 +133,15 @@ router.post("/jimmy/stream", async (req, res) => {
       const result = streamText({
         model: openrouter(modelId),
         system: JIMMY_SYSTEM(projectId),
-        messages,
+        messages: normalizeMessages(messages),
         tools: { write_file, read_file, git_commit },
         maxSteps: 50,
       });
 
-      for await (const chunk of result.textStream) {
-        res.write(`data: ${JSON.stringify({ type: "text", text: chunk, model: modelId })}\n\n`);
-      }
+      let fullText = "";
+      for await (const chunk of result.textStream) fullText += chunk;
+      if (violatesFounderVoice(fullText)) throw new Error("Founder communication contract violated");
+      res.write(`data: ${JSON.stringify({ type: "text", text: fullText, model: modelId })}\n\n`);
       res.write(`data: ${JSON.stringify({ type: "done", model: modelId })}\n\n`);
       res.end();
       return;

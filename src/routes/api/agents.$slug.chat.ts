@@ -102,6 +102,13 @@ function hasProviderKeyFailure(text: string | null | undefined) {
   return /all providers failed|no key|missing.*key|provider.*failed/i.test(text);
 }
 
+function violatesFounderVoice(text: string | null | undefined) {
+  if (!text) return false;
+  return /\bhi there\b|\bjimmy here\b|\bready to help\b|\bwhat can i (?:assist|help)\b|\bhow can i (?:assist|help)\b|ready ho ja(?:o|ye)|kya aap kuch specific verify|agla step bata(?:o|ayein)/i.test(
+    text,
+  );
+}
+
 function providerEnv(...names: string[]) {
   for (const name of names) {
     const value = process.env[name]?.trim();
@@ -169,6 +176,13 @@ function founderCommunicationContract(slug: string) {
 
 function brainPrompt(slug: string, prompt: string) {
   return `${founderCommunicationContract(slug)}\n\nFounder ka current message:\n${prompt}`;
+}
+
+function needsBuilderExecution(prompt: string, firstReply: string) {
+  if (parsePatchOperations(firstReply).length > 0) return true;
+  return /\b(build|banao|bana|implement|create|add|edit|update|change|fix|repair|patch|code|file|component|route|api|sql|migration|deploy|ship|publish|remove|delete|rename|refactor|wire|connect|integrat(?:e|ion)|bug|error)\b/i.test(
+    prompt,
+  );
 }
 
 async function fetchWithTimeout(
@@ -243,13 +257,14 @@ async function callGroqFallback(slug: string, prompt: string, signal?: AbortSign
         };
       } | null;
       const text = payload?.choices?.[0]?.message?.content?.trim();
-      if (text)
+      if (text && !violatesFounderVoice(text))
         return {
           text,
           model: `groq:${model}`,
           tokensIn: payload?.usage?.prompt_tokens ?? payload?.usage?.input_tokens,
           tokensOut: payload?.usage?.completion_tokens ?? payload?.usage?.output_tokens,
         };
+      if (text) lastError = `${model}: founder communication contract violated`;
     } catch (err) {
       lastError = `${model}: ${err instanceof Error ? err.message : String(err)}`.slice(0, 280);
     }
@@ -322,13 +337,14 @@ async function callOpenRouterFallback(slug: string, prompt: string, signal?: Abo
         };
       } | null;
       const text = payload?.choices?.[0]?.message?.content?.trim();
-      if (text)
+      if (text && !violatesFounderVoice(text))
         return {
           text,
           model: `openrouter:${model}`,
           tokensIn: payload?.usage?.prompt_tokens ?? payload?.usage?.input_tokens,
           tokensOut: payload?.usage?.completion_tokens ?? payload?.usage?.output_tokens,
         };
+      if (text) lastError = `${model}: founder communication contract violated`;
     } catch (err) {
       lastError = `${model}: ${err instanceof Error ? err.message : String(err)}`.slice(0, 280);
     }
@@ -670,6 +686,8 @@ async function insertAgentRun(job: BrainJob, fields: Record<string, unknown>) {
 async function runCoreBuilderLoop(job: BrainJob, firstReply: string, firstMeta?: CompletionMeta) {
   if (job.slug !== "jimmy")
     return { text: firstReply, meta: firstMeta, applied: [] as string[], audit: "" };
+  if (!needsBuilderExecution(job.prompt, firstReply))
+    return { text: firstReply, meta: firstMeta, applied: [] as string[], audit: "" };
 
   const projectUuid = await resolveProjectUuid(job.supabase, job.projectId);
   let files = await loadProjectSnapshot(job.supabase, projectUuid);
@@ -706,17 +724,16 @@ async function runCoreBuilderLoop(job: BrainJob, firstReply: string, firstMeta?:
 
     const auditPrompt = buildSherlockAuditPrompt(job.prompt, files, jimmyReply);
     const verdict = await runDirectFallback("sherlock", auditPrompt, job.signal);
-    audit =
-      verdict && "text" in verdict && verdict.text
-        ? verdict.text
-        : "CHANGES_REQUIRED — Sherlock audit unavailable; retry once with safer patch.";
+    if (!verdict || !("text" in verdict) || !verdict.text) {
+      console.warn(`[agent-loop] Sherlock audit unavailable at loop ${iteration}`);
+      break;
+    }
+    audit = verdict.text;
 
     await insertAssistantMessage(
       { ...job, slug: "sherlock" },
       `Loop ${iteration}/3 — ${audit}`,
-      verdict && "text" in verdict
-        ? { model: verdict.model, tokensIn: verdict.tokensIn, tokensOut: verdict.tokensOut }
-        : undefined,
+      { model: verdict.model, tokensIn: verdict.tokensIn, tokensOut: verdict.tokensOut },
     );
 
     if (/^\s*APPROVED\b/i.test(audit)) {
@@ -733,10 +750,10 @@ async function runCoreBuilderLoop(job: BrainJob, firstReply: string, firstMeta?:
 
   const cleanReply = stripPatchBlock(jimmyReply);
   const summary = [
-    cleanReply || "Jimmy ne project files update kar diye.",
+    cleanReply || (appliedAll.length ? "Project files update ho gayi hain." : "Requested change apply nahi hui."),
     appliedAll.length
       ? `\nApplied files:\n${appliedAll.map((x) => `- ${x}`).join("\n")}`
-      : "\nNo patch block applied — Sherlock ne changes require kiye.",
+      : "",
     audit ? `\nSherlock final:\n${audit}` : "",
   ]
     .join("\n")
@@ -765,7 +782,7 @@ async function safeRunCoreBuilderLoop(
       finished_at: new Date().toISOString(),
     });
     return {
-      text: `${firstReply}\n\n⚠️ Agent loop skipped: ${message}`,
+      text: firstReply,
       meta: firstMeta,
       applied: [] as string[],
       audit: "",
@@ -844,7 +861,6 @@ function brainChatPaths(slug: string, opts?: { stream?: boolean }) {
         ];
   }
   return [
-    "/api/founder/jimmy/orchestrate",
     "/api/founder/jimmy/stream",
     `/api/agents/${slug}/chat`,
   ];
@@ -944,7 +960,7 @@ async function runBrainAndInsert(job: BrainJob) {
 
   if (signal?.aborted) return;
 
-  if (hasProviderKeyFailure(rustError ?? assistantText)) {
+  if (hasProviderKeyFailure(rustError ?? assistantText) || violatesFounderVoice(assistantText)) {
     const direct = await runDirectFallback(slug, prompt, signal);
     if (direct && "text" in direct && direct.text) {
       assistantText = direct.text;
@@ -1085,7 +1101,6 @@ function streamBrainToClient(job: BrainJob) {
                     continue;
                   }
                   assistantText += delta;
-                  send("token", { delta });
                 }
                 const finalText = extractText(payload);
                 if (!delta && finalText && /done|final|complete/i.test(frame)) {
@@ -1100,8 +1115,6 @@ function streamBrainToClient(job: BrainJob) {
               : await r.text().catch(() => "");
             assistantText = extractText(payload);
             meta = { model: extractModel(payload), ...extractUsage(payload) };
-            if (assistantText && !hasProviderKeyFailure(assistantText))
-              send("token", { delta: assistantText });
           }
         } catch (err) {
           rustError =
@@ -1124,7 +1137,7 @@ function streamBrainToClient(job: BrainJob) {
           return;
         }
 
-        if (hasProviderKeyFailure(rustError ?? assistantText)) {
+        if (hasProviderKeyFailure(rustError ?? assistantText) || violatesFounderVoice(assistantText)) {
           const direct = await runDirectFallback(job.slug, job.prompt, job.signal);
           if (direct && "text" in direct && direct.text) {
             assistantText = direct.text;
@@ -1158,8 +1171,7 @@ function streamBrainToClient(job: BrainJob) {
           const looped = await safeRunCoreBuilderLoop(job, assistantText, meta);
           finalText = looped.text;
           finalMeta = looped.meta;
-          if (finalText !== assistantText)
-            send("token", { delta: `\n\n${finalText.replace(assistantText, "").trim()}` });
+          send("token", { delta: finalText });
         }
         const assistantMessageId = finalText
           ? await insertAssistantMessage(job, finalText, finalMeta)
