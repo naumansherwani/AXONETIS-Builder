@@ -39,8 +39,8 @@ grant all    on public.user_roles to service_role;
 
 alter table public.user_roles enable row level security;
 
-create policy "user_roles: self read"
-  on public.user_roles for select
+drop policy if exists "user_roles: self read" on public.user_roles;
+create policy "user_roles: self read" on public.user_roles for select
   to authenticated
   using (user_id = auth.uid());
 
@@ -123,6 +123,7 @@ create table if not exists public.projects (
 grant select, insert, update, delete on public.projects to authenticated;
 grant all on public.projects to service_role;
 alter table public.projects enable row level security;
+drop policy if exists "projects: admin full" on public.projects;
 create policy "projects: admin full" on public.projects
   for all to authenticated
   using (public.has_role(auth.uid(), 'admin'))
@@ -151,6 +152,7 @@ create index if not exists idx_project_files_checksum on public.project_files(ch
 grant select, insert, update, delete on public.project_files to authenticated;
 grant all on public.project_files to service_role;
 alter table public.project_files enable row level security;
+drop policy if exists "project_files: admin full" on public.project_files;
 create policy "project_files: admin full" on public.project_files
   for all to authenticated
   using (public.has_role(auth.uid(), 'admin'))
@@ -173,6 +175,7 @@ create index if not exists idx_project_versions_project on public.project_versio
 grant select, insert, delete on public.project_versions to authenticated;
 grant all on public.project_versions to service_role;
 alter table public.project_versions enable row level security;
+drop policy if exists "project_versions: admin full" on public.project_versions;
 create policy "project_versions: admin full" on public.project_versions
   for all to authenticated
   using (public.has_role(auth.uid(), 'admin'))
@@ -198,6 +201,7 @@ create index if not exists idx_chat_messages_project on public.chat_messages(pro
 grant select, insert, delete on public.chat_messages to authenticated;
 grant all on public.chat_messages to service_role;
 alter table public.chat_messages enable row level security;
+drop policy if exists "chat_messages: admin full" on public.chat_messages;
 create policy "chat_messages: admin full" on public.chat_messages
   for all to authenticated
   using (public.has_role(auth.uid(), 'admin'))
@@ -231,6 +235,7 @@ create index if not exists idx_agent_runs_status  on public.agent_runs(status);
 grant select, insert, update on public.agent_runs to authenticated;
 grant all on public.agent_runs to service_role;
 alter table public.agent_runs enable row level security;
+drop policy if exists "agent_runs: admin full" on public.agent_runs;
 create policy "agent_runs: admin full" on public.agent_runs
   for all to authenticated
   using (public.has_role(auth.uid(), 'admin'))
@@ -256,6 +261,7 @@ create index if not exists idx_deployments_project on public.deployments(project
 grant select, insert, update on public.deployments to authenticated;
 grant all on public.deployments to service_role;
 alter table public.deployments enable row level security;
+drop policy if exists "deployments: admin full" on public.deployments;
 create policy "deployments: admin full" on public.deployments
   for all to authenticated
   using (public.has_role(auth.uid(), 'admin'))
@@ -285,8 +291,10 @@ create index if not exists idx_ai_model_registry_role on public.ai_model_registr
 grant select on public.ai_model_registry to authenticated;
 grant all    on public.ai_model_registry to service_role;
 alter table public.ai_model_registry enable row level security;
+drop policy if exists "ai_model_registry: read auth" on public.ai_model_registry;
 create policy "ai_model_registry: read auth" on public.ai_model_registry
   for select to authenticated using (true);
+drop policy if exists "ai_model_registry: admin write" on public.ai_model_registry;
 create policy "ai_model_registry: admin write" on public.ai_model_registry
   for all to authenticated
   using (public.has_role(auth.uid(), 'admin'))
@@ -327,8 +335,10 @@ create index if not exists idx_ai_agent_identities_role on public.ai_agent_ident
 grant select on public.ai_agent_identities to authenticated;
 grant all    on public.ai_agent_identities to service_role;
 alter table public.ai_agent_identities enable row level security;
+drop policy if exists "ai_agent_identities: read auth" on public.ai_agent_identities;
 create policy "ai_agent_identities: read auth" on public.ai_agent_identities
   for select to authenticated using (true);
+drop policy if exists "ai_agent_identities: admin write" on public.ai_agent_identities;
 create policy "ai_agent_identities: admin write" on public.ai_agent_identities
   for all to authenticated
   using (public.has_role(auth.uid(), 'admin'))
@@ -408,6 +418,7 @@ create index if not exists idx_mirror_sync_log_table on public.mirror_sync_log(m
 grant select on public.mirror_sync_log to authenticated;
 grant all    on public.mirror_sync_log to service_role;
 alter table public.mirror_sync_log enable row level security;
+drop policy if exists "mirror_sync_log: admin read" on public.mirror_sync_log;
 create policy "mirror_sync_log: admin read" on public.mirror_sync_log
   for select to authenticated using (public.has_role(auth.uid(), 'admin'));
 
@@ -432,6 +443,7 @@ create index if not exists idx_mirror_ai_agents_name on public.mirror_ai_agents(
 grant select on public.mirror_ai_agents to authenticated;
 grant all    on public.mirror_ai_agents to service_role;
 alter table public.mirror_ai_agents enable row level security;
+drop policy if exists "mirror_ai_agents: admin read" on public.mirror_ai_agents;
 create policy "mirror_ai_agents: admin read" on public.mirror_ai_agents
   for select to authenticated using (public.has_role(auth.uid(), 'admin'));
 
@@ -451,6 +463,7 @@ create index if not exists idx_mirror_ai_registry_model on public.mirror_ai_regi
 grant select on public.mirror_ai_registry to authenticated;
 grant all    on public.mirror_ai_registry to service_role;
 alter table public.mirror_ai_registry enable row level security;
+drop policy if exists "mirror_ai_registry: admin read" on public.mirror_ai_registry;
 create policy "mirror_ai_registry: admin read" on public.mirror_ai_registry
   for select to authenticated using (public.has_role(auth.uid(), 'admin'));
 
@@ -470,6 +483,7 @@ create index if not exists idx_mirror_ai_configurations_key on public.mirror_ai_
 grant select on public.mirror_ai_configurations to authenticated;
 grant all    on public.mirror_ai_configurations to service_role;
 alter table public.mirror_ai_configurations enable row level security;
+drop policy if exists "mirror_ai_configurations: admin read" on public.mirror_ai_configurations;
 create policy "mirror_ai_configurations: admin read" on public.mirror_ai_configurations
   for select to authenticated using (public.has_role(auth.uid(), 'admin'));
 
@@ -489,6 +503,7 @@ create index if not exists idx_mirror_industry_advisors_ind on public.mirror_ind
 grant select on public.mirror_industry_advisors to authenticated;
 grant all    on public.mirror_industry_advisors to service_role;
 alter table public.mirror_industry_advisors enable row level security;
+drop policy if exists "mirror_industry_advisors: admin read" on public.mirror_industry_advisors;
 create policy "mirror_industry_advisors: admin read" on public.mirror_industry_advisors
   for select to authenticated using (public.has_role(auth.uid(), 'admin'));
 
@@ -507,6 +522,7 @@ create index if not exists idx_mirror_runtime_features_name on public.mirror_run
 grant select on public.mirror_runtime_features to authenticated;
 grant all    on public.mirror_runtime_features to service_role;
 alter table public.mirror_runtime_features enable row level security;
+drop policy if exists "mirror_runtime_features: admin read" on public.mirror_runtime_features;
 create policy "mirror_runtime_features: admin read" on public.mirror_runtime_features
   for select to authenticated using (public.has_role(auth.uid(), 'admin'));
 
@@ -526,6 +542,7 @@ create index if not exists idx_mirror_agent_capabilities_pair on public.mirror_a
 grant select on public.mirror_agent_capabilities to authenticated;
 grant all    on public.mirror_agent_capabilities to service_role;
 alter table public.mirror_agent_capabilities enable row level security;
+drop policy if exists "mirror_agent_capabilities: admin read" on public.mirror_agent_capabilities;
 create policy "mirror_agent_capabilities: admin read" on public.mirror_agent_capabilities
   for select to authenticated using (public.has_role(auth.uid(), 'admin'));
 
@@ -546,15 +563,27 @@ create index if not exists idx_mirror_sync_registry_health on public.mirror_sync
 grant select on public.mirror_sync_registry to authenticated;
 grant all    on public.mirror_sync_registry to service_role;
 alter table public.mirror_sync_registry enable row level security;
+drop policy if exists "mirror_sync_registry: admin read" on public.mirror_sync_registry;
 create policy "mirror_sync_registry: admin read" on public.mirror_sync_registry
   for select to authenticated using (public.has_role(auth.uid(), 'admin'));
 
 -- ============================================================================
 -- 11. REALTIME PUBLICATION
 -- ============================================================================
-alter publication supabase_realtime add table public.project_files;
-alter publication supabase_realtime add table public.chat_messages;
-alter publication supabase_realtime add table public.agent_runs;
+do $$
+declare t text;
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    foreach t in array array['project_files','chat_messages','agent_runs'] loop
+      if not exists (
+        select 1 from pg_publication_tables
+        where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t
+      ) then
+        execute format('alter publication supabase_realtime add table public.%I', t);
+      end if;
+    end loop;
+  end if;
+end $$;
 
 -- ============================================================================
 -- updated_at auto-touch
