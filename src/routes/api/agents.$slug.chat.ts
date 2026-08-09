@@ -1126,6 +1126,7 @@ function streamBrainToClient(job: BrainJob) {
         });
 
         let assistantText = "";
+        let streamedText = "";
         let rustError: string | null = null;
         const ctrl = new AbortController();
         let abortedByFounder = false;
