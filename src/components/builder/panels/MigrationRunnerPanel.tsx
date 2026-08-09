@@ -121,7 +121,10 @@ export default function MigrationRunnerPanel() {
               }}
               onMount={(_editor, monaco) => {
                 monaco.languages.registerCompletionItemProvider("sql", {
-                  provideCompletionItems: (model, position) => {
+                  provideCompletionItems: (
+                    model: { getWordUntilPosition: (p: { lineNumber: number; column: number }) => { startColumn: number; endColumn: number } },
+                    position: { lineNumber: number; column: number },
+                  ) => {
                     const word = model.getWordUntilPosition(position);
                     const range = {
                       startLineNumber: position.lineNumber,
@@ -215,7 +218,7 @@ export default function MigrationRunnerPanel() {
 
           <PanelSection title="Before → after">
             <div className="h-[160px] overflow-hidden rounded border border-white/[0.08]">
-              <MonacoDiffView original={dry.before} modified={dry.after} language="sql" />
+              <MonacoDiffView oldValue={dry.before} newValue={dry.after} language="sql" />
             </div>
             <div className="mt-1.5 flex items-center gap-1.5">
               <button
