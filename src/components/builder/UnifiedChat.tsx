@@ -518,6 +518,9 @@ export default function UnifiedChat() {
             setComposerNotice("");
             textareaRef.current?.focus();
           },
+          onPing: () => {
+            bumpWatchdog();
+          },
           onError: (error) => {
             setComposerNotice(
               error.includes("timeout")
@@ -556,6 +559,27 @@ export default function UnifiedChat() {
           void sendBuilderCommand({ projectId: project, branch, environment, prompt }).catch(
             () => undefined,
           );
+        })
+        .then(() => {
+          // Stream close ho gayi par done event nahi aaya — bubble ko kabhi
+          // "connect…" par nahi chhodna.
+          if (pendingPlaceholderRef.current !== placeholderId) return;
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === placeholderId && (m.thinking || !m.text.trim())
+                ? {
+                    ...m,
+                    text:
+                      m.text.trim() && !m.text.startsWith("Live stream connect") && !m.text.startsWith("Audit stream connect")
+                        ? m.text
+                        : `${targetAgent === "sherlock" ? "Sherlock" : "Jimmy"} stream bina jawab band ho gayi — dobara bhejo (brain logs check karo).`,
+                    thinking: false,
+                  }
+                : m,
+            ),
+          );
+          pendingPlaceholderRef.current = null;
+          setStatus("ready");
         })
         .finally(() => {
           clearWatchdog();

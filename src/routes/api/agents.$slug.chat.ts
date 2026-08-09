@@ -28,6 +28,10 @@ const ALLOWED_SLUGS = new Set(["jimmy", "sherlock"]);
 const RUST_TIMEOUT_MS = 45_000;
 const BRAIN_ATTEMPT_TIMEOUT_MS = 15_000;
 const DIRECT_FALLBACK_TIMEOUT_MS = 30_000;
+/** Heartbeat interval — client watchdog ko zinda rakhta hai jab brain silent ho. */
+const SSE_PING_MS = 5_000;
+/** Absolute cap — is ke baad stream har haal mein close hoti hai (koi infinite "connect…" nahi). */
+const SSE_HARD_DEADLINE_MS = 180_000;
 const MAX_SHERLOCK_LOOPS = 3;
 const DISABLED_PROVIDER_IDS = ["J-bk-deepseek-v31-fr", "S-bk-llama-70b-fr"];
 const DEFAULT_MODEL = "anthropic/claude-3.5-sonnet";
@@ -1111,7 +1115,15 @@ function streamBrainToClient(job: BrainJob) {
   return new Response(
     new ReadableStream({
       async start(controller) {
-        const send = (event: string, data: unknown) => controller.enqueue(sseFrame(event, data));
+        let closed = false;
+        const send = (event: string, data: unknown) => {
+          if (closed) return;
+          try {
+            controller.enqueue(sseFrame(event, data));
+          } catch {
+            closed = true;
+          }
+        };
         send("ack", {
           threadId: job.threadId,
           userMessageId: job.userMessageId,
@@ -1130,6 +1142,26 @@ function streamBrainToClient(job: BrainJob) {
         if (job.signal?.aborted) abort();
         else job.signal?.addEventListener("abort", abort, { once: true });
         const timer = setTimeout(() => ctrl.abort(), RUST_TIMEOUT_MS);
+        // Heartbeat: brain silent ho to bhi client ka watchdog reset hota rahe.
+        const ping = setInterval(() => send("ping", { t: Date.now() }), SSE_PING_MS);
+        // Absolute cap: 3 min ke baad stream har haal mein khatam (infinite "connect…" mana hai).
+        let deadlineHit = false;
+        const hardDeadline = setTimeout(() => {
+          deadlineHit = true;
+          ctrl.abort();
+        }, SSE_HARD_DEADLINE_MS);
+        const finish = () => {
+          clearInterval(ping);
+          clearTimeout(hardDeadline);
+          clearTimeout(timer);
+          if (closed) return;
+          closed = true;
+          try {
+            controller.close();
+          } catch {
+            /* client already gone */
+          }
+        };
         let meta: CompletionMeta | undefined;
 
         try {
@@ -1261,71 +1293,89 @@ function streamBrainToClient(job: BrainJob) {
           job.signal?.removeEventListener("abort", abort);
         }
 
-        if (abortedByFounder || job.signal?.aborted) {
-          try {
-            controller.close();
-          } catch {
-            /* client already gone */
-          }
+        if (abortedByFounder || (job.signal?.aborted && !deadlineHit)) {
+          finish();
           return;
         }
 
-        if (
-          hasProviderKeyFailure(rustError ?? assistantText) ||
-          violatesFounderVoice(assistantText) ||
-          mismatchedLanguage(job.prompt, assistantText)
-        ) {
-          const direct = await runDirectFallback(job.slug, job.prompt, job.signal);
-          if (direct && "text" in direct && direct.text) {
-            assistantText = direct.text;
-            rustError = null;
-            meta = { model: direct.model, tokensIn: direct.tokensIn, tokensOut: direct.tokensOut };
-          } else if (direct && "error" in direct && direct.error) {
-            rustError = `Direct fallback failed: ${direct.error}`;
-            assistantText = "";
-          }
+        if (deadlineHit && !assistantText) {
+          rustError = rustError ?? "Brain 3 minute tak silent raha — stream hard timeout.";
         }
 
-        if (rustError && !assistantText) {
-          if (isBackgroundSherlockAudit(job.slug, job.prompt)) {
-            console.warn("[agents.chat] Background Sherlock audit skipped:", rustError);
-            send("done", {
-              threadId: job.threadId,
-              userMessageId: job.userMessageId,
-              status: "done",
-            });
-            controller.close();
-            return;
+        try {
+          if (
+            !deadlineHit &&
+            (hasProviderKeyFailure(rustError ?? assistantText) ||
+              violatesFounderVoice(assistantText) ||
+              mismatchedLanguage(job.prompt, assistantText))
+          ) {
+            const direct = await runDirectFallback(job.slug, job.prompt, job.signal);
+            if (direct && "text" in direct && direct.text) {
+              assistantText = direct.text;
+              rustError = null;
+              meta = {
+                model: direct.model,
+                tokensIn: direct.tokensIn,
+                tokensOut: direct.tokensOut,
+              };
+            } else if (direct && "error" in direct && direct.error) {
+              rustError = `Direct fallback failed: ${direct.error}`;
+              assistantText = "";
+            }
           }
-          assistantText = `⚠️ Brain unreachable: ${rustError}`;
-          send("error", { error: rustError });
-        }
 
-        let finalText = assistantText;
-        let finalMeta = meta;
-        if (assistantText) {
-          const looped = await safeRunCoreBuilderLoop(job, assistantText, meta);
-          const voiced = await enforceFounderVoice(job.slug, job.prompt, looped.text, job.signal);
-          finalText = voiced.text;
-          finalMeta = voiced.meta ?? looped.meta;
-          if (!streamedText) {
+          if (rustError && !assistantText) {
+            if (isBackgroundSherlockAudit(job.slug, job.prompt)) {
+              console.warn("[agents.chat] Background Sherlock audit skipped:", rustError);
+              send("done", {
+                threadId: job.threadId,
+                userMessageId: job.userMessageId,
+                status: "done",
+              });
+              finish();
+              return;
+            }
+            assistantText = `⚠️ Brain unreachable: ${rustError}`;
+            send("error", { error: rustError });
+          }
+
+          let finalText = assistantText;
+          let finalMeta = meta;
+          if (assistantText && !deadlineHit) {
+            const looped = await safeRunCoreBuilderLoop(job, assistantText, meta);
+            const voiced = await enforceFounderVoice(job.slug, job.prompt, looped.text, job.signal);
+            finalText = voiced.text;
+            finalMeta = voiced.meta ?? looped.meta;
+          }
+          if (finalText && !streamedText) {
             send("token", { delta: finalText });
-          } else if (finalText !== streamedText) {
+          } else if (finalText && finalText !== streamedText) {
             // Loop/voice-guard ne text badla — duplicate append ke bajaye replace bhejo.
             send("replace", { text: finalText });
           }
+          const assistantMessageId = finalText
+            ? await insertAssistantMessage(job, finalText, finalMeta)
+            : null;
+          send("done", {
+            threadId: job.threadId,
+            userMessageId: job.userMessageId,
+            assistantMessageId,
+            assistantText: finalText,
+            status: "done",
+          });
+        } catch (err) {
+          // Post-processing crash bhi client ko readable milna chahiye — silent hang mana hai.
+          const message = err instanceof Error ? err.message : String(err);
+          send("error", { error: message });
+          send("done", {
+            threadId: job.threadId,
+            userMessageId: job.userMessageId,
+            assistantMessageId: null,
+            assistantText: assistantText || `⚠️ Stream error: ${message}`,
+            status: "done",
+          });
         }
-        const assistantMessageId = finalText
-          ? await insertAssistantMessage(job, finalText, finalMeta)
-          : null;
-        send("done", {
-          threadId: job.threadId,
-          userMessageId: job.userMessageId,
-          assistantMessageId,
-          assistantText: finalText,
-          status: "done",
-        });
-        controller.close();
+        finish();
       },
     }),
     { status: 200, headers: SSE_HEADERS },
