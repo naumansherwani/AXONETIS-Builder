@@ -601,18 +601,22 @@ function unique(values: string[]) {
 
 function resolveBrainURLs() {
   const configured = [
-    process.env.RUST_BRAIN_URL,
-    process.env.AXONETIS_RUST_BRAIN_URL,
     process.env.HOSTFLOWAI_BRAIN_URL,
     process.env.HOSTFLOW_BRAIN_URL,
+    process.env.RUST_BRAIN_URL,
+    process.env.AXONETIS_RUST_BRAIN_URL,
   ].flatMap((value) => (value ?? "").split(","));
 
+  // Founder agent routes (/api/founder/*) live ONLY on the Node brain :8080.
+  // The Rust compute brain :8088 has no founder routes → always 404, so it is
+  // tried last and never becomes the reported error while :8080 is reachable.
   return unique([
+    "http://127.0.0.1:8080",
     ...configured.map((value) => value.trim().replace(/\/$/, "")),
     "http://127.0.0.1:8088",
-    "http://127.0.0.1:8080",
   ]);
 }
+
 
 function projectSlugCandidates(projectId: string) {
   const aliases: Record<string, string[]> = {
