@@ -1155,14 +1155,17 @@ function streamBrainToClient(job: BrainJob) {
                   signal: ctrl.signal,
                 });
                 if (r.ok) break;
-                rustError =
+                const msg =
                   `Brain ${brainURL}${path} ${r.status}: ${await r.text().catch(() => "")}`.slice(
                     0,
                     500,
                   );
                 const retryable = r.status === 404 || r.status === 405;
+                // never let a 404 from a brain without founder routes mask a real error
+                if (!retryable || !rustError) rustError = msg;
                 r = null;
                 if (!retryable) break;
+
               } catch (err) {
                 rustError =
                   err instanceof Error && err.name === "AbortError"
