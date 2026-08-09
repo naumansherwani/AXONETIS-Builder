@@ -1065,7 +1065,11 @@ async function runBrainAndInsert(job: BrainJob) {
 
   if (signal?.aborted) return;
 
-  if (hasProviderKeyFailure(rustError ?? assistantText) || violatesFounderVoice(assistantText)) {
+  if (
+    hasProviderKeyFailure(rustError ?? assistantText) ||
+    violatesFounderVoice(assistantText) ||
+    mismatchedLanguage(prompt, assistantText)
+  ) {
     const direct = await runDirectFallback(slug, prompt, signal);
     if (direct && "text" in direct && direct.text) {
       assistantText = direct.text;
