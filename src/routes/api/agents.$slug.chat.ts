@@ -1115,7 +1115,15 @@ function streamBrainToClient(job: BrainJob) {
   return new Response(
     new ReadableStream({
       async start(controller) {
-        const send = (event: string, data: unknown) => controller.enqueue(sseFrame(event, data));
+        let closed = false;
+        const send = (event: string, data: unknown) => {
+          if (closed) return;
+          try {
+            controller.enqueue(sseFrame(event, data));
+          } catch {
+            closed = true;
+          }
+        };
         send("ack", {
           threadId: job.threadId,
           userMessageId: job.userMessageId,
@@ -1134,6 +1142,26 @@ function streamBrainToClient(job: BrainJob) {
         if (job.signal?.aborted) abort();
         else job.signal?.addEventListener("abort", abort, { once: true });
         const timer = setTimeout(() => ctrl.abort(), RUST_TIMEOUT_MS);
+        // Heartbeat: brain silent ho to bhi client ka watchdog reset hota rahe.
+        const ping = setInterval(() => send("ping", { t: Date.now() }), SSE_PING_MS);
+        // Absolute cap: 3 min ke baad stream har haal mein khatam (infinite "connect…" mana hai).
+        let deadlineHit = false;
+        const hardDeadline = setTimeout(() => {
+          deadlineHit = true;
+          ctrl.abort();
+        }, SSE_HARD_DEADLINE_MS);
+        const finish = () => {
+          clearInterval(ping);
+          clearTimeout(hardDeadline);
+          clearTimeout(timer);
+          if (closed) return;
+          closed = true;
+          try {
+            controller.close();
+          } catch {
+            /* client already gone */
+          }
+        };
         let meta: CompletionMeta | undefined;
 
         try {
