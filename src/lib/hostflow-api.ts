@@ -239,6 +239,8 @@ export async function streamChatWithAgent(
     onReplace?: (text: string) => void;
     onDone?: (event: Extract<AgentChatStreamEvent, { type: "done" }>) => void;
     onError?: (error: string) => void;
+    /** Server heartbeat — client watchdog reset karne ke liye. */
+    onPing?: () => void;
   },
   options: { signal?: AbortSignal } = {},
 ) {
@@ -289,7 +291,9 @@ export async function streamChatWithAgent(
       } catch {
         payload = { delta: data };
       }
-      if (event === "ack") {
+      if (event === "ping") {
+        handlers.onPing?.();
+      } else if (event === "ack") {
         handlers.onAck?.({
           type: "ack",
           threadId: String(payload.threadId ?? ""),
