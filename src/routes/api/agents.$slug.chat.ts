@@ -1090,7 +1090,8 @@ async function runBrainAndInsert(job: BrainJob) {
   }
 
   const looped = await safeRunCoreBuilderLoop(job, assistantText, meta);
-  await insertAssistantMessage(job, looped.text, looped.meta);
+  const voiced = await enforceFounderVoice(slug, prompt, looped.text, signal);
+  await insertAssistantMessage(job, voiced.text, voiced.meta ?? looped.meta);
 }
 
 function streamBrainToClient(job: BrainJob) {
