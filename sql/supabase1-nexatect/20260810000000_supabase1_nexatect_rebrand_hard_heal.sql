@@ -249,12 +249,14 @@ begin
     execute format('grant all on public.%I to service_role', t.relname);
     execute format('revoke all on public.%I from anon', t.relname);
 
-    -- 3c. owner column detect
+    -- 3c. owner column detect (sirf uuid ya text — warna auth.uid() se compare nahi hota)
     select a.attname into owner_col
       from pg_attribute a
+      join pg_type ty on ty.oid = a.atttypid
      where a.attrelid = t.oid
        and a.attnum > 0 and not a.attisdropped
        and a.attname in ('user_id','owner_id','created_by','founder_id','profile_id','account_id')
+       and ty.typname in ('uuid','text','varchar','bpchar')
      order by array_position(
        array['user_id','owner_id','created_by','founder_id','profile_id','account_id'], a.attname)
      limit 1;
@@ -271,11 +273,14 @@ begin
     execute format('drop policy if exists nexatect_owner_all   on public.%I', t.relname);
 
     if owner_col is not null then
+      -- ::text cast dono taraf — text vs uuid mismatch (42883) permanently fix
       execute format($p$
         create policy nexatect_owner_all on public.%1$I
           as permissive for all to authenticated
-          using (%2$I = auth.uid()) with check (%2$I = auth.uid())
+          using (%2$I::text = (auth.uid())::text)
+          with check (%2$I::text = (auth.uid())::text)
       $p$, t.relname, owner_col);
+
     else
       execute format($p$
         create policy nexatect_auth_select on public.%I
