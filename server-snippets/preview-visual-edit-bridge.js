@@ -131,3 +131,123 @@
     if (enabled && e.key === "Escape") disable();
   }, true);
 })();
+
+// ============================================================
+// AXONETIS™ Preview LIVE BRIDGE (handshake + route sync + errors)
+// Builder expects (src/lib/preview-bridge.ts):
+//   in : bridge:handshake | bridge:ping | hmr:reload
+//   out: bridge:ready | bridge:pong | route:change | dom:click | runtime:error
+// Ye block wahi file mein rehta hai jo preview app load karti hai.
+// ============================================================
+(function axonetisPreviewLiveBridge() {
+  if (window.__AXONETIS_LIVE_BRIDGE__) return;
+  window.__AXONETIS_LIVE_BRIDGE__ = true;
+
+  var parentOrigin = "*";
+  var projectId = null;
+
+  function sourceName() {
+    var host = location.hostname.toLowerCase();
+    if (host.includes("anexvot") || host.includes("rapidpay")) return "anexvotaipay-preview";
+    if (host.includes("builder") || host.includes("axon") || host.includes("aiaxonetis")) return "axonetis-preview";
+    return "hostflow-preview";
+  }
+
+  function emit(type, extra) {
+    if (!window.parent || window.parent === window) return;
+    var msg = {
+      source: sourceName(),
+      type: type,
+      projectId: projectId,
+      url: location.href,
+      sentAt: Date.now(),
+    };
+    if (extra) for (var k in extra) msg[k] = extra[k];
+    try {
+      window.parent.postMessage(msg, parentOrigin);
+      if (parentOrigin !== "*") window.parent.postMessage(msg, "*");
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  window.addEventListener("message", function (event) {
+    var data = event.data || {};
+    if (data.source !== "axonetis-builder") return;
+    if (event.origin) parentOrigin = event.origin;
+    if (data.projectId) projectId = data.projectId;
+
+    if (data.type === "bridge:handshake") {
+      emit("bridge:ready", {
+        payload: {
+          capabilities: ["route:change", "dom:click", "runtime:error", "hmr:reload", "visual:edit"],
+          userAgent: navigator.userAgent,
+        },
+      });
+    } else if (data.type === "bridge:ping") {
+      emit("bridge:pong");
+    } else if (data.type === "hmr:reload") {
+      emit("hmr:reload");
+      location.reload();
+    }
+  });
+
+  // Builder ke handshake se pehle bhi ready bhejna — race khatam.
+  function announce() {
+    emit("bridge:ready", { payload: { capabilities: ["route:change", "runtime:error"] } });
+  }
+  if (document.readyState === "complete" || document.readyState === "interactive") announce();
+  else document.addEventListener("DOMContentLoaded", announce);
+  var beats = 0;
+  var beat = setInterval(function () {
+    beats += 1;
+    emit("bridge:pong");
+    if (beats > 8) clearInterval(beat);
+  }, 900);
+
+  // ── Route sync (SPA + history API) ─────────────────────────
+  var lastPath = location.pathname + location.search + location.hash;
+  function routeChanged() {
+    var next = location.pathname + location.search + location.hash;
+    if (next === lastPath) return;
+    lastPath = next;
+    emit("route:change", { url: next });
+  }
+  ["pushState", "replaceState"].forEach(function (fn) {
+    var orig = history[fn];
+    history[fn] = function () {
+      var out = orig.apply(this, arguments);
+      setTimeout(routeChanged, 0);
+      return out;
+    };
+  });
+  window.addEventListener("popstate", routeChanged);
+  window.addEventListener("hashchange", routeChanged);
+
+  // ── Click telemetry (link/button only, no PII) ─────────────
+  document.addEventListener(
+    "click",
+    function (e) {
+      var el = e.target && e.target.closest ? e.target.closest("a,button,[role=button]") : null;
+      if (!el) return;
+      emit("dom:click", {
+        url: (el.getAttribute("href") || el.getAttribute("aria-label") || el.tagName).toString().slice(0, 120),
+      });
+    },
+    true,
+  );
+
+  // ── Runtime errors → Builder logs/chat ─────────────────────
+  window.addEventListener("error", function (e) {
+    emit("runtime:error", {
+      message: String((e && e.message) || "error"),
+      payload: { file: e.filename || null, line: e.lineno || null, col: e.colno || null },
+    });
+  });
+  window.addEventListener("unhandledrejection", function (e) {
+    var r = e && e.reason;
+    emit("runtime:error", {
+      message: String((r && (r.message || r)) || "unhandled rejection"),
+    });
+  });
+})();

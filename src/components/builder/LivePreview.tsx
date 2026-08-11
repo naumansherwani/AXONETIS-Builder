@@ -14,6 +14,7 @@ import { useBuilder } from "@/lib/builder-state";
 import { PROJECTS } from "@/lib/projects";
 import {
   createBridgeHandshake,
+  createBridgePing,
   getProjectOrigin,
   normalizePreviewBridgeEvent,
 } from "@/lib/preview-bridge";
@@ -48,14 +49,41 @@ export default function LivePreview() {
     bridgeStatusRef.current = bridgeStatus;
   }, [bridgeStatus]);
 
+  // Live handshake: iframe load ke baad ek dafa message bhejna kaafi nahi tha —
+  // preview app apna listener late register karti hai. Ab retry loop chalta hai
+  // (10 × 700ms), connect hone par heartbeat ping har 8s.
   useEffect(() => {
     setBridgeStatus("handshaking");
     setLastBridgeEvent(null);
-    const timeout = window.setTimeout(() => {
-      if (bridgeStatusRef.current !== "connected") setBridgeStatus("no-signal");
-    }, 2600);
-    return () => window.clearTimeout(timeout);
+    let attempts = 0;
+    const post = (msg: unknown) => {
+      const win = frameRef.current?.contentWindow;
+      if (!win) return;
+      win.postMessage(msg, getProjectOrigin(project));
+      win.postMessage(msg, "*"); // dev/preview hosts jahan origin differ karta hai
+    };
+    const retry = window.setInterval(() => {
+      attempts += 1;
+      if (bridgeStatusRef.current === "connected") {
+        window.clearInterval(retry);
+        return;
+      }
+      if (attempts > 10) {
+        window.clearInterval(retry);
+        setBridgeStatus("no-signal");
+        return;
+      }
+      post(createBridgeHandshake(project));
+    }, 700);
+    const heartbeat = window.setInterval(() => {
+      if (bridgeStatusRef.current === "connected") post(createBridgePing(project));
+    }, 8000);
+    return () => {
+      window.clearInterval(retry);
+      window.clearInterval(heartbeat);
+    };
   }, [project, reloadKey, setBridgeStatus, setLastBridgeEvent]);
+
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
@@ -110,10 +138,11 @@ export default function LivePreview() {
   }, [project, previewEnv, setLastPreviewChange]);
 
   const sendHandshake = () => {
-    frameRef.current?.contentWindow?.postMessage(
-      createBridgeHandshake(project),
-      getProjectOrigin(project),
-    );
+    const win = frameRef.current?.contentWindow;
+    if (!win) return;
+    const msg = createBridgeHandshake(project);
+    win.postMessage(msg, getProjectOrigin(project));
+    win.postMessage(msg, "*");
   };
 
   return (

@@ -104,3 +104,124 @@ export function subscribeDeployStatus(
     }
   };
 }
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * REAL DEPLOY PIPELINE — POST /rpc/publish.run (SSE over fetch)
+ * Server: server-snippets/deploy.routes.ts
+ * Steps: promote → git pull → bun install → bun run build → migrations →
+ *        pm2 reload → health probe.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+export type DeployStepId =
+  | "promote"
+  | "git"
+  | "install"
+  | "build"
+  | "migrate"
+  | "reload"
+  | "health";
+
+export type DeployStepEvent = {
+  id: DeployStepId;
+  status: "running" | "ok" | "error";
+  label: string;
+  at: number;
+};
+
+export interface RunPublishHandlers {
+  onStart?: (info: { runId: string; repo: string; pm2: string; url: string }) => void;
+  onStep?: (step: DeployStepEvent) => void;
+  onLog?: (line: string) => void;
+  onDone?: (info: { runId: string; ok: boolean; url: string }) => void;
+  onError?: (message: string) => void;
+}
+
+export function isDeployPipelineAvailable() {
+  return Boolean(BRIDGE);
+}
+
+export async function runPublish(
+  projectId: string,
+  branch: string,
+  handlers: RunPublishHandlers,
+  opts?: { signal?: AbortSignal },
+): Promise<void> {
+  if (!BRIDGE) {
+    handlers.onError?.("Bridge URL configured nahi hai — deploy pipeline reachable nahi.");
+    return;
+  }
+  const res = await fetch(`${BRIDGE}/rpc/publish.run`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+    body: JSON.stringify({ projectId, branch }),
+    signal: opts?.signal,
+  });
+  if (!res.ok || !res.body) {
+    handlers.onError?.(`publish.run ${res.status}`);
+    return;
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  const dispatch = (event: string, raw: string) => {
+    let data: unknown = null;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      return;
+    }
+    const d = (data ?? {}) as Record<string, unknown>;
+    switch (event) {
+      case "start":
+        handlers.onStart?.({
+          runId: String(d.runId ?? ""),
+          repo: String(d.repo ?? ""),
+          pm2: String(d.pm2 ?? ""),
+          url: String(d.url ?? ""),
+        });
+        break;
+      case "step":
+        handlers.onStep?.({
+          id: d.id as DeployStepId,
+          status: (d.status as DeployStepEvent["status"]) ?? "running",
+          label: String(d.label ?? ""),
+          at: Number(d.at ?? Date.now()),
+        });
+        break;
+      case "log":
+        handlers.onLog?.(String(d.line ?? ""));
+        break;
+      case "done":
+        handlers.onDone?.({
+          runId: String(d.runId ?? ""),
+          ok: Boolean(d.ok),
+          url: String(d.url ?? ""),
+        });
+        break;
+      case "error":
+        handlers.onError?.(String(d.message ?? "deploy failed"));
+        break;
+      default:
+        break;
+    }
+  };
+
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const frames = buffer.split("\n\n");
+    buffer = frames.pop() ?? "";
+    for (const frame of frames) {
+      let event = "message";
+      const dataLines: string[] = [];
+      for (const line of frame.split("\n")) {
+        if (line.startsWith("event:")) event = line.slice(6).trim();
+        else if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
+      }
+      if (dataLines.length) dispatch(event, dataLines.join("\n"));
+    }
+  }
+}

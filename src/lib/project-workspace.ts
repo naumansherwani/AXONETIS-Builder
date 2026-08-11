@@ -30,6 +30,27 @@ export interface ChatMsgMeta {
   defaultModel?: string | null;
 }
 
+/** Claude-style live activity step shown inside the assistant bubble. */
+export type ActivityKind =
+  | "connect"
+  | "route"
+  | "plan"
+  | "tool"
+  | "token"
+  | "verify"
+  | "answer"
+  | "error";
+
+export interface ActivityStep {
+  id: string;
+  kind: ActivityKind;
+  label: string;
+  detail?: string;
+  /** epoch ms */
+  at: number;
+  status: "running" | "ok" | "error";
+}
+
 export interface ChatMsg {
   id: string;
   agent: ChatAgent;
@@ -51,7 +72,12 @@ export interface ChatMsg {
   verifications?: VerificationPart[];
   /** 3.10.2 — Jimmy sub-agent delegation fan-out. */
   delegations?: DelegationPart[];
+  /** Live reasoning/activity log (Claude-style "Thought for Xs"). */
+  activity?: ActivityStep[];
+  /** ms spent thinking, set when the stream finishes. */
+  thoughtMs?: number;
 }
+
 
 export interface ProjectWorkspace {
   projectId: ProjectId;

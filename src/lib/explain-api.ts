@@ -66,3 +66,66 @@ export function stepTone(kind: DecisionStep["kind"]): string {
       return "#34d399";
   }
 }
+
+/**
+ * Explainability WRITE path — POST /rpc/explain.record.
+ * Called when a stream finishes so the WHY tooltip and workspace memory
+ * counter show real data instead of "bridge pending".
+ */
+export async function recordExplanation(input: {
+  projectId: string;
+  messageId: string;
+  why: string;
+  model?: string | null;
+  modelReason?: string | null;
+  tokensIn?: number | null;
+  tokensOut?: number | null;
+  costUsd?: number | null;
+  chain?: DecisionStep[];
+  tools?: ToolRef[];
+  memoryTitle?: string;
+  memoryContent?: string;
+  memoryKind?: "episodic" | "semantic" | "procedural" | "fact";
+  memoryImportance?: number;
+}): Promise<boolean> {
+  const res = await rpc<{ ok: boolean }>(`/rpc/explain.record`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return Boolean(res?.ok);
+}
+
+export interface WorkspaceMemoryRow {
+  id: string;
+  title: string;
+  content: string;
+  kind: string;
+  importance: number | null;
+  created_at: string;
+}
+
+export async function listWorkspaceMemory(
+  projectId: string,
+  limit = 50,
+): Promise<WorkspaceMemoryRow[]> {
+  return (
+    (await rpc<WorkspaceMemoryRow[]>(
+      `/rpc/memory.list?projectId=${encodeURIComponent(projectId)}&limit=${limit}`,
+    )) ?? []
+  );
+}
+
+export async function writeWorkspaceMemory(input: {
+  projectId: string;
+  title: string;
+  content: string;
+  kind?: string;
+  importance?: number;
+  messageId?: string;
+}): Promise<boolean> {
+  const res = await rpc<{ ok: boolean }>(`/rpc/memory.write`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return Boolean(res?.ok);
+}
