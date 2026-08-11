@@ -14,6 +14,7 @@ import { useBuilder } from "@/lib/builder-state";
 import { PROJECTS } from "@/lib/projects";
 import {
   createBridgeHandshake,
+  createBridgePing,
   getProjectOrigin,
   normalizePreviewBridgeEvent,
 } from "@/lib/preview-bridge";
@@ -137,10 +138,11 @@ export default function LivePreview() {
   }, [project, previewEnv, setLastPreviewChange]);
 
   const sendHandshake = () => {
-    frameRef.current?.contentWindow?.postMessage(
-      createBridgeHandshake(project),
-      getProjectOrigin(project),
-    );
+    const win = frameRef.current?.contentWindow;
+    if (!win) return;
+    const msg = createBridgeHandshake(project);
+    win.postMessage(msg, getProjectOrigin(project));
+    win.postMessage(msg, "*");
   };
 
   return (
