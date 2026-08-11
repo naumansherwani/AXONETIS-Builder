@@ -33,6 +33,8 @@ import {
   createShareLink,
   unpublish,
   subscribeDeployStatus,
+  runPublish,
+  type DeployStepEvent,
   type PublishState,
   type Visibility,
   type DeployStatus,
@@ -58,6 +60,8 @@ export default function PublishModal({ open, onClose }: { open: boolean; onClose
   const [copied, setCopied] = useState<"url" | "share" | null>(null);
   const [confirmUnpub, setConfirmUnpub] = useState(false);
   const [unpubBusy, setUnpubBusy] = useState(false);
+  const [steps, setSteps] = useState<DeployStepEvent[]>([]);
+  const [logs, setLogs] = useState<string[]>([]);
 
   // Load + subscribe when opened
   useEffect(() => {
@@ -81,17 +85,46 @@ export default function PublishModal({ open, onClose }: { open: boolean; onClose
 
   async function handlePublish() {
     setError(null);
+    setSteps([]);
+    setLogs([]);
     setStage("auditing");
-    await new Promise((r) => setTimeout(r, 650));
     setStage("promoting");
+    setState((prev) => (prev ? { ...prev, status: "deploying" } : prev));
+    let ran = false;
     try {
-      const res = await promoteSandboxToProduction({ projectId: project, branch });
-      setDeploymentId(res.deploymentId);
-      setStage("done");
-      // Optimistic: mark deploying → server SSE will confirm live
-      setState((prev) => (prev ? { ...prev, status: "deploying" } : prev));
+      await runPublish(project, branch, {
+        onStart: (info) => {
+          ran = true;
+          setDeploymentId(info.runId);
+          setLogs((l) => [...l, `→ ${info.repo} · pm2 ${info.pm2}`]);
+        },
+        onStep: (st) =>
+          setSteps((prev) => {
+            const i = prev.findIndex((p) => p.id === st.id);
+            if (i < 0) return [...prev, st];
+            const next = [...prev];
+            next[i] = st;
+            return next;
+          }),
+        onLog: (line) => setLogs((l) => [...l.slice(-240), line]),
+        onDone: (d) => {
+          setStage(d.ok ? "done" : "error");
+          if (!d.ok) setError("Deploy failed — logs dekho.");
+          setState((prev) => (prev ? { ...prev, status: d.ok ? "up_to_date" : "failed" } : prev));
+        },
+        onError: (message) => {
+          setError(message);
+          setStage("error");
+        },
+      });
+      if (!ran) {
+        // Bridge deploy pipeline reachable nahi — legacy promote fallback.
+        const res = await promoteSandboxToProduction({ projectId: project, branch });
+        setDeploymentId(res.deploymentId);
+        setStage("done");
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Promote failed");
+      setError(e instanceof Error ? e.message : "Deploy failed");
       setStage("error");
     }
   }
@@ -341,6 +374,36 @@ export default function PublishModal({ open, onClose }: { open: boolean; onClose
                 label="Promote sandbox → production"
                 state={stageOf(stage, "promoting")}
               />
+              {steps.length > 0 && (
+                <div className="space-y-1">
+                  {steps.map((st) => (
+                    <div
+                      key={st.id}
+                      className={`flex items-center gap-2 text-[11.5px] ${
+                        st.status === "ok"
+                          ? "text-emerald-300"
+                          : st.status === "error"
+                            ? "text-red-300"
+                            : "text-amber-300"
+                      }`}
+                    >
+                      {st.status === "running" ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : st.status === "ok" ? (
+                        <CheckCircle2 className="h-3 w-3" />
+                      ) : (
+                        <AlertCircle className="h-3 w-3" />
+                      )}
+                      <span>{st.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {logs.length > 0 && (
+                <pre className="mt-2 max-h-40 overflow-auto rounded-md border border-white/[0.07] bg-black/50 p-2 font-mono text-[9.5px] leading-relaxed text-muted-foreground/85">
+                  {logs.slice(-120).join("\n")}
+                </pre>
+              )}
               {stage === "done" && deploymentId && (
                 <div className="mt-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-200">
                   Live. deploymentId <span className="font-mono">{deploymentId.slice(0, 8)}</span>
