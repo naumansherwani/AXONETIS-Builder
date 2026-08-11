@@ -411,6 +411,7 @@ export default function UnifiedChat() {
       const targetAgent = resolveAgent(prompt);
       const placeholderId = `j-${Date.now() + 1}`;
       const startedAt = Date.now();
+      const routedAdvisorModelRef = { current: routerPreviewRef.current?.model ?? null };
       const streamId = `stream-${Date.now()}`;
       const attachmentNote = attachments.length
         ? `\n\nAttached context:\n${attachments.map((file) => `- ${file.name}: ${file.url}`).join("\n")}`
@@ -615,10 +616,7 @@ export default function UnifiedChat() {
               projectId: project,
               messageId: finalId,
               why: `${targetAgent === "sherlock" ? "Sherlock" : "Jimmy"} ne founder prompt "${prompt.slice(0, 160)}" par ${Math.round((Date.now() - startedAt) / 1000)}s mein jawab diya.`,
-              model: done.model ?? null,
-              tokensIn: done.tokensIn ?? null,
-              tokensOut: done.tokensOut ?? null,
-              costUsd: done.costUsd ?? null,
+              model: routedAdvisorModelRef.current,
               chain: [
                 { id: "c1", index: 0, label: "Stream open", kind: "route", detail: `${project} · ${environment}` },
                 { id: "c2", index: 1, label: targetAgent === "sherlock" ? "Sherlock audit" : "Jimmy build", kind: "plan", detail: null },
