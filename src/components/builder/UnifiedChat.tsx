@@ -50,7 +50,13 @@ import {
   type UploadedAttachment,
 } from "@/lib/hostflow-api";
 import { PROJECTS } from "@/lib/projects";
-import { loadWorkspace, patchWorkspace, type ChatMsg } from "@/lib/project-workspace";
+import {
+  loadWorkspace,
+  patchWorkspace,
+  type ActivityKind,
+  type ActivityStep,
+  type ChatMsg,
+} from "@/lib/project-workspace";
 import {
   subscribeThread,
   fetchThreadMessages,
@@ -65,6 +71,8 @@ import { abortToolCall } from "@/lib/tools-api";
 import { ADVISORS, findAdvisor, detectMentionedAdvisor } from "@/lib/advisors-api";
 import { AdvisorBadge } from "./AdvisorMentionPicker";
 import WhyTooltip from "./WhyTooltip";
+import ThinkingLog from "./ThinkingLog";
+import { recordExplanation } from "@/lib/explain-api";
 
 type Agent = "founder" | "jimmy" | "sherlock";
 type Msg = ChatMsg;
@@ -402,6 +410,7 @@ export default function UnifiedChat() {
     (prompt: string) => {
       const targetAgent = resolveAgent(prompt);
       const placeholderId = `j-${Date.now() + 1}`;
+      const startedAt = Date.now();
       const streamId = `stream-${Date.now()}`;
       const attachmentNote = attachments.length
         ? `\n\nAttached context:\n${attachments.map((file) => `- ${file.name}: ${file.url}`).join("\n")}`
@@ -419,8 +428,18 @@ export default function UnifiedChat() {
         {
           id: placeholderId,
           agent: targetAgent,
-          text: targetAgent === "sherlock" ? "Audit stream connect…" : "Live stream connect…",
+          text: "",
           thinking: true,
+          activity: [
+            {
+              id: "connect",
+              kind: "connect",
+              label: targetAgent === "sherlock" ? "Sherlock stream open" : "Jimmy stream open",
+              detail: `${project} · ${environment}`,
+              at: startedAt,
+              status: "running",
+            },
+          ],
           sourcePrompt: prompt,
           meta: { createdAt: now },
         },
@@ -429,6 +448,62 @@ export default function UnifiedChat() {
 
       const ctrl = new AbortController();
       abortRef.current = ctrl;
+
+      // Live activity log — har step real SSE event se aata hai, koi fake nahi.
+      const pushStep = (
+        id: string,
+        kind: ActivityKind,
+        label: string,
+        detail?: string,
+        status: ActivityStep["status"] = "running",
+      ) => {
+        setMessages((prev) =>
+          prev.map((m) => {
+            if (m.id !== placeholderId) return m;
+            const list = m.activity ? [...m.activity] : [];
+            const i = list.findIndex((s) => s.id === id);
+            const step: ActivityStep = {
+              id,
+              kind,
+              label,
+              detail,
+              at: i >= 0 ? list[i].at : Date.now(),
+              status,
+            };
+            if (i >= 0) list[i] = step;
+            else list.push(step);
+            return { ...m, activity: list };
+          }),
+        );
+      };
+      const settleStep = (id: string, status: ActivityStep["status"] = "ok") => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === placeholderId && m.activity
+              ? {
+                  ...m,
+                  activity: m.activity.map((s) => (s.id === id ? { ...s, status } : s)),
+                }
+              : m,
+          ),
+        );
+      };
+      const settleAll = () => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === placeholderId && m.activity
+              ? {
+                  ...m,
+                  activity: m.activity.map((s) =>
+                    s.status === "running" ? { ...s, status: "ok" } : s,
+                  ),
+                  thoughtMs: Date.now() - startedAt,
+                }
+              : m,
+          ),
+        );
+      };
+      let firstToken = false;
 
       // Silence watchdog — agar brain 90s tak kuch na bheje to bubble ko readable
       // error bana do; "connect…" par hamesha ke liye atkna mana hai.
@@ -467,6 +542,14 @@ export default function UnifiedChat() {
         {
           onAck: (ack) => {
             bumpWatchdog();
+            settleStep("connect", "ok");
+            pushStep(
+              "route",
+              "route",
+              targetAgent === "sherlock" ? "Routed → Sherlock (audit)" : "Routed → Jimmy (build)",
+              ack.threadId ? `thread ${String(ack.threadId).slice(0, 8)}` : undefined,
+              "ok",
+            );
             if (!threadId && ack.threadId) setThreadId(ack.threadId);
             if (ack.userMessageId) pendingUserMessageIdRef.current = ack.userMessageId;
             setComposerNotice(
@@ -477,6 +560,10 @@ export default function UnifiedChat() {
           },
           onToken: (delta) => {
             bumpWatchdog();
+            if (!firstToken) {
+              firstToken = true;
+              pushStep("write", "token", "Writing answer", undefined, "running");
+            }
             setMessages((prev) =>
               prev.map((m) => {
                 if (m.id !== placeholderId) return m;
@@ -496,6 +583,9 @@ export default function UnifiedChat() {
           },
           onDone: (done) => {
             clearWatchdog();
+            settleStep("write", "ok");
+            pushStep("answer", "answer", "Answer delivered", undefined, "ok");
+            settleAll();
             if (done.assistantMessageId) seenMessageIdsRef.current.add(done.assistantMessageId);
             const cleaned = cleanAgentText(done.assistantText ?? "");
             setMessages((prev) =>
@@ -517,11 +607,35 @@ export default function UnifiedChat() {
             setStatus("ready");
             setComposerNotice("");
             textareaRef.current?.focus();
+
+            // Explainability + workspace memory WRITE path (no more "bridge pending").
+            const finalId = done.assistantMessageId ?? placeholderId;
+            const answer = cleaned || "";
+            void recordExplanation({
+              projectId: project,
+              messageId: finalId,
+              why: `${targetAgent === "sherlock" ? "Sherlock" : "Jimmy"} ne founder prompt "${prompt.slice(0, 160)}" par ${Math.round((Date.now() - startedAt) / 1000)}s mein jawab diya.`,
+              model: done.model ?? null,
+              tokensIn: done.tokensIn ?? null,
+              tokensOut: done.tokensOut ?? null,
+              costUsd: done.costUsd ?? null,
+              chain: [
+                { id: "c1", index: 0, label: "Stream open", kind: "route", detail: `${project} · ${environment}` },
+                { id: "c2", index: 1, label: targetAgent === "sherlock" ? "Sherlock audit" : "Jimmy build", kind: "plan", detail: null },
+                { id: "c3", index: 2, label: "Answer delivered", kind: "answer", detail: `${answer.length} chars` },
+              ],
+              tools: [],
+              memoryTitle: prompt.slice(0, 120),
+              memoryContent: answer.slice(0, 4000),
+              memoryKind: "episodic",
+              memoryImportance: 3,
+            }).catch(() => undefined);
           },
           onPing: () => {
             bumpWatchdog();
           },
           onError: (error) => {
+            pushStep("stream-error", "error", "Stream warning", error.slice(0, 160), "error");
             setComposerNotice(
               error.includes("timeout")
                 ? "Brain timeout — Rust SSE/server logs check karo."
@@ -535,7 +649,17 @@ export default function UnifiedChat() {
           if (ctrl.signal.aborted) {
             setMessages((prev) =>
               prev.map((m) =>
-                m.id === placeholderId ? { ...m, text: "Stopped by founder.", thinking: false } : m,
+                m.id === placeholderId
+                  ? {
+                      ...m,
+                      text: "Stopped by founder.",
+                      thinking: false,
+                      thoughtMs: Date.now() - startedAt,
+                      activity: (m.activity ?? []).map((s) =>
+                        s.status === "running" ? { ...s, status: "error" } : s,
+                      ),
+                    }
+                  : m,
               ),
             );
             if (pendingUserMessageIdRef.current)
@@ -1296,8 +1420,7 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
         .slice(-1)[0]
         .replace(/-instruct$|:free$/gi, "")
     : null;
-  const connectPlaceholder =
-    msg.text === "Live stream connect…" || msg.text === "Audit stream connect…";
+  const activity = msg.activity ?? [];
   const displayText = msg.thinking ? msg.text : cleanAgentText(msg.text);
   const hasStructuredContent = Boolean(
     msg.plans?.length ||
@@ -1307,7 +1430,7 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
     msg.diffs?.length,
   );
 
-  if (!displayText && !hasStructuredContent) return null;
+  if (!displayText && !hasStructuredContent && activity.length === 0) return null;
 
   const copy = async () => {
     try {
@@ -1345,13 +1468,21 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
             </span>
           )}
         </div>
-        {msg.thinking && connectPlaceholder ? (
-          <Shimmer className="text-[14px]" duration={2}>
-            {msg.text}
-          </Shimmer>
-        ) : (
-          <MessageResponse>{displayText}</MessageResponse>
+        {activity.length > 0 && (
+          <ThinkingLog
+            steps={activity}
+            running={Boolean(msg.thinking)}
+            thoughtMs={msg.thoughtMs}
+            startedAt={activity[0]?.at}
+          />
         )}
+        {displayText ? (
+          <MessageResponse>{displayText}</MessageResponse>
+        ) : msg.thinking && activity.length === 0 ? (
+          <Shimmer className="text-[14px]" duration={2}>
+            Stream open…
+          </Shimmer>
+        ) : null}
 
         {/* 3.10.2 — Jimmy Planning Tree (Goal → Tasks → Verification) */}
         {msg.plans?.map((p, i) => (
