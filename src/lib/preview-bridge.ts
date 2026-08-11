@@ -83,3 +83,8 @@ function summarizeBridgeEvent(type: string, detail?: string) {
   if (type === "hmr:reload") return "Preview HMR reload acknowledged";
   return `Preview event: ${type}`;
 }
+
+/** Heartbeat ping — preview bridge answers with `bridge:pong`. */
+export function createBridgePing(projectId: ProjectId) {
+  return { source: BUILDER_SOURCE, type: "bridge:ping", projectId, sentAt: Date.now() };
+}
