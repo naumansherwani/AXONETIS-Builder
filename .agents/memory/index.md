@@ -43,6 +43,7 @@ AI SDK V4 SYSTEM PROMPT LOCKED: Vercel AI SDK v4+ streamText/generateText mein `
 ## Memories
 - [AWAM model registry DeepInfra LOCKED](mem://features/awam-model-registry-deepinfra-LOCKED) — Master ai-models.ts registry: agents→models→provider/key map, credits, rate limits, install steps
 - [SQL run commands LOCKED](mem://features/sql-run-commands-LOCKED) — Do fixed commands: README-RUN-ORDER padho, phir run-all-founder.sh AXONETIS_DB_URL (Supabase 3 db.itoejjzjjprjnrhygjal) ke saath. Local DB nahi.
+- [AI SDK v4 system prompt rule LOCKED](mem://constraints/ai-sdk-v4-system-prompt-rule-LOCKED) — Vercel AI SDK v4+ mein `messages` array mein `role: "system"` haram; hamesha `system:` parameter. Sherlock `InvalidPromptError` fix is rule se.
 - [Phase 3.10.10 Supabase 3 canonical LOCKED](mem://features/phase-3.10.10-supabase3-canonical-LOCKED) — tool_call_registry + tool_calls view + tool_cost_daily, agent_subagents (5 live/depth 3 trigger), mem_entries pgvector 1536 + match/search/prune
 - [Phase 3.10.8 LSP diagnostics LOCKED](mem://features/phase-3.10.8-lsp-diagnostics-LOCKED) — project_diagnostics table, /rpc/lsp.diagnostics + lsp.autofix, squiggles/hover/Fix, Problems badge
 - [TROJAN BY JIMMY Phase 9 LOCKED](mem://features/trojan-by-jimmy-phase9-LOCKED) — Zero-entry CRM 4 stages, model routing table, TROJAN_SYSTEM prompt (live in brain config/models.ts), product pricing pitch list
