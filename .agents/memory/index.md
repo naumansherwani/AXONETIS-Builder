@@ -39,7 +39,6 @@ Additive-only tech: purane phases purani tech (/rpc+SSE) pe frozen, NEW phases n
 TROJAN BY JIMMY LOCKED (Phase 9): zero-entry autonomous CRM — Attract/Nurture/Close/Retain, 72h silence auto follow-up, deal≥80% Sherlock audit. Situation routing: outreach+legal claude-sonnet-4-6 · analysis deepseek-r1 · quick deepseek-v4-flash · bulk gpt-oss-120b. SQL = Supabase 1 (CRM) + Supabase 3 (agent). See mem://features/trojan-by-jimmy-phase9-LOCKED.
 
 AI SDK V4 SYSTEM PROMPT LOCKED: Vercel AI SDK v4+ streamText/generateText mein `messages` array mein `{ role: "system" }` kabhi nahi — hamesha `system: ...` top-level parameter. Sherlock crash `InvalidPromptError` isi rule se fix hua. See mem://constraints/ai-sdk-v4-system-prompt-rule-LOCKED.
-41
 
 ## Memories
 - [AWAM model registry DeepInfra LOCKED](mem://features/awam-model-registry-deepinfra-LOCKED) — Master ai-models.ts registry: agents→models→provider/key map, credits, rate limits, install steps
