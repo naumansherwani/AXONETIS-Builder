@@ -13,7 +13,7 @@ test -f /opt/hostflowai-brain/backend/src/config/ai-models.ts && echo "registry 
 ## Install
 
 ```bash
-pm2 update && \
+pm2 resurrect && \
 cp /var/www/axonetis/server-snippets/sherlock.routes.ts \
    /opt/hostflowai-brain/backend/src/routes/founder/sherlock.ts && \
 cd /opt/hostflowai-brain/backend && \
@@ -37,3 +37,5 @@ tail -n 10 /root/.pm2/logs/hostflowai-brain-error.log
 ## Hard rule
 
 Vercel AI SDK v4+ mein `messages` array mein `role: "system"` hargiz mat bhejo. Hamesha `system: ...` parameter use karo.
+
+Production par `pm2 update` kabhi mat chalao. Yeh daemon stop/recreate karke running process list ko disturb kar sakta hai. Existing saved process list ke liye sirf `pm2 resurrect`; individual deployment ke liye sirf named `pm2 restart <name> --update-env` use karo.

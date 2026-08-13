@@ -1,6 +1,7 @@
 # Project Memory
 
 ## Core
+Production commands must never run `pm2 update`; use `pm2 resurrect`, then restart only the named process.
 SQL LOCKED: saari SQL repo mein — sql/founder/phase-<NN>-<slug>/ (founder) aur sql/awam/ (public, alag server). Chat mein SQL paste nahi, sirf path + run cmd.
 Project: Self-hosted AI agent builder — **AXONETIS AI Builder™**. LIVE at **founderbuilder.axonetis.com** (founder-only, hidden, Caddy + Namecheap). **axonetis.com** root = future PUBLIC marketing site — DO NOT point builder there. FORBIDDEN: aiaxonetis.hostflowai.net, aiaxonetis.nexatect.com, any *.hostflowai.net. Edits founder's existing sites. Backend: self-hosted Supabase on Hetzner. Never mention Supabase. APIs via OpenRouter + Groq.
 Founder: Muhammad Nauman Sherwani. Roman Urdu/Hindi — reply same style, keep short.
