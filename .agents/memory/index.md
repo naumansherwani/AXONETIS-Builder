@@ -38,7 +38,8 @@ MODERN RUNTIME LOCKED: Rust + Bun native, SSE now → WebTransport/HTTP3 next, t
 Additive-only tech: purane phases purani tech (/rpc+SSE) pe frozen, NEW phases nayi tech (tRPC+WebTransport) pe — koi migration/touch nahi.
 TROJAN BY JIMMY LOCKED (Phase 9): zero-entry autonomous CRM — Attract/Nurture/Close/Retain, 72h silence auto follow-up, deal≥80% Sherlock audit. Situation routing: outreach+legal claude-sonnet-4-6 · analysis deepseek-r1 · quick deepseek-v4-flash · bulk gpt-oss-120b. SQL = Supabase 1 (CRM) + Supabase 3 (agent). See mem://features/trojan-by-jimmy-phase9-LOCKED.
 
-AWAM MODEL REGISTRY LOCKED Aug 12 2026: Master file /opt/hostflowai-brain/backend/src/config/ai-models.ts (repo copy server-snippets/ai-models.registry.ts). Awam Jimmy = claude-sonnet-5 chat / Qwen3-Coder-480B code / DeepSeek-V4-Flash fallback (DI1). Sherlock R1-0528→V4-Pro. Aria gemini-2.5-flash→claude-sonnet-5→Llama-3.3-70B. Leo DI2. Free tier = OR3 free + 5 msgs/day hard cap, OR1 kabhi nahi. See mem://features/awam-model-registry-deepinfra-LOCKED.
+AI SDK V4 SYSTEM PROMPT LOCKED: Vercel AI SDK v4+ streamText/generateText mein `messages` array mein `{ role: "system" }` kabhi nahi — hamesha `system: ...` top-level parameter. Sherlock crash `InvalidPromptError` isi rule se fix hua. See mem://constraints/ai-sdk-v4-system-prompt-rule-LOCKED.
+41
 
 ## Memories
 - [AWAM model registry DeepInfra LOCKED](mem://features/awam-model-registry-deepinfra-LOCKED) — Master ai-models.ts registry: agents→models→provider/key map, credits, rate limits, install steps
