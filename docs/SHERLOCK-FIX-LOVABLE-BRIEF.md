@@ -65,7 +65,7 @@ cp /var/www/axonetis/server-snippets/sherlock.routes.ts \
 echo "✅ sherlock.ts replaced"
 
 # 3. Build and restart
-pm2 update && \
+pm2 resurrect && \
 cd /opt/hostflowai-brain/backend && \
 bun install && \
 bun run build && \
@@ -76,6 +76,8 @@ curl -sS -o /dev/null -w 'jimmy stream:%{http_code}\n' -X POST http://127.0.0.1:
 curl -sS -o /dev/null -w 'sherlock audit:%{http_code}\n' -X POST http://127.0.0.1:8080/api/founder/sherlock/audit -H "Content-Type: application/json" -d '{"messages":[{"role":"user","content":"ping"}],"projectId":"founderbuilder"}' && \
 pm2 logs hostflowai-brain --lines 20 --nostream
 ```
+
+Do not run `pm2 update` during deployment. It replaces the live PM2 daemon and can interrupt or lose the active process list. Use `pm2 resurrect` to restore the saved list and restart only the named service being deployed.
 
 ## Verification
 
