@@ -7,12 +7,28 @@
 // ║  { role: "system", content: "..." } allowed NAHI hai.               ║
 // ║  System prompt ko `system:` parameter mein alag se pass karo.     ║
 // ╚════════════════════════════════════════════════════════════════╝
-import { Router } from "express";
+import { Router, json } from "express";
 import { streamText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { getModelConfig } from "../../config/ai-models.js";
 
 const router = Router();
+// ✅ FIX 400: apna JSON parser — agar app-level express.json() missing/late ho to bhi body milegi
+router.use(json({ limit: "10mb" }));
+
+// Payload ko tolerant banao: messages | message | prompt | text, projectId | projectSlug | project
+function readPayload(body: any) {
+  const b = body ?? {};
+  let messages = b.messages;
+  if (!Array.isArray(messages)) {
+    const single = b.message ?? b.prompt ?? b.text ?? b.content;
+    messages = typeof single === "string" && single.trim()
+      ? [{ role: "user", content: single }]
+      : [];
+  }
+  const projectId = String(b.projectId ?? b.projectSlug ?? b.project ?? b.slug ?? "founderbuilder");
+  return { messages, projectId };
+}
 
 const deepinfra = createOpenAI({
   baseURL: "https://api.deepinfra.com/v1/openai",
@@ -55,9 +71,9 @@ function violatesFounderVoice(text: string) {
 
 // POST /api/founder/sherlock/audit — SSE streaming audit
 router.post("/sherlock/audit", async (req, res) => {
-  const { messages, projectId } = req.body ?? {};
-  if (!messages || !projectId) {
-    return res.status(400).json({ error: "messages + projectId required" });
+  const { messages, projectId } = readPayload(req.body);
+  if (!messages.length) {
+    return res.status(400).json({ error: "messages required (messages[] | message | prompt)" });
   }
 
   res.setHeader("Content-Type", "text/event-stream");
@@ -104,9 +120,9 @@ router.post("/sherlock/audit", async (req, res) => {
 // Backwards-compat alias — /sherlock/stream bhi audit hi chalayega
 router.post("/sherlock/stream", async (req, res) => {
   // Forward same request body to /sherlock/audit logic
-  const { messages, projectId } = req.body ?? {};
-  if (!messages || !projectId) {
-    return res.status(400).json({ error: "messages + projectId required" });
+  const { messages, projectId } = readPayload(req.body);
+  if (!messages.length) {
+    return res.status(400).json({ error: "messages required (messages[] | message | prompt)" });
   }
 
   res.setHeader("Content-Type", "text/event-stream");
