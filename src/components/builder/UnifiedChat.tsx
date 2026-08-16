@@ -1168,8 +1168,7 @@ export default function UnifiedChat() {
                     No messages yet
                   </div>
                   <div className="max-w-[280px] text-[11px] leading-relaxed text-muted-foreground">
-                    Jimmy se baat karo ya build command do. Sherlock sirf code change ke baad audit
-                    karega.
+                    Neeche AI select karo, phir conversation ya build command shuru karo.
                   </div>
                 </div>
               ) : (
