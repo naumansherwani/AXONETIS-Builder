@@ -276,11 +276,11 @@ router.post("/publish.run", async (req: Request, res: Response) => {
     );
     if (mig.failed > 0) throw new Error("migration failed");
 
-    // 6. pm2 reload
-    step("reload", "running", `pm2 reload ${target.pm2}`);
-    const reloadCode = await run("pm2", ["reload", target.pm2, "--update-env"], target.repo, log);
-    step("reload", reloadCode === 0 ? "ok" : "error", "Process reloaded");
-    if (reloadCode !== 0) throw new Error("pm2 reload failed");
+    // 6. PM2 restart — never run `pm2 update` or mutate the production daemon.
+    step("reload", "running", `pm2 restart ${target.pm2}`);
+    const reloadCode = await run("pm2", ["restart", target.pm2], target.repo, log);
+    step("reload", reloadCode === 0 ? "ok" : "error", "Process restarted");
+    if (reloadCode !== 0) throw new Error("pm2 restart failed");
 
     // 7. health
     step("health", "running", "Health probe");

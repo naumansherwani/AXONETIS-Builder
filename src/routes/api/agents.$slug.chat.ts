@@ -609,17 +609,13 @@ function resolveBrainURLs() {
   const configured = [
     process.env.HOSTFLOWAI_BRAIN_URL,
     process.env.HOSTFLOW_BRAIN_URL,
-    process.env.RUST_BRAIN_URL,
-    process.env.AXONETIS_RUST_BRAIN_URL,
   ].flatMap((value) => (value ?? "").split(","));
 
-  // Founder agent routes (/api/founder/*) live ONLY on the Node brain :8080.
-  // The Rust compute brain :8088 has no founder routes → always 404, so it is
-  // tried last and never becomes the reported error while :8080 is reachable.
+  // Founder/registered-agent routes live on the Node brain only. The Rust
+  // compute runtime on :8088 has no chat routes and must never be a fallback.
   return unique([
     "http://127.0.0.1:8080",
     ...configured.map((value) => value.trim().replace(/\/$/, "")),
-    "http://127.0.0.1:8088",
   ]);
 }
 
@@ -1064,12 +1060,14 @@ async function runBrainAndInsert(job: BrainJob) {
           break outer;
         }
       } catch (err) {
-        rustError =
-          err instanceof Error && err.name === "AbortError"
-            ? `Brain response timeout: ${brainURL}`
-            : err instanceof Error
-              ? `${brainURL}: ${err.message}`
-              : `${brainURL}: ${String(err)}`;
+        if (!rustError) {
+          rustError =
+            err instanceof Error && err.name === "AbortError"
+              ? `Brain response timeout: ${brainURL}`
+              : err instanceof Error
+                ? `${brainURL}: ${err.message}`
+                : `${brainURL}: ${String(err)}`;
+        }
       } finally {
         clearTimeout(timer);
         signal?.removeEventListener("abort", abort);
@@ -1192,12 +1190,14 @@ function streamBrainToClient(job: BrainJob) {
                 r = null;
                 if (!retryable) break;
               } catch (err) {
-                rustError =
-                  err instanceof Error && err.name === "AbortError"
-                    ? `Brain response timeout: ${brainURL}`
-                    : err instanceof Error
-                      ? `${brainURL}: ${err.message}`
-                      : `${brainURL}: ${String(err)}`;
+                if (!rustError) {
+                  rustError =
+                    err instanceof Error && err.name === "AbortError"
+                      ? `Brain response timeout: ${brainURL}`
+                      : err instanceof Error
+                        ? `${brainURL}: ${err.message}`
+                        : `${brainURL}: ${String(err)}`;
+                }
                 r = null;
               }
               if (job.signal?.aborted) break;

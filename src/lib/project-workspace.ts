@@ -11,13 +11,14 @@
  */
 import type { Branch, Environment, ProjectId } from "./projects";
 import type { PreviewEnv } from "./preview-engine";
+import type { AgentSlug } from "./hostflow-api";
 import type { ToolCallPart } from "@/components/builder/ToolCallBubble";
 import type { DiffPart } from "@/components/builder/DiffPreview";
 import type { PlanPart } from "@/components/builder/PlanningTree";
 import type { VerificationPart } from "@/components/builder/SelfVerifyLoop";
 import type { DelegationPart } from "@/components/builder/DelegationTree";
 
-export type ChatAgent = "founder" | "jimmy" | "sherlock";
+export type ChatAgent = "founder" | Exclude<AgentSlug, "router">;
 
 export interface ChatMsgMeta {
   model?: string | null;
