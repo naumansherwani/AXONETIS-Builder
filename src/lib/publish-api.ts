@@ -1,8 +1,7 @@
 /**
  * Phase 3.9.3 — Publish/Visibility client (frontend).
  * Talks to Hetzner bridge /rpc/publish.* + /rpc/deploys.status (SSE).
- * Server endpoints pending on founder Hetzner — falls back to null/offline
- * per constitutional principle (no dummy data).
+ * Failures stay explicit: deploy actions never pretend to succeed offline.
  */
 const BRIDGE = (
   (import.meta.env.VITE_HOSTFLOW_BRIDGE_URL as string | undefined) ??
@@ -157,8 +156,12 @@ export async function runPublish(
     signal: opts?.signal,
   });
   if (!res.ok || !res.body) {
-    handlers.onError?.(`publish.run ${res.status}`);
-    return;
+    const detail = (await res.text().catch(() => "")).slice(0, 240);
+    throw new Error(
+      res.status === 404
+        ? "Real deploy route /rpc/publish.run bridge par mounted nahi hai."
+        : `publish.run ${res.status}${detail ? `: ${detail}` : ""}`,
+    );
   }
 
   const reader = res.body.getReader();
@@ -223,5 +226,13 @@ export async function runPublish(
       }
       if (dataLines.length) dispatch(event, dataLines.join("\n"));
     }
+  }
+
+  if (buffer.trim()) {
+    const dataLines = buffer
+      .split("\n")
+      .filter((line) => line.startsWith("data:"))
+      .map((line) => line.slice(5).trim());
+    if (dataLines.length) dispatch("message", dataLines.join("\n"));
   }
 }

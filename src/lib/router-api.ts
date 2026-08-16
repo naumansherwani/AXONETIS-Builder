@@ -22,7 +22,7 @@ export interface RouterPreview {
 
 export async function previewRoute(
   prompt: string,
-  agent: "jimmy" | "sherlock",
+  agent: string,
   signal?: AbortSignal,
 ): Promise<RouterPreview | null> {
   if (!BRIDGE || !prompt.trim()) return null;

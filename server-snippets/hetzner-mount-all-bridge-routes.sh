@@ -48,7 +48,7 @@ mkdir -p "$BRIDGE_DIR/src/routes"
 log "2) Router files copy → src/routes/"
 ROUTERS=(
   founder-panel.routes.ts axon-io.routes.ts agents.cancel.ts
-  ops.routes.ts rpc.routes.ts diff.routes.ts preview.routes.ts
+  ops.routes.ts rpc.routes.ts deploy.routes.ts explain.routes.ts diff.routes.ts preview.routes.ts
   plan.routes.ts verify.routes.ts delegate.routes.ts orchestrate.routes.ts
   lsp.routes.ts tests.routes.ts vision.routes.ts browser.routes.ts
   fullstack.routes.ts migration.routes.ts replay.routes.ts
@@ -201,6 +201,7 @@ chk POST "/api/agents/stream/test/cancel"
 chk POST "/rpc/tools.abort"
 chk GET  "/rpc/telemetry.snapshot?projectId=hostflowai"
 chk GET  "/rpc/explain.get?projectId=hostflowai&messageId=x"
+chk POST "/rpc/publish.run"
 
 log "RESULT"
 printf '  PASS=%s  FAIL=%s\n' "$PASS" "$FAILN"

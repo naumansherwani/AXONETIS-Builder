@@ -3,7 +3,7 @@
  *
  * Split (3-process-split-LOCKED Option B + Jun 24 2026 finalization):
  *   - This repo = UI + thin proxy + ALL Supabase 3 writes.
- *   - Rust hostflow-engine :8088 = PURE COMPUTE brain (stateless, no Supabase).
+ *   - Node AI brain :8080 owns founder and registered-agent chat routes.
  *     Route: POST /api/agents/:agent/chat  body: { message: string }
  *     Returns: JSON (ensemble result — text extracted defensively below).
  *   - hostflow-server = files/projects/deploy bridge.
@@ -18,7 +18,7 @@
  *
  * Env required on Hetzner (pm2 axonetis-builder):
  *   SUPABASE3_URL, SUPABASE3_SERVICE_ROLE_KEY
- *   RUST_BRAIN_URL (default http://127.0.0.1:8088)
+ *   HOSTFLOWAI_BRAIN_URL (default http://127.0.0.1:8080)
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -609,17 +609,13 @@ function resolveBrainURLs() {
   const configured = [
     process.env.HOSTFLOWAI_BRAIN_URL,
     process.env.HOSTFLOW_BRAIN_URL,
-    process.env.RUST_BRAIN_URL,
-    process.env.AXONETIS_RUST_BRAIN_URL,
   ].flatMap((value) => (value ?? "").split(","));
 
-  // Founder agent routes (/api/founder/*) live ONLY on the Node brain :8080.
-  // The Rust compute brain :8088 has no founder routes → always 404, so it is
-  // tried last and never becomes the reported error while :8080 is reachable.
+  // Founder/registered-agent routes live on the Node brain only. The Rust
+  // compute runtime on :8088 has no chat routes and must never be a fallback.
   return unique([
     "http://127.0.0.1:8080",
     ...configured.map((value) => value.trim().replace(/\/$/, "")),
-    "http://127.0.0.1:8088",
   ]);
 }
 
@@ -1064,12 +1060,14 @@ async function runBrainAndInsert(job: BrainJob) {
           break outer;
         }
       } catch (err) {
-        rustError =
-          err instanceof Error && err.name === "AbortError"
-            ? `Brain response timeout: ${brainURL}`
-            : err instanceof Error
-              ? `${brainURL}: ${err.message}`
-              : `${brainURL}: ${String(err)}`;
+        if (!rustError) {
+          rustError =
+            err instanceof Error && err.name === "AbortError"
+              ? `Brain response timeout: ${brainURL}`
+              : err instanceof Error
+                ? `${brainURL}: ${err.message}`
+                : `${brainURL}: ${String(err)}`;
+        }
       } finally {
         clearTimeout(timer);
         signal?.removeEventListener("abort", abort);
@@ -1192,12 +1190,14 @@ function streamBrainToClient(job: BrainJob) {
                 r = null;
                 if (!retryable) break;
               } catch (err) {
-                rustError =
-                  err instanceof Error && err.name === "AbortError"
-                    ? `Brain response timeout: ${brainURL}`
-                    : err instanceof Error
-                      ? `${brainURL}: ${err.message}`
-                      : `${brainURL}: ${String(err)}`;
+                if (!rustError) {
+                  rustError =
+                    err instanceof Error && err.name === "AbortError"
+                      ? `Brain response timeout: ${brainURL}`
+                      : err instanceof Error
+                        ? `${brainURL}: ${err.message}`
+                        : `${brainURL}: ${String(err)}`;
+                }
                 r = null;
               }
               if (job.signal?.aborted) break;

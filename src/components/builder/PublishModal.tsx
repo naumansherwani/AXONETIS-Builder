@@ -25,7 +25,6 @@ import {
 } from "lucide-react";
 import { useBuilder } from "@/lib/builder-state";
 import { PROJECTS } from "@/lib/projects";
-import { promoteSandboxToProduction } from "@/lib/preview-engine";
 import { supabaseLabelFor } from "@/lib/project-workspace";
 import {
   fetchPublishState,
@@ -90,11 +89,9 @@ export default function PublishModal({ open, onClose }: { open: boolean; onClose
     setStage("auditing");
     setStage("promoting");
     setState((prev) => (prev ? { ...prev, status: "deploying" } : prev));
-    let ran = false;
     try {
       await runPublish(project, branch, {
         onStart: (info) => {
-          ran = true;
           setDeploymentId(info.runId);
           setLogs((l) => [...l, `→ ${info.repo} · pm2 ${info.pm2}`]);
         },
@@ -117,12 +114,6 @@ export default function PublishModal({ open, onClose }: { open: boolean; onClose
           setStage("error");
         },
       });
-      if (!ran) {
-        // Bridge deploy pipeline reachable nahi — legacy promote fallback.
-        const res = await promoteSandboxToProduction({ projectId: project, branch });
-        setDeploymentId(res.deploymentId);
-        setStage("done");
-      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Deploy failed");
       setStage("error");
@@ -185,7 +176,7 @@ export default function PublishModal({ open, onClose }: { open: boolean; onClose
   }
 
   const url = state?.url ?? active.previewUrl;
-  const status: DeployStatus = state?.status ?? (BRIDGE_MISSING ? "offline" : "up_to_date");
+  const status: DeployStatus = state?.status ?? "offline";
   const visibility: Visibility = state?.visibility ?? "public";
 
   return (
@@ -490,8 +481,6 @@ export default function PublishModal({ open, onClose }: { open: boolean; onClose
     </AnimatePresence>
   );
 }
-
-const BRIDGE_MISSING = !(import.meta.env.VITE_HOSTFLOW_BRIDGE_URL ?? "");
 
 function StatusBadge({ status, loading }: { status: DeployStatus; loading: boolean }) {
   if (loading) {

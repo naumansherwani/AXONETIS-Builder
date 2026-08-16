@@ -205,8 +205,8 @@ export async function chatWithAgent(
   body: AgentChatRequest,
   options: { signal?: AbortSignal } = {},
 ) {
-  // Phase A.1 (3-process-split-LOCKED Option B): same-origin TanStack proxy
-  // → inserts user msg into Supabase 3 → forwards to Rust brain :8088.
+  // Same-origin TanStack proxy inserts the user message, then forwards to the
+  // Node AI brain. Internal brain ports are never exposed to the browser.
   // Forward Supabase 3 access token so the server can attribute the thread
   // to the founder's auth.users.id (agent_threads.user_id is NOT NULL).
   const { supabase3 } = await import("@/integrations/supabase3/client");

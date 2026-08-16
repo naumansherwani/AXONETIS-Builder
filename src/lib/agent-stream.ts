@@ -349,4 +349,16 @@ export function cleanAgentText(raw: string): string {
 }
 
 /** Slugs the Unified Build Chat surface accepts (everything else is filtered out). */
-export const UNIFIED_CHAT_SLUGS: ReadonlySet<AgentSlug> = new Set<AgentSlug>(["jimmy", "sherlock"]);
+/** Registered AIs that can be selected explicitly in the founder chat. */
+export const UNIFIED_CHAT_SLUGS: ReadonlySet<AgentSlug> = new Set<AgentSlug>([
+  "jimmy",
+  "sherlock",
+  "aria",
+  "orion",
+  "rex",
+  "lyra",
+  "sage",
+  "atlas",
+  "vega",
+  "kai",
+]);

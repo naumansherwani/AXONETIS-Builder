@@ -9,6 +9,7 @@ import {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  ChevronDown,
   Copy,
   DollarSign,
   Mic,
@@ -38,6 +39,14 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useBuilder } from "@/lib/builder-state";
 import {
@@ -68,16 +77,15 @@ import {
 } from "@/lib/agent-stream";
 import { previewRoute, shortModelTag, formatUsd, type RouterPreview } from "@/lib/router-api";
 import { abortToolCall } from "@/lib/tools-api";
-import { ADVISORS, findAdvisor, detectMentionedAdvisor } from "@/lib/advisors-api";
+import { ADVISORS, findAdvisor, detectMentionedAdvisor, routeToAdvisor } from "@/lib/advisors-api";
 import { AdvisorBadge } from "./AdvisorMentionPicker";
-import WhyTooltip from "./WhyTooltip";
 import ThinkingLog from "./ThinkingLog";
 import { recordExplanation } from "@/lib/explain-api";
 
-type Agent = "founder" | "jimmy" | "sherlock";
 type Msg = ChatMsg;
+type Agent = Msg["agent"];
 type ChatStatus = "ready" | "submitted" | "streaming";
-type UnifiedAgentSlug = Extract<AgentSlug, "jimmy" | "sherlock">;
+type UnifiedAgentSlug = Exclude<AgentSlug, "router">;
 
 const MAX_CHARS = 5_000_000;
 const MAX_ATTACHMENTS = 10_000;
@@ -103,6 +111,11 @@ const SLASH_COMMANDS: Array<{ cmd: string; label: string; hint: string; agent: U
 const MENTIONS: Array<{ tag: string; agent: UnifiedAgentSlug; hint: string }> = [
   { tag: "@jimmy", agent: "jimmy", hint: "Build agent" },
   { tag: "@sherlock", agent: "sherlock", hint: "Review agent" },
+  ...ADVISORS.map((advisor) => ({
+    tag: `@${advisor.slug}`,
+    agent: advisor.slug as UnifiedAgentSlug,
+    hint: `${advisor.domain} · ${advisor.tagline}`,
+  })),
 ];
 
 /**
@@ -128,10 +141,12 @@ function detectVoiceIntent(text: string): { slash: string; prompt: string } | nu
   return null;
 }
 
-const resolveAgent = (prompt: string): UnifiedAgentSlug => {
+const resolveAgent = (prompt: string, selected: UnifiedAgentSlug): UnifiedAgentSlug => {
   const p = prompt.toLowerCase();
   if (p.includes("@sherlock")) return "sherlock";
   if (p.includes("@jimmy")) return "jimmy";
+  const advisor = detectMentionedAdvisor(prompt);
+  if (advisor) return advisor.slug as UnifiedAgentSlug;
   // Jimmy is the default conversational/build agent. A founder message can
   // mention Sherlock while explaining company context; that must not silently
   // hand the whole turn to the audit agent. Sherlock runs only when explicitly
@@ -139,7 +154,7 @@ const resolveAgent = (prompt: string): UnifiedAgentSlug => {
   return /^\s*(?:(?:hi|hello|salam)\s+)?sherlock\b/i.test(prompt) ||
     /^\s*\/(?:scan|fix|explain|review)\b/i.test(prompt)
     ? "sherlock"
-    : "jimmy";
+    : selected;
 };
 
 const AGENT_META: Record<
@@ -170,7 +185,23 @@ const AGENT_META: Record<
     ring: "ring-[#7c3aed]/50",
     initial: "S",
   },
-};
+  ...Object.fromEntries(
+    ADVISORS.map((advisor) => [
+      advisor.slug,
+      {
+        name: advisor.name,
+        subtitle: `${advisor.domain} AI`,
+        rail: "bg-cyan-400 shadow-[0_0_18px_rgba(34,211,238,0.65)]",
+        chip: "bg-cyan-400/10 text-cyan-200 border-cyan-400/35",
+        ring: "ring-cyan-400/40",
+        initial: advisor.glyph,
+      },
+    ]),
+  ),
+} as Record<
+  Agent,
+  { name: string; subtitle: string; rail: string; chip: string; ring: string; initial: string }
+>;
 
 function relTime(iso?: string): string {
   if (!iso) return "";
@@ -187,7 +218,7 @@ function relTime(iso?: string): string {
 export default function UnifiedChat() {
   const { project, branch, environment, bridgeStatus, lastVisualEditPick, setLastVisualEditPick } =
     useBuilder();
-  const activeProject = PROJECTS.find((p) => p.id === project)!;
+  const activeProject = PROJECTS.find((p) => p.id === project) ?? PROJECTS[0];
 
   const [messages, setMessages] = useState<Msg[]>(() => {
     const ws = loadWorkspace(project, SEED);
@@ -200,6 +231,7 @@ export default function UnifiedChat() {
     () => loadWorkspace(project, SEED).jimmyThreadId,
   );
   const [draft, setDraft] = useState("");
+  const [selectedAgent, setSelectedAgent] = useState<UnifiedAgentSlug>("jimmy");
   const [status, setStatus] = useState<ChatStatus>("ready");
   const [queue, setQueue] = useState<string[]>([]);
   const [attachments, setAttachments] = useState<UploadedAttachment[]>([]);
@@ -313,7 +345,7 @@ export default function UnifiedChat() {
     const text = extractText(row);
     if (!text) return;
     const { toolCalls, diffs, plans, verifications, delegations } = extractStructured(row);
-    const agent: Agent = slug === "sherlock" ? "sherlock" : "jimmy";
+    const agent = slug as UnifiedAgentSlug;
     const meta = {
       model: row.model ?? null,
       tokensIn: row.tokens_in ?? 0,
@@ -396,7 +428,7 @@ export default function UnifiedChat() {
     }
     const ctrl = new AbortController();
     const t = window.setTimeout(async () => {
-      const agent = /@sherlock|\/scan|\/fix|\/review/i.test(prompt) ? "sherlock" : "jimmy";
+      const agent = resolveAgent(prompt, selectedAgent);
       const res = await previewRoute(prompt, agent, ctrl.signal);
       if (!ctrl.signal.aborted) setRouterPreview(res);
     }, 400);
@@ -404,11 +436,12 @@ export default function UnifiedChat() {
       window.clearTimeout(t);
       ctrl.abort();
     };
-  }, [draft]);
+  }, [draft, selectedAgent]);
 
   const executePrompt = useCallback(
     (prompt: string) => {
-      const targetAgent = resolveAgent(prompt);
+      const targetAgent = resolveAgent(prompt, selectedAgent);
+      const targetMeta = AGENT_META[targetAgent];
       const placeholderId = `j-${Date.now() + 1}`;
       const startedAt = Date.now();
       const routedModel = routerPreview?.model ?? null;
@@ -435,7 +468,7 @@ export default function UnifiedChat() {
             {
               id: "connect",
               kind: "connect",
-              label: targetAgent === "sherlock" ? "Sherlock stream open" : "Jimmy stream open",
+              label: `${targetMeta.name} stream open`,
               detail: `${project} · ${environment}`,
               at: startedAt,
               status: "running",
@@ -506,6 +539,49 @@ export default function UnifiedChat() {
       };
       let firstToken = false;
 
+      if (targetAgent !== "jimmy" && targetAgent !== "sherlock") {
+        pushStep("route", "route", `Routed → ${targetMeta.name}`, targetMeta.subtitle, "ok");
+        void routeToAdvisor(project, targetAgent, `${prompt}${attachmentNote}`)
+          .then((result) => {
+            if (!result?.answer) throw new Error(`${targetMeta.name} route ne jawab return nahi kiya.`);
+            pushStep("answer", "answer", "Answer delivered", result.model ?? undefined, "ok");
+            settleAll();
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === placeholderId
+                  ? {
+                      ...m,
+                      agent: targetAgent,
+                      text: cleanAgentText(result.answer),
+                      thinking: false,
+                      meta: { ...m.meta, model: result.model },
+                    }
+                  : m,
+              ),
+            );
+            pendingPlaceholderRef.current = null;
+            streamIdRef.current = null;
+            setComposerNotice("");
+          })
+          .catch((err) => {
+            pushStep("stream-error", "error", "Advisor route failed", String(err), "error");
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === placeholderId
+                  ? { ...m, text: `${targetMeta.name}: ${err instanceof Error ? err.message : String(err)}`, thinking: false }
+                  : m,
+              ),
+            );
+            pendingPlaceholderRef.current = null;
+          })
+          .finally(() => {
+            abortRef.current = null;
+            setStatus("ready");
+            textareaRef.current?.focus();
+          });
+        return;
+      }
+
       // Silence watchdog — agar brain 90s tak kuch na bheje to bubble ko readable
       // error bana do; "connect…" par hamesha ke liye atkna mana hai.
       let watchdog = 0;
@@ -522,7 +598,7 @@ export default function UnifiedChat() {
               m.id === placeholderId && (m.thinking || !m.text.trim())
                 ? {
                     ...m,
-                    text: `${targetAgent === "sherlock" ? "Sherlock" : "Jimmy"} brain ne 90s tak koi token nahi bheja — stream timeout. Brain logs check karo, phir dobara bhejo.`,
+                    text: `${targetMeta.name} brain ne 90s tak koi token nahi bheja — stream timeout. Brain logs check karo, phir dobara bhejo.`,
                     thinking: false,
                   }
                 : m,
@@ -547,17 +623,13 @@ export default function UnifiedChat() {
             pushStep(
               "route",
               "route",
-              targetAgent === "sherlock" ? "Routed → Sherlock (audit)" : "Routed → Jimmy (build)",
+              `Routed → ${targetMeta.name} (${targetMeta.subtitle.toLowerCase()})`,
               ack.threadId ? `thread ${String(ack.threadId).slice(0, 8)}` : undefined,
               "ok",
             );
             if (!threadId && ack.threadId) setThreadId(ack.threadId);
             if (ack.userMessageId) pendingUserMessageIdRef.current = ack.userMessageId;
-            setComposerNotice(
-              targetAgent === "sherlock"
-                ? "Sherlock live audit stream."
-                : "Jimmy live token stream.",
-            );
+            setComposerNotice(`${targetMeta.name} live token stream.`);
           },
           onToken: (delta) => {
             bumpWatchdog();
@@ -615,11 +687,11 @@ export default function UnifiedChat() {
             void recordExplanation({
               projectId: project,
               messageId: finalId,
-              why: `${targetAgent === "sherlock" ? "Sherlock" : "Jimmy"} ne founder prompt "${prompt.slice(0, 160)}" par ${Math.round((Date.now() - startedAt) / 1000)}s mein jawab diya.`,
+              why: `${targetMeta.name} ne founder prompt "${prompt.slice(0, 160)}" par ${Math.round((Date.now() - startedAt) / 1000)}s mein jawab diya.`,
               model: routedModel,
               chain: [
                 { id: "c1", index: 0, label: "Stream open", kind: "route", detail: `${project} · ${environment}` },
-                { id: "c2", index: 1, label: targetAgent === "sherlock" ? "Sherlock audit" : "Jimmy build", kind: "plan", detail: null },
+                { id: "c2", index: 1, label: `${targetMeta.name} response`, kind: "plan", detail: null },
                 { id: "c3", index: 2, label: "Answer delivered", kind: "answer", detail: `${answer.length} chars` },
               ],
               tools: [],
@@ -672,7 +744,7 @@ export default function UnifiedChat() {
                 ? {
                     ...m,
                     agent: targetAgent,
-                    text: `${targetAgent === "sherlock" ? "Sherlock audit" : "Jimmy brain"}: ${err instanceof Error ? err.message : String(err)}`,
+                    text: `${targetMeta.name}: ${err instanceof Error ? err.message : String(err)}`,
                     thinking: false,
                   }
                 : m,
@@ -694,7 +766,7 @@ export default function UnifiedChat() {
                     text:
                       m.text.trim() && !m.text.startsWith("Live stream connect") && !m.text.startsWith("Audit stream connect")
                         ? m.text
-                        : `${targetAgent === "sherlock" ? "Sherlock" : "Jimmy"} stream bina jawab band ho gayi — dobara bhejo (brain logs check karo).`,
+                        : `${targetMeta.name} stream bina jawab band ho gayi — dobara bhejo (brain logs check karo).`,
                     thinking: false,
                   }
                 : m,
@@ -713,7 +785,7 @@ export default function UnifiedChat() {
           }
         });
     },
-    [attachments, branch, environment, ingestAgentRow, project, threadId],
+    [attachments, branch, environment, project, routerPreview?.model, selectedAgent, threadId],
   );
 
   const submit = useCallback(() => {
@@ -821,13 +893,7 @@ export default function UnifiedChat() {
     const q = `@${match[2].toLowerCase()}`;
     const base = MENTIONS.filter((m) => m.tag.startsWith(q));
     // 10.12 — industry advisors join the same picker (no duplicate popover).
-    const advisors = ADVISORS.filter((a) => `@${a.slug}`.startsWith(q)).map((a) => ({
-      tag: `@${a.slug}`,
-      agent: "jimmy" as UnifiedAgentSlug,
-      hint: `${a.domain} · ${a.tagline}`,
-      advisorSlug: a.slug,
-    }));
-    return [...base, ...advisors];
+    return base;
   }, [draft]);
 
   /** 10.12 — which advisor the current draft routes to (badge in composer). */
@@ -1102,8 +1168,7 @@ export default function UnifiedChat() {
                     No messages yet
                   </div>
                   <div className="max-w-[280px] text-[11px] leading-relaxed text-muted-foreground">
-                    Jimmy se baat karo ya build command do. Sherlock sirf code change ke baad audit
-                    karega.
+                    Neeche AI select karo, phir conversation ya build command shuru karo.
                   </div>
                 </div>
               ) : (
@@ -1267,7 +1332,7 @@ export default function UnifiedChat() {
               }}
               onWheel={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
-              placeholder="Tell Jimmy what to build…"
+              placeholder={`Message ${AGENT_META[selectedAgent].name}…`}
               rows={1}
               className="fb-no-scrollbar pr-2"
               onInput={(e) => {
@@ -1279,12 +1344,41 @@ export default function UnifiedChat() {
             <PromptInputFooter>
               <TooltipProvider delayDuration={150}>
                 <div className="flex min-w-0 items-center gap-1.5">
-                  <div className="inline-flex h-8 items-center gap-2 rounded-md border border-border bg-accent/30 px-2.5 text-[11px] font-semibold text-foreground">
-                    <span className="grid h-4 w-4 place-items-center rounded bg-primary text-[9px] text-primary-foreground">
-                      J
-                    </span>
-                    Jimmy
-                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button type="button" variant="outline" className="h-8 gap-2 bg-accent/30 px-2.5 text-[11px]">
+                        <span className={`grid h-4 w-4 place-items-center rounded text-[9px] ${AGENT_META[selectedAgent].chip}`}>
+                          {AGENT_META[selectedAgent].initial}
+                        </span>
+                        {AGENT_META[selectedAgent].name}
+                        <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" side="top" className="w-64">
+                      <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        Choose AI
+                      </DropdownMenuLabel>
+                      {(["jimmy", "sherlock"] as UnifiedAgentSlug[]).map((slug) => (
+                        <DropdownMenuItem key={slug} onSelect={() => setSelectedAgent(slug)}>
+                          <span className={`grid h-5 w-5 place-items-center rounded text-[9px] ${AGENT_META[slug].chip}`}>
+                            {AGENT_META[slug].initial}
+                          </span>
+                          <span className="flex-1 text-xs">{AGENT_META[slug].name}</span>
+                          <span className="text-[9px] text-muted-foreground">{AGENT_META[slug].subtitle}</span>
+                        </DropdownMenuItem>
+                      ))}
+                      <DropdownMenuSeparator />
+                      {ADVISORS.map((advisor) => (
+                        <DropdownMenuItem key={advisor.slug} onSelect={() => setSelectedAgent(advisor.slug as UnifiedAgentSlug)}>
+                          <span className="grid h-5 w-5 place-items-center rounded bg-cyan-400/10 text-[9px] text-cyan-200">
+                            {advisor.glyph}
+                          </span>
+                          <span className="flex-1 text-xs">{advisor.name}</span>
+                          <span className="text-[9px] text-muted-foreground">{advisor.domain}</span>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -1547,9 +1641,6 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
                   ? `$${msg.meta.savedVsDefaultUsd.toFixed(5)}`
                   : `$${msg.meta.savedVsDefaultUsd.toFixed(4)}`}
               </span>
-            )}
-            {isAssistant && !msg.thinking && (
-              <WhyTooltip messageId={msg.id} fallbackModel={msg.meta?.model ?? null} />
             )}
             <div className="ml-auto flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
               <Tooltip>

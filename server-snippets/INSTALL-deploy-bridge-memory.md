@@ -41,7 +41,7 @@ curl -sS -o /dev/null -w 'publish.run:%{http_code}\n' -X POST http://127.0.0.1:8
 
 Expected: `explain.get:200`, `memory.list:200`, `publish.run:200` (SSE, unknown project → error frame).
 
-`deploy.routes.ts` env: `AXONETIS_DB_URL`, `SUPABASE1_DB_URL`, `SUPABASE2_DB_URL` (migrations optional — na ho to skip hota hai).
+`deploy.routes.ts` env: `AXONETIS_DB_URL`, `SUPABASE1_DB_URL`, `SUPABASE2_DB_URL` (migrations optional — na ho to skip hota hai). Production mein sirf `pm2 restart <existing-process>` use hota hai; `pm2 update` kabhi nahi.
 
 ## 3. Preview bridge (B) — har preview app mein inject
 
