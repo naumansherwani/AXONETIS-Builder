@@ -77,9 +77,8 @@ import {
 } from "@/lib/agent-stream";
 import { previewRoute, shortModelTag, formatUsd, type RouterPreview } from "@/lib/router-api";
 import { abortToolCall } from "@/lib/tools-api";
-import { ADVISORS, findAdvisor, detectMentionedAdvisor } from "@/lib/advisors-api";
+import { ADVISORS, findAdvisor, detectMentionedAdvisor, routeToAdvisor } from "@/lib/advisors-api";
 import { AdvisorBadge } from "./AdvisorMentionPicker";
-import WhyTooltip from "./WhyTooltip";
 import ThinkingLog from "./ThinkingLog";
 import { recordExplanation } from "@/lib/explain-api";
 
@@ -539,6 +538,49 @@ export default function UnifiedChat() {
         );
       };
       let firstToken = false;
+
+      if (targetAgent !== "jimmy" && targetAgent !== "sherlock") {
+        pushStep("route", "route", `Routed → ${targetMeta.name}`, targetMeta.subtitle, "ok");
+        void routeToAdvisor(project, targetAgent, `${prompt}${attachmentNote}`)
+          .then((result) => {
+            if (!result?.answer) throw new Error(`${targetMeta.name} route ne jawab return nahi kiya.`);
+            pushStep("answer", "answer", "Answer delivered", result.model ?? undefined, "ok");
+            settleAll();
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === placeholderId
+                  ? {
+                      ...m,
+                      agent: targetAgent,
+                      text: cleanAgentText(result.answer),
+                      thinking: false,
+                      meta: { ...m.meta, model: result.model },
+                    }
+                  : m,
+              ),
+            );
+            pendingPlaceholderRef.current = null;
+            streamIdRef.current = null;
+            setComposerNotice("");
+          })
+          .catch((err) => {
+            pushStep("stream-error", "error", "Advisor route failed", String(err), "error");
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === placeholderId
+                  ? { ...m, text: `${targetMeta.name}: ${err instanceof Error ? err.message : String(err)}`, thinking: false }
+                  : m,
+              ),
+            );
+            pendingPlaceholderRef.current = null;
+          })
+          .finally(() => {
+            abortRef.current = null;
+            setStatus("ready");
+            textareaRef.current?.focus();
+          });
+        return;
+      }
 
       // Silence watchdog — agar brain 90s tak kuch na bheje to bubble ko readable
       // error bana do; "connect…" par hamesha ke liye atkna mana hai.
@@ -1600,9 +1642,6 @@ function MessageRow({ msg, onRetry }: { msg: Msg; onRetry: (sourcePrompt: string
                   ? `$${msg.meta.savedVsDefaultUsd.toFixed(5)}`
                   : `$${msg.meta.savedVsDefaultUsd.toFixed(4)}`}
               </span>
-            )}
-            {isAssistant && !msg.thinking && (
-              <WhyTooltip messageId={msg.id} fallbackModel={msg.meta?.model ?? null} />
             )}
             <div className="ml-auto flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
               <Tooltip>

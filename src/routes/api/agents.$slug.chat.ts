@@ -3,7 +3,7 @@
  *
  * Split (3-process-split-LOCKED Option B + Jun 24 2026 finalization):
  *   - This repo = UI + thin proxy + ALL Supabase 3 writes.
- *   - Rust hostflow-engine :8088 = PURE COMPUTE brain (stateless, no Supabase).
+ *   - Node AI brain :8080 owns founder and registered-agent chat routes.
  *     Route: POST /api/agents/:agent/chat  body: { message: string }
  *     Returns: JSON (ensemble result — text extracted defensively below).
  *   - hostflow-server = files/projects/deploy bridge.
@@ -18,7 +18,7 @@
  *
  * Env required on Hetzner (pm2 axonetis-builder):
  *   SUPABASE3_URL, SUPABASE3_SERVICE_ROLE_KEY
- *   RUST_BRAIN_URL (default http://127.0.0.1:8088)
+ *   HOSTFLOWAI_BRAIN_URL (default http://127.0.0.1:8080)
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";

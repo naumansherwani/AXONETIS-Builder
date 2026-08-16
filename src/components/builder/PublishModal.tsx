@@ -25,7 +25,6 @@ import {
 } from "lucide-react";
 import { useBuilder } from "@/lib/builder-state";
 import { PROJECTS } from "@/lib/projects";
-import { promoteSandboxToProduction } from "@/lib/preview-engine";
 import { supabaseLabelFor } from "@/lib/project-workspace";
 import {
   fetchPublishState,
