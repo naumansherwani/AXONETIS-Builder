@@ -61,7 +61,7 @@ async function planTasks(prompt) {
       ],
     }),
   });
-  const j = await r.json();
+  const j: any = await r.json();
   if (!r.ok) throw new Error(j?.error?.message || `hermes ${r.status}`);
   const text = String(j?.choices?.[0]?.message?.content ?? "").replace(/^```[a-z]*|```$/gm, "");
   const parsed = JSON.parse(text.trim());

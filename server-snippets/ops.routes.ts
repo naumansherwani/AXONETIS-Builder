@@ -77,7 +77,7 @@ router.post("/rpc/advisor.route", async (req, res) => {
         ],
       }),
     });
-    const j = await r.json();
+    const j: any = await r.json();
     if (!r.ok) return bad(res, j?.error?.message || `advisor ${r.status}`, 502);
     const answer = String(j?.choices?.[0]?.message?.content ?? "").trim();
     await sb().from("advisor_answers").insert({

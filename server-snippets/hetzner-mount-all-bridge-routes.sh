@@ -156,19 +156,69 @@ if src != orig:
 else:
     print("  already mounted — no change (no duplicate)")
 PY
+# ── 4b. de-duplicate (idempotent heal) ──────────────────────────────────────
+log "4b) De-duplicate imports / mounts / markers"
+python3 - "$ENTRY" <<'PY'
+import re, sys
+entry = sys.argv[1]
+lines = open(entry, encoding="utf-8").read().split("\n")
+seen_imports, seen_mounts, seen_marker = set(), set(), False
+out = []
+for ln in lines:
+    s = ln.strip()
+    m_imp = re.match(r'^import\s+(\w+Router)\s+from\s+["\']\./routes/[^"\']+["\'];$', s)
+    m_use = re.match(r'^app\.use\((?:"[^"]*",\s*)?(\w+Router)\);$', s)
+    if s == "// AXONETIS_BRIDGE_MOUNTS":
+        if seen_marker:
+            continue
+        seen_marker = True
+    elif m_imp:
+        if m_imp.group(1) in seen_imports:
+            continue
+        seen_imports.add(m_imp.group(1))
+    elif m_use:
+        key = (s,)
+        if key in seen_mounts:
+            continue
+        seen_mounts.add(key)
+    out.append(ln)
+new = "\n".join(out)
+if new != "\n".join(lines):
+    open(entry, "w", encoding="utf-8").write(new)
+    print("  removed duplicate imports/mounts/markers")
+else:
+    print("  no duplicates found")
+PY
 DUP=$(grep -c "AXONETIS_BRIDGE_MOUNTS" "$ENTRY" || true)
-[ "$DUP" -le 1 ] && ok "mount marker count=$DUP" || bad "duplicate mount marker ($DUP) — $ENTRY manually dekho"
+[ "$DUP" -le 1 ] && ok "mount marker count=$DUP" || die "duplicate mount marker ($DUP) — $ENTRY manually dekho"
 
 # ── 5. build + restart ──────────────────────────────────────────────────────
 log "5) Build + PM2 restart"
 if grep -q '"build"' package.json; then
-  if [ "$PKG_MGR" = bun ]; then bun run build 2>&1 | tail -12; else npm run build 2>&1 | tail -12; fi
+  BUILD_LOG=$(mktemp)
+  if [ "$PKG_MGR" = bun ]; then bun run build >"$BUILD_LOG" 2>&1; else npm run build >"$BUILD_LOG" 2>&1; fi
+  BUILD_RC=$?
+  tail -20 "$BUILD_LOG"
+  [ "$BUILD_RC" -eq 0 ] || die "build FAIL — restart skip kiya (purana code chalta rahega). Upar ke TS errors fix karo."
+  ok "build clean"
 else
   warn "no build script — assuming ts runtime"
 fi
+
+# port 8090 par stale listener (EADDRINUSE) — pehle free karo
+CUR_PID=$(pm2 pid hostflow-server 2>/dev/null | tr -d ' \n')
+for p in $(ss -ltnpH 'sport = :8090' 2>/dev/null | grep -oP 'pid=\K[0-9]+' | sort -u); do
+  if [ "$p" != "$CUR_PID" ]; then
+    kill -9 "$p" 2>/dev/null && warn "stale listener pid=$p on :8090 killed"
+  fi
+done
 pm2 restart hostflow-server --update-env >/dev/null 2>&1 && ok "hostflow-server restarted" \
   || warn "pm2 restart hostflow-server fail"
-sleep 4
+sleep 5
+for i in $(seq 1 20); do
+  curl -sf -o /dev/null --max-time 3 "http://127.0.0.1:8090/health" && { ok "bridge :8090 up"; break; }
+  sleep 1
+done
 
 # ── 6. endpoint matrix (real status codes) ──────────────────────────────────
 log "6) Endpoint verify matrix — $PUBLIC_BASE"

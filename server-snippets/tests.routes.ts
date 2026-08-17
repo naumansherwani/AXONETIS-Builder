@@ -109,7 +109,7 @@ router.post("/rpc/tests.generate", async (req, res) => {
         ],
       }),
     });
-    const j = await r.json();
+    const j: any = await r.json();
     if (!r.ok) return bad(res, j?.error?.message || `model ${r.status}`, 502);
     code = String(j?.choices?.[0]?.message?.content ?? "").replace(/^```[a-z]*|```$/gm, "").trim();
   } catch (e) {
