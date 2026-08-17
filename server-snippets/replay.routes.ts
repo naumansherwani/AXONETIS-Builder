@@ -147,7 +147,7 @@ router.post("/rpc/replay.analyze", async (req, res) => {
       }),
     });
     if (r.ok) {
-      const body = await r.json();
+      const body: any = await r.json();
       const text = body.text ?? body.output ?? body.content ?? "";
       const m = typeof text === "string" ? text.match(/\{[\s\S]*\}/) : null;
       if (m) parsed = JSON.parse(m[0]);

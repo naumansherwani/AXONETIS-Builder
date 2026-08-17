@@ -155,12 +155,12 @@ router.post("/rpc/migration.apply", async (req, res) => {
   try {
     const result = await withClient(async (client) => {
       const before = await schemaSnapshot(client, names);
-      const backup = {};
+      const backup: Record<string, any> = {};
       for (const t of names) {
         const { rows } = await client
           .query(`select * from public.${t} limit 5000`)
           .catch(() => ({ rows: [] }));
-        backup[t] = rows;
+        backup[String(t)] = rows;
       }
       await client.query("BEGIN");
       const r = await client.query(sql);

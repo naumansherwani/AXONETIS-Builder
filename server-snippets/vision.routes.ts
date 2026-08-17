@@ -115,7 +115,7 @@ router.post("/rpc/vision.analyze", async (req, res) => {
         ],
       }),
     });
-    const j = await r.json();
+    const j: any = await r.json();
     if (!r.ok) return bad(res, j?.error?.message || `vision model ${r.status}`, 502);
     const text = j?.choices?.[0]?.message?.content ?? "";
     const jsonText = String(text).replace(/^```(?:json)?|```$/gm, "").trim();
