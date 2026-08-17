@@ -205,20 +205,45 @@ else
   warn "no build script — assuming ts runtime"
 fi
 
-# port 8090 par stale listener (EADDRINUSE) — pehle free karo
-CUR_PID=$(pm2 pid hostflow-server 2>/dev/null | tr -d ' \n')
-for p in $(ss -ltnpH 'sport = :8090' 2>/dev/null | grep -oP 'pid=\K[0-9]+' | sort -u); do
-  if [ "$p" != "$CUR_PID" ]; then
+# `tsx watch` parent se alag child listener chhor sakta hai. PM2 ko pehle stop
+# karke port ke HAR listener ko terminate karo; warna naya mounted source
+# EADDRINUSE par crash hota hai aur purana child 404 serve karta rehta hai.
+pm2 stop hostflow-server >/dev/null 2>&1 || die "pm2 stop hostflow-server fail"
+for i in $(seq 1 10); do
+  PORT_PIDS=$(ss -ltnpH 2>/dev/null | awk '$4 ~ /:8090$/ {print}' \
+    | grep -oE 'pid=[0-9]+' | cut -d= -f2 | sort -u | tr '\n' ' ')
+  [ -z "$PORT_PIDS" ] && break
+  for p in $PORT_PIDS; do
     kill -9 "$p" 2>/dev/null && warn "stale listener pid=$p on :8090 killed"
-  fi
-done
-pm2 restart hostflow-server --update-env >/dev/null 2>&1 && ok "hostflow-server restarted" \
-  || warn "pm2 restart hostflow-server fail"
-sleep 5
-for i in $(seq 1 20); do
-  curl -sf -o /dev/null --max-time 3 "http://127.0.0.1:8090/health" && { ok "bridge :8090 up"; break; }
+  done
   sleep 1
 done
+if ss -ltnH 2>/dev/null | awk '$4 ~ /:8090$/ {found=1} END {exit !found}'; then
+  die "port 8090 abhi bhi occupied hai — restart skip"
+fi
+
+# --update-env intentionally nahi: npm script ko unknown CLI flag leak ho raha tha.
+pm2 restart hostflow-server >/dev/null 2>&1 || die "pm2 restart hostflow-server fail"
+READY=0
+for i in $(seq 1 30); do
+  if curl -sf -o /dev/null --max-time 3 "http://127.0.0.1:8090/health"; then
+    READY=1
+    ok "bridge :8090 up"
+    break
+  fi
+  sleep 1
+done
+[ "$READY" -eq 1 ] || { pm2 logs hostflow-server --lines 30 --nostream || true; die "bridge :8090 start nahi hua"; }
+
+# Public Caddy path test se pehle local mounted route prove karo. Is se stale
+# public response aur source/mount failure ek doosre mein mix nahi honge.
+LOCAL_HEALTH=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 \
+  "http://127.0.0.1:8090/api/system/health")
+[ "$LOCAL_HEALTH" = "200" ] || {
+  pm2 logs hostflow-server --lines 30 --nostream || true
+  die "local mounted route /api/system/health=$LOCAL_HEALTH (expected 200)"
+}
+ok "local mounted routes active"
 
 # ── 6. endpoint matrix (real status codes) ──────────────────────────────────
 log "6) Endpoint verify matrix — $PUBLIC_BASE"
