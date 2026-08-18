@@ -281,11 +281,38 @@ chk GET  "/rpc/telemetry.snapshot?projectId=hostflowai"
 chk GET  "/rpc/explain.get?projectId=hostflowai&messageId=x"
 chk POST "/rpc/publish.run"
 
-log "RESULT"
+log "RESULT (local bridge)"
 printf '  PASS=%s  FAIL=%s\n' "$PASS" "$FAILN"
 if [ "$FAILN" -gt 0 ]; then
   warn "Neeche PM2 logs — jo 404 hai us ka router mount nahi hua ya path galat hai."
   pm2 logs hostflow-server --lines 30 --nostream || true
   exit 1
 fi
-printf '\n\033[1;32mALL BRIDGE ROUTES GREEN ✅\033[0m\n'
+printf '\n\033[1;32mALL BRIDGE ROUTES GREEN (local) ✅\033[0m\n'
+
+# ── 7. public /hf routing diagnose (Caddy layer, non-fatal) ─────────────────
+log "7) Public $PUBLIC_BASE routing check (Caddy)"
+PUB_BAD=0
+for p in "/api/system/health" "/api/agents/founder/secrets" "/rpc/tools.abort"; do
+  code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 12 "$PUBLIC_BASE$p")
+  case "$code" in
+    200|400|401|405|422|501) ok "$code $p";;
+    *) bad "$code $p"; PUB_BAD=$((PUB_BAD+1));;
+  esac
+done
+if [ "$PUB_BAD" -gt 0 ]; then
+  warn "Local 200 + public 404 => mount theek hai, Caddy /hf routing adhoori hai."
+  warn "Caddyfile mein founderbuilder.axonetis.com block ke andar yeh chahiye:"
+  cat <<'CADDY'
+
+  handle_path /hf/* {
+    reverse_proxy 127.0.0.1:8090
+  }
+
+CADDY
+  warn "Fir: caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy"
+  CADDYFILE="${CADDYFILE:-/etc/caddy/Caddyfile}"
+  [ -f "$CADDYFILE" ] && { warn "Mojooda /hf block:"; grep -n -A4 '/hf' "$CADDYFILE" || true; }
+else
+  printf '\n\033[1;32mPUBLIC /hf ROUTING GREEN ✅\033[0m\n'
+fi
