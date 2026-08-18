@@ -1,0 +1,57 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# AXONETIS — /hf path split: BRAIN (8080) + BRIDGE (8090)
+#
+# Masla: founderbuilder.axonetis.com (aur foundercrm.nexatect.com) ke block mein
+# sirf yeh hai:
+#     handle_path /hf/* { reverse_proxy 127.0.0.1:8080 }
+# Isliye bridge (hostflow-server, :8090) ke saare routes public par 404 dete hain,
+# jabke local 127.0.0.1:8090 par 200 hain.
+#
+# Fix: 8080 wale generic block ko HATANA NAHI. Us ke SAATH ye 4 zyada specific
+# blocks add karo. Caddy zyada specific path matcher ko pehle chalata hai, is liye
+# order matter nahi karta — bas ek hi baar add karo (NO DUPLICATE).
+#
+# Kahan: har founder host block ke andar (line ~33 aur ~187 wale dono jagah),
+# usi @founder_only gate ke andar jahan mojooda /hf/* block hai.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── BRIDGE (hostflow-server :8090) ──────────────────────────────────────────
+handle_path /hf/rpc/* {
+	reverse_proxy 127.0.0.1:8090 {
+		flush_interval -1
+	}
+}
+
+handle_path /hf/api/system/* {
+	reverse_proxy 127.0.0.1:8090
+}
+
+handle_path /hf/api/axon/* {
+	reverse_proxy 127.0.0.1:8090 {
+		flush_interval -1
+	}
+}
+
+handle_path /hf/api/agents/stream/* {
+	reverse_proxy 127.0.0.1:8090 {
+		flush_interval -1
+	}
+}
+
+# ── BRAIN (hostflowai-brain :8080) — YEH PEHLE SE MOJOOD HAI, DOBARA NA ADD KARO
+# handle_path /hf/* {
+# 	reverse_proxy 127.0.0.1:8080
+# }
+#
+# Brain par rehne wale paths: /hf/api/agents/founder/*  (secrets, costs, security,
+# storage, tools, db/query), /hf/api/founder/sherlock/*, /hf/api/founder/jimmy/*
+#
+# Apply:
+#   caddy validate --config /etc/caddy/Caddyfile
+#   systemctl reload caddy
+#
+# Verify (dono host par):
+#   for p in /api/system/health /rpc/tools.abort /api/agents/founder/secrets; do
+#     printf '%s ' "$p"; curl -s -o /dev/null -w '%{http_code}\n' \
+#       https://founderbuilder.axonetis.com/hf$p; done
+#   # expected: 200, 400/401 (route zinda), 200
