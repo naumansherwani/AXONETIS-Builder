@@ -302,17 +302,21 @@ for p in "/api/system/health" "/api/agents/founder/secrets" "/rpc/tools.abort"; 
 done
 if [ "$PUB_BAD" -gt 0 ]; then
   warn "Local 200 + public 404 => mount theek hai, Caddy /hf routing adhoori hai."
-  warn "Caddyfile mein founderbuilder.axonetis.com block ke andar yeh chahiye:"
+  warn "Wajah: /hf/* sirf 127.0.0.1:8080 (brain) par jaata hai; bridge :8090 ka koi path nahi."
+  warn "Mojooda 8080 block HATANA NAHI — us ke saath yeh specific blocks add karo:"
   cat <<'CADDY'
 
-  handle_path /hf/* {
-    reverse_proxy 127.0.0.1:8090
-  }
+  handle_path /hf/rpc/*                { reverse_proxy 127.0.0.1:8090 { flush_interval -1 } }
+  handle_path /hf/api/system/*         { reverse_proxy 127.0.0.1:8090 }
+  handle_path /hf/api/axon/*           { reverse_proxy 127.0.0.1:8090 { flush_interval -1 } }
+  handle_path /hf/api/agents/stream/*  { reverse_proxy 127.0.0.1:8090 { flush_interval -1 } }
 
 CADDY
+  warn "Pura snippet: .agents/server-snippets/Caddyfile.hf-bridge-split.snippet"
   warn "Fir: caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy"
   CADDYFILE="${CADDYFILE:-/etc/caddy/Caddyfile}"
   [ -f "$CADDYFILE" ] && { warn "Mojooda /hf block:"; grep -n -A4 '/hf' "$CADDYFILE" || true; }
+
 else
   printf '\n\033[1;32mPUBLIC /hf ROUTING GREEN ✅\033[0m\n'
 fi
