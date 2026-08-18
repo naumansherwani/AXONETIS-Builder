@@ -249,15 +249,15 @@ LOCAL_HEALTH=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 \
 ok "local mounted routes active"
 
 # ── 6. endpoint matrix (real status codes) ──────────────────────────────────
-log "6) Endpoint verify matrix — $PUBLIC_BASE"
+log "6) Endpoint verify matrix — $VERIFY_BASE (local bridge = source of truth)"
 PASS=0; FAILN=0
 chk() { # chk METHOD PATH
   local m="$1" p="$2" code
   if [ "$m" = GET ]; then
-    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 12 "$PUBLIC_BASE$p")
+    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 12 "$VERIFY_BASE$p")
   else
     code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 12 -X POST \
-      -H 'content-type: application/json' -d '{}' "$PUBLIC_BASE$p")
+      -H 'content-type: application/json' -d '{}' "$VERIFY_BASE$p")
   fi
   # 400/501 = route zinda hai (validation), 404 = mount missing
   case "$code" in
