@@ -17,6 +17,9 @@ set -uo pipefail
 
 BUILDER_DIR="${BUILDER_DIR:-/var/www/axonetis}"
 SNIP="$BUILDER_DIR/server-snippets"
+# Source of truth = local bridge. Public /hf sirf Caddy reverse-proxy layer hai;
+# uska 404 mount ka masla nahi, routing ka masla hai (section 7 diagnose karta hai).
+VERIFY_BASE="${VERIFY_BASE:-http://127.0.0.1:8090}"
 PUBLIC_BASE="${PUBLIC_BASE:-https://founderbuilder.axonetis.com/hf}"
 
 log()  { printf '\n\033[1;36m== %s\033[0m\n' "$*"; }
