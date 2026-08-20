@@ -514,4 +514,56 @@ router.get("/rrweb.list", async (req, res) => {
   } catch (err) { return serverError(res, err); }
 });
 
+// ============================================================
+// Phase 3.10.1 — tools.abort  (Stop button ka real backend)
+// Frontend: src/lib/tools-api.ts → POST {BASE}/rpc/tools.abort
+// Dono path shapes register hote hain kyunki entry file kabhi
+// app.use(rpcRouter) aur kabhi app.use("/rpc", rpcRouter) karti hai.
+// ============================================================
+async function handleToolsAbort(req: Request, res: Response) {
+  try {
+    const toolCallId = String(req.body?.tool_call_id ?? req.body?.toolCallId ?? "").trim();
+    const abortToken = req.body?.abort_token ?? req.body?.abortToken;
+    if (!toolCallId) return bad(res, "tool_call_id required");
+
+    const { data: reg } = await supabase
+      .from("tool_call_registry")
+      .select("pid, abort_token, status")
+      .eq("id", toolCallId)
+      .maybeSingle();
+
+    const row = (reg ?? null) as { pid: number | null; abort_token: string | null; status: string | null } | null;
+
+    if (row?.abort_token && abortToken && row.abort_token !== abortToken) {
+      return bad(res, "abort_token mismatch", 403);
+    }
+
+    let signalled = false;
+    if (row?.pid) {
+      try { process.kill(row.pid, "SIGTERM"); signalled = true; }
+      catch (e) { console.warn("[tools.abort] SIGTERM failed:", e); }
+    }
+
+    await supabase
+      .from("tool_call_registry")
+      .update({
+        status: "aborted",
+        error: "aborted by founder",
+        finished_at: new Date().toISOString(),
+      })
+      .eq("id", toolCallId);
+
+    return res.json({ ok: true, aborted: true, signalled, tool_call_id: toolCallId });
+  } catch (err) { return serverError(res, err); }
+}
+
+router.post("/tools.abort", handleToolsAbort);
+router.post("/rpc/tools.abort", handleToolsAbort);
+
+// GET probe — route zinda hai ya nahi (health matrix 404 na de).
+const abortProbe = (_req: Request, res: Response) =>
+  res.status(405).json({ ok: false, error: "use POST", route: "/rpc/tools.abort" });
+router.get("/tools.abort", abortProbe);
+router.get("/rpc/tools.abort", abortProbe);
+
 export default router;
