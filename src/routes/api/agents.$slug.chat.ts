@@ -1417,7 +1417,7 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
           auth: { persistSession: false, autoRefreshToken: false },
         });
 
-        // Resolve founder user_id from forwarded bearer token or GitHub founder session.
+        // Resolve founder user_id from forwarded bearer token or AXONETIS founder session.
         const authHeader = request.headers.get("authorization") ?? "";
         const token = authHeader.toLowerCase().startsWith("bearer ")
           ? authHeader.slice(7).trim()
@@ -1440,7 +1440,7 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
             userId = await resolveFounderUserId(supabase, founderSession);
           } else {
             // Preview-host bypass — mirrors _authenticated/route.tsx.
-            // Production still enforces the founder GitHub session.
+            // Production always enforces the AXONETIS founder session.
             const host = new URL(request.url).hostname;
             const isPreview =
               host === "localhost" ||
@@ -1449,12 +1449,10 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
               host.endsWith(".lovable.dev") ||
               host.endsWith(".lovable.app") ||
               host.includes("id-preview--") ||
-              host.startsWith("preview--") ||
-              host === "founderbuilder.axonetis.com" ||
-              host.endsWith(".axonetis.com");
+              host.startsWith("preview--");
             if (!isPreview) {
               return Response.json(
-                { error: "Founder GitHub session required. Login at /auth first." },
+                { error: "Founder session required. Login at /auth first." },
                 { status: 401 },
               );
             }
@@ -1462,8 +1460,6 @@ export const Route = createFileRoute("/api/agents/$slug/chat")({
             userId = await resolveFounderUserId(supabase, {
               sub: "preview",
               login: "preview",
-              githubId: 0,
-              name: "Preview Founder",
               iat: 0,
               exp: 0,
             });

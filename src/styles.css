@@ -230,6 +230,19 @@
   backdrop-filter: blur(14px) saturate(140%);
 }
 
+.auth-shell {
+  background-image:
+    linear-gradient(to right, oklch(1 0 0 / 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(1 0 0 / 0.025) 1px, transparent 1px),
+    radial-gradient(75% 70% at 14% 12%, oklch(0.58 0.24 25 / 0.16), transparent 62%),
+    radial-gradient(55% 65% at 92% 88%, oklch(0.32 0.09 295 / 0.13), transparent 70%);
+  background-size: 56px 56px, 56px 56px, auto, auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fb-pulse { animation: none; }
+}
+
 /* Hide scrollbar but keep scroll */
 .fb-no-scrollbar::-webkit-scrollbar,
 .fb-no-scrollbar *::-webkit-scrollbar { display: none; width: 0; height: 0; }

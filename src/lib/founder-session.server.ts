@@ -7,19 +7,14 @@ const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 export type FounderSession = {
   sub: string;
   login: string;
-  githubId: number;
-  name?: string | null;
   iat: number;
   exp: number;
 };
 
 function getSessionSecret() {
-  const secret =
-    process.env.FOUNDER_GITHUB_SESSION_SECRET ||
-    process.env.SUPABASE3_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE3_ANON_KEY;
+  const secret = process.env.FOUNDER_SESSION_SECRET;
 
-  if (!secret || secret.length < 16) {
+  if (!secret || secret.length < 32) {
     throw new Error("Founder session secret is not configured on the builder server.");
   }
   return secret;
@@ -45,17 +40,11 @@ function parseCookies(header: string | null) {
   return out;
 }
 
-export function createFounderSession(input: {
-  login: string;
-  githubId: number;
-  name?: string | null;
-}) {
+export function createFounderSession(input: { login: string }) {
   const now = Math.floor(Date.now() / 1000);
   const session: FounderSession = {
-    sub: `github:${input.githubId}`,
-    login: input.login,
-    githubId: input.githubId,
-    name: input.name ?? null,
+    sub: `founder:${input.login.toLowerCase()}`,
+    login: input.login.toLowerCase(),
     iat: now,
     exp: now + SESSION_MAX_AGE_SECONDS,
   };
@@ -72,7 +61,7 @@ export function verifyFounderSession(token: string | undefined | null): FounderS
       Buffer.from(payload, "base64url").toString("utf8"),
     ) as FounderSession;
     if (!session.exp || session.exp < Math.floor(Date.now() / 1000)) return null;
-    if (!session.login || !session.githubId) return null;
+    if (!session.login || !session.sub.startsWith("founder:")) return null;
     return session;
   } catch {
     return null;
@@ -103,60 +92,25 @@ export function clearFounderSessionCookie() {
   return `${FOUNDER_SESSION_COOKIE}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0`;
 }
 
-export async function verifyGithubPat(username: string, pat: string) {
-  const response = await fetch("https://api.github.com/user", {
-    headers: {
-      Authorization: `Bearer ${pat}`,
-      Accept: "application/vnd.github+json",
-      "User-Agent": "AXONETIS-AI-Builder",
-      "X-GitHub-Api-Version": "2022-11-28",
-    },
-  });
-
-  if (!response.ok) {
-    return {
-      ok: false as const,
-      status: response.status,
-      message: "GitHub username ya PAT invalid hai.",
-    };
-  }
-
-  const profile = (await response.json()) as { id?: number; login?: string; name?: string | null };
-  if (!profile.id || !profile.login) {
-    return { ok: false as const, status: 401, message: "GitHub profile verify nahi hua." };
-  }
-
-  if (profile.login.toLowerCase() !== username.trim().toLowerCase()) {
-    return {
-      ok: false as const,
-      status: 401,
-      message: "Username is PAT ke GitHub account se match nahi karta.",
-    };
-  }
-
-  const allowlist = (process.env.FOUNDER_GITHUB_USERS || process.env.FOUNDER_GITHUB_USERNAME || "")
-    .split(",")
-    .map((item) => item.trim().toLowerCase())
-    .filter(Boolean);
-  if (allowlist.length && !allowlist.includes(profile.login.toLowerCase())) {
-    return {
-      ok: false as const,
-      status: 403,
-      message: "Yeh GitHub account founder allowlist mein nahi hai.",
-    };
-  }
-
-  return {
-    ok: true as const,
-    login: profile.login,
-    githubId: profile.id,
-    name: profile.name ?? null,
-  };
+function digest(value: string) {
+  return createHash("sha256").update(value, "utf8").digest();
 }
 
-function stableUuidFromGithubId(githubId: number) {
+export function verifyFounderCredentials(username: string, password: string) {
+  const expectedUsername = process.env.FOUNDER_USERNAME || "naumansherwani";
+  const expectedPassword = process.env.FOUNDER_PASSWORD;
+  if (!expectedPassword) {
+    throw new Error("FOUNDER_PASSWORD is not configured on the builder server.");
+  }
+  return (
+    timingSafeEqual(digest(username.trim().toLowerCase()), digest(expectedUsername.toLowerCase())) &&
+    timingSafeEqual(digest(password), digest(expectedPassword))
+  );
+}
+
+function stableUuidFromLogin(login: string) {
   const hex = createHash("sha256")
-    .update(`axon-founder-github:${githubId}`)
+    .update(`axonetis-founder:${login.toLowerCase()}`)
     .digest("hex")
     .slice(0, 32);
   const variant = ((Number.parseInt(hex[16], 16) & 0x3) | 0x8).toString(16);
@@ -181,5 +135,5 @@ export async function resolveFounderUserId(supabase: SupabaseClient, session: Fo
   const user = data?.users?.find((candidate) =>
     founderEmails.includes((candidate.email ?? "").toLowerCase()),
   );
-  return user?.id ?? stableUuidFromGithubId(session.githubId);
+  return user?.id ?? stableUuidFromLogin(session.login);
 }

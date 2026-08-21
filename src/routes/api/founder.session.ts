@@ -9,8 +9,8 @@ export const Route = createFileRoute("/api/founder/session")({
         if (!session) return Response.json({ authenticated: false }, { status: 401 });
         return Response.json({
           authenticated: true,
-          user: { login: session.login, name: session.name ?? null, provider: "github" },
-        });
+          user: { login: session.login, provider: "axonetis" },
+        }, { headers: { "Cache-Control": "no-store" } });
       },
       DELETE: async () => {
         const { clearFounderSessionCookie } = await import("@/lib/founder-session.server");
