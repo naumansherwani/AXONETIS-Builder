@@ -24,14 +24,14 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
-  const [pat, setPat] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!username.trim() || !pat.trim()) return;
+    if (!username.trim() || !password.trim()) return;
 
     setStatus("sending");
     setErrorMsg("");
@@ -39,7 +39,7 @@ function AuthPage() {
     const response = await fetch("/api/founder/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password: pat }),
+      body: JSON.stringify({ username, password }),
     });
 
     if (!response.ok) {
@@ -133,8 +133,8 @@ function AuthPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
-                  value={pat}
-                  onChange={(e) => setPat(e.target.value)}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
                   placeholder="Founder password"
                   className="h-12 w-full rounded-md border border-input bg-secondary/50 pl-10 pr-11 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/60 focus:ring-2 focus:ring-primary/15"
