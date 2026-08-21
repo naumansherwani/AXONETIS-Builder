@@ -61,6 +61,7 @@ export default function TopBar() {
   }, [setAgentState]);
 
   async function handleSignOut() {
+    await fetch("/api/founder/session", { method: "DELETE", credentials: "same-origin" });
     if (SUPABASE3_READY) await supabase3.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
