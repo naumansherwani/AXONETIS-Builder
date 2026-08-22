@@ -45,7 +45,7 @@ function AuthPage() {
     if (!response.ok) {
       const payload = (await response.json().catch(() => null)) as { error?: string } | null;
       setStatus("error");
-      setErrorMsg(payload?.error ?? "Founder access verify nahi hua.");
+      setErrorMsg(payload?.error ?? "Founder access could not be verified.");
       return;
     }
 

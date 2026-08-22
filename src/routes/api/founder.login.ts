@@ -6,7 +6,7 @@ export const Route = createFileRoute("/api/founder/login")({
       POST: async ({ request }) => {
         const origin = request.headers.get("origin");
         if (origin && new URL(origin).origin !== new URL(request.url).origin) {
-          return Response.json({ error: "Request allow nahi hai." }, { status: 403 });
+          return Response.json({ error: "Request not allowed." }, { status: 403 });
         }
 
         let body: { username?: string; password?: string };
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/api/founder/login")({
         const password = body.password ?? "";
         if (!username || !password || username.length > 64 || password.length > 256) {
           return Response.json(
-            { error: "Username aur password required hain." },
+            { error: "Username and password are required." },
             { status: 400 },
           );
         }
@@ -38,7 +38,7 @@ export const Route = createFileRoute("/api/founder/login")({
         const limit = checkFounderLoginLimit(loginKey);
         if (!limit.allowed) {
           return Response.json(
-            { error: "Kuch dair baad dobara try karein." },
+            { error: "Too many attempts. Please try again shortly." },
             {
               status: 429,
               headers: {
@@ -51,7 +51,7 @@ export const Route = createFileRoute("/api/founder/login")({
         if (!verifyFounderCredentials(username, password)) {
           recordFounderLoginFailure(loginKey);
           return Response.json(
-            { error: "Username ya password sahi nahi hai." },
+            { error: "Invalid username or password." },
             { status: 401, headers: { "Cache-Control": "no-store" } },
           );
         }
