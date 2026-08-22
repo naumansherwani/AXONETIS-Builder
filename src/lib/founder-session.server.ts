@@ -3,6 +3,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const FOUNDER_SESSION_COOKIE = "axon_founder_session";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_ATTEMPTS = 5;
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
 
 export type FounderSession = {
   sub: string;
@@ -106,6 +109,36 @@ export function verifyFounderCredentials(username: string, password: string) {
     timingSafeEqual(digest(username.trim().toLowerCase()), digest(expectedUsername.toLowerCase())) &&
     timingSafeEqual(digest(password), digest(expectedPassword))
   );
+}
+
+export function checkFounderLoginLimit(key: string) {
+  const now = Date.now();
+  const attempt = loginAttempts.get(key);
+  if (!attempt || attempt.resetAt <= now) {
+    loginAttempts.set(key, { count: 0, resetAt: now + LOGIN_WINDOW_MS });
+    return { allowed: true as const, retryAfter: 0 };
+  }
+  if (attempt.count < LOGIN_MAX_ATTEMPTS) {
+    return { allowed: true as const, retryAfter: 0 };
+  }
+  return {
+    allowed: false as const,
+    retryAfter: Math.max(1, Math.ceil((attempt.resetAt - now) / 1000)),
+  };
+}
+
+export function recordFounderLoginFailure(key: string) {
+  const now = Date.now();
+  const attempt = loginAttempts.get(key);
+  if (!attempt || attempt.resetAt <= now) {
+    loginAttempts.set(key, { count: 1, resetAt: now + LOGIN_WINDOW_MS });
+    return;
+  }
+  attempt.count += 1;
+}
+
+export function clearFounderLoginFailures(key: string) {
+  loginAttempts.delete(key);
 }
 
 function stableUuidFromLogin(login: string) {
