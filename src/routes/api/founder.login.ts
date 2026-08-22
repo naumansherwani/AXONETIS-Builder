@@ -26,17 +26,37 @@ export const Route = createFileRoute("/api/founder/login")({
         }
 
         const {
+          checkFounderLoginLimit,
+          clearFounderLoginFailures,
           createFounderSession,
           founderSessionCookie,
+          recordFounderLoginFailure,
           verifyFounderCredentials,
         } = await import("@/lib/founder-session.server");
+        const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+        const loginKey = forwardedFor || request.headers.get("cf-connecting-ip") || "unknown";
+        const limit = checkFounderLoginLimit(loginKey);
+        if (!limit.allowed) {
+          return Response.json(
+            { error: "Kuch dair baad dobara try karein." },
+            {
+              status: 429,
+              headers: {
+                "Cache-Control": "no-store",
+                "Retry-After": String(limit.retryAfter),
+              },
+            },
+          );
+        }
         if (!verifyFounderCredentials(username, password)) {
+          recordFounderLoginFailure(loginKey);
           return Response.json(
             { error: "Username ya password sahi nahi hai." },
             { status: 401, headers: { "Cache-Control": "no-store" } },
           );
         }
 
+        clearFounderLoginFailures(loginKey);
         const token = createFounderSession({ login: username });
         return Response.json(
           { ok: true, login: username },
