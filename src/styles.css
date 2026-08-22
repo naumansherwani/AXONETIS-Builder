@@ -232,10 +232,10 @@
 
 .auth-shell {
   background-image:
-    linear-gradient(to right, oklch(1 0 0 / 0.025) 1px, transparent 1px),
-    linear-gradient(to bottom, oklch(1 0 0 / 0.025) 1px, transparent 1px),
-    radial-gradient(75% 70% at 14% 12%, oklch(0.58 0.24 25 / 0.16), transparent 62%),
-    radial-gradient(55% 65% at 92% 88%, oklch(0.32 0.09 295 / 0.13), transparent 70%);
+    linear-gradient(to right, oklch(1 0 0 / 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(1 0 0 / 0.055) 1px, transparent 1px),
+    radial-gradient(70% 65% at 12% 10%, oklch(0.58 0.24 25 / 0.3), transparent 60%),
+    radial-gradient(60% 65% at 94% 90%, oklch(0.42 0.12 295 / 0.24), transparent 70%);
   background-size: 56px 56px, 56px 56px, auto, auto;
 }
 
